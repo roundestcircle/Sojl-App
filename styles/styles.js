@@ -1,34 +1,43 @@
 import { StyleSheet } from 'react-native';
+import { colors } from './colors';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 35,
+    padding: 20,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 15,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  footnote: {
+    fontSize: 9,
+    position: 'absolute',
+    bottom: 20,
   },
   text: {
     fontSize: 16,
-
     color: '#333',
   },
+  maintext: {
+    fontSize: 25,
+    color: '#333',
+    fontWeight: 'bold',
+  },
   button: {
-    width: '80%',
+    width: '100%',
     fontSize: 25,
     fontWeight: 'bold',
-    fontColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#000',
-    backgroundColor: '#2b700c',
-    color: '#fff',
+    color: '#333',
+    padding: 18,
+    borderRadius: 25,
+    borderWidth: 5,
+    backgroundColor: '#fff',
+    borderColor: colors.primary,
+    textAlign: 'center',
+  },
+  link: {
+    color: '#007AFF',
+    textDecorationLine: 'underline',
   },
 });
-

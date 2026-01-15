@@ -1,31 +1,22 @@
 import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
+import { styles } from '../styles/styles.js';
 
 export default function Index() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Home screen</Text>
+      <Link href="/soiltexture" style={styles.button}>
+        Just Determine Soil Texture
+      </Link>
+      <Link href="/soilcolor" style={styles.button}>
+        Just Determine Soil Color
+      </Link>
+      <Link href="/soilmapping" style={styles.button}>
+        Start Mapping
+      </Link>
       <Link href="/about" style={styles.button}>
-        Go to About screen
+        About
       </Link>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#25292e',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    color: '#fff',
-  },
-  button: {
-    fontSize: 20,
-    textDecorationLine: 'underline',
-    color: '#fff',
-  },
-});
-

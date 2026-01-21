@@ -1,10 +1,11 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import ColorPickerScreen from '../components/ColorPickerScreen';
 import { styles } from '../styles/styles.js';
 
 export default function SoilColorScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Under Construction</Text>
-    </View>
-  );
+return (
+  <View style={styles.container}>
+    <ColorPickerScreen />
+  </View>
+);
 }

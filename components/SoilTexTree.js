@@ -54,11 +54,11 @@ export const SoilTexTree = {
             options: [
                 {
                     text: 'Ein Ring mit 3cm Durchmesser ist möglich',
-                    next: 'tex3a',
+                    next: 'tex3b',
                 },
                 {
                     text: 'Ein Ring mit 3cm Durchmesser ist nicht möglich, ohne dass die Wurst bricht',
-                    next: 'tex3b',
+                    next: 'tex3a',
                 },
             ],
         },

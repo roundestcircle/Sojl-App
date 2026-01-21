@@ -5,10 +5,13 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 15,
+  },
+  containerfull: {
+    flex: 1,
+    padding: 150,
   },
   footnote: {
     fontSize: 9,
@@ -26,18 +29,22 @@ export const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    fontSize: 25,
-    fontWeight: 'bold',
-    color: '#333',
     padding: 18,
     borderRadius: 25,
     borderWidth: 5,
     backgroundColor: '#fff',
     borderColor: colors.primary,
-    textAlign: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   link: {
     color: '#007AFF',
     textDecorationLine: 'underline',
+  },
+  cameraContainer: StyleSheet.absoluteFillObject,
+  camera: {
+    width: '100%',
+    aspectRatio: 3/4,
+
   },
 });

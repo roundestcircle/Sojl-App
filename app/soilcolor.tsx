@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import PictureTakerScreen from '../components/PictureTakerScreen';
-import { styles } from '../styles/styles.js';
+import { styles } from '../styles/styles';
 
 export default function SoilColorScreen() {
 return (

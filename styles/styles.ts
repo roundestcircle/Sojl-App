@@ -11,7 +11,8 @@ export const styles = StyleSheet.create({
   },
   containerfull: {
     flex: 1,
-    padding: 150,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
   },
   footnote: {
     fontSize: 9,
@@ -41,7 +42,9 @@ export const styles = StyleSheet.create({
     color: '#007AFF',
     textDecorationLine: 'underline',
   },
-  cameraContainer: StyleSheet.absoluteFillObject,
+  cameraContainer: {
+    flex: 1,
+  },
   camera: {
     width: '100%',
     aspectRatio: 3/4,

@@ -1,21 +1,21 @@
-import { colors } from '@/styles/colors.js';
+import { colors } from '@/styles/colors';
 import { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { styles } from '../styles/styles.js';
-import { SoilTexTree } from './SoilTexTree';
+import { styles } from '../styles/styles';
+import { SoilTexTree } from '../utils/SoilTexTree';
 
 export default function TexTreeScreen() {
   const [currentNode, setCurrentNode] = useState(SoilTexTree.id);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState<string[]>([]);
 
-  const getNode = (id) => {
+  const getNode = (id: string) => {
     if (id === SoilTexTree.id) return SoilTexTree;
-    return SoilTexTree.nodes[id];
+    return SoilTexTree.nodes[id as keyof typeof SoilTexTree.nodes];
   };
 
   const node = getNode(currentNode);
 
-  const handlePress = (nextId) => {
+  const handlePress = (nextId: string) => {
     setHistory([...history, currentNode]);
     setCurrentNode(nextId);
   };
@@ -23,13 +23,13 @@ export default function TexTreeScreen() {
   const handleBack = () => {
     if (history.length > 0) {
       const newHistory = [...history];
-      const previousNode = newHistory.pop();
+      const previousNode = newHistory.pop()!;
       setHistory(newHistory);
       setCurrentNode(previousNode);
     }
   };
 
-  const isResult = node.result !== undefined;
+  const isResult = 'result' in node;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -37,7 +37,7 @@ export default function TexTreeScreen() {
         {node.question}
       </Text>
 
-      {!isResult && (
+      {!isResult && 'options' in node && (
         <View style={{ gap: 10 }}>
           {node.options.map((option, index) => (
             <TouchableOpacity
@@ -53,7 +53,7 @@ export default function TexTreeScreen() {
         </View>
       )}
 
-      {isResult && (
+      {isResult && 'result' in node && (
         <View style={{backgroundColor: colors.primary, borderRadius: 25, padding: 20, gap: 10, minWidth: '100%'}}>
           <Text style={[styles.maintext, { textAlign: 'center', marginBottom: 40, marginTop: 40, color : '#fff' }]}>
             {node.result.title};{' '}

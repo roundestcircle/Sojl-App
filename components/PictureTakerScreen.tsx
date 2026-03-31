@@ -1,23 +1,14 @@
 import {
-  CameraMode,
-  CameraType,
   CameraView,
   useCameraPermissions,
 } from "expo-camera";
 import { useRef, useState } from "react";
-import { Button, Pressable, StyleSheet, Text, Touchable, TouchableOpacity, View, ViewStyle, ActivityIndicator } from "react-native";
+import { Text, TouchableOpacity, View, ViewStyle, ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
 import { styles } from "@/styles/styles";
-import { extractSoilColor } from "./ColorPicker";
+import { colors } from "@/styles/colors";
+import { extractSoilColor } from "../utils/soilColorExtractor";
 
-export default function PictureTakerScreen() {
-  const [permission, requestPermission] = useCameraPermissions();
-  const ref = useRef<CameraView>(null);
-  const [uri, setUri] = useState<string | null>(null);
-  const [mode, setMode] = useState<CameraMode>("picture");
-  const [facing, setFacing] = useState<CameraType>("back");
-  const [soilColor, setSoilColor] = useState<{ r: number; g: number; b: number } | null>(null);
-  const [isExtractingColor, setIsExtractingColor] = useState(false);
 const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } = {
   largeRectangle: {
     position: 'absolute',
@@ -40,6 +31,14 @@ const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } = 
     backgroundColor: 'transparent'
   }
 };
+
+export default function PictureTakerScreen() {
+  const [permission, requestPermission] = useCameraPermissions();
+  const ref = useRef<CameraView>(null);
+  const [uri, setUri] = useState<string | null>(null);
+  const [soilColor, setSoilColor] = useState<{ r: number; g: number; b: number } | null>(null);
+  const [munsellColor, setMunsellColor] = useState<string | null>(null);
+  const [isExtractingColor, setIsExtractingColor] = useState(false);
 
   if (!permission) {
     return null;
@@ -68,11 +67,13 @@ const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } = 
   const handleExtractSoilColor = async (photoUri: string) => {
     try {
       setIsExtractingColor(true);
-      const { correctedColor } = await extractSoilColor(photoUri);
+      const { correctedColor, correctedColorMunsell } = await extractSoilColor(photoUri);
       setSoilColor(correctedColor);
+      setMunsellColor(correctedColorMunsell.full);
     } catch (error) {
       console.error('Error extracting soil color:', error);
       setSoilColor(null);
+      setMunsellColor(null);
     } finally {
       setIsExtractingColor(false);
     }
@@ -93,31 +94,39 @@ const renderPicture = (uri: string) => {
       </View>
 
       {soilColor && (
-        <View style={{ alignItems: 'center' }}>
-          <Text style={styles.maintext}>
+        <View style={{backgroundColor: colors.primary, borderRadius: 25, padding: 20, gap: 10, minWidth: '100%', alignItems: 'center'}}>
+          <Text style={[styles.maintext, { color: '#fff' }]}>
             RGB: R={soilColor.r} G={soilColor.g} B={soilColor.b}
           </Text>
+          {munsellColor && (
+            <Text style={[styles.maintext, { color: '#fff' }]}>
+              Munsell: {munsellColor}
+            </Text>
+          )}
         </View>
       )}
       
+      {!soilColor && (
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={() => handleExtractSoilColor(uri)}
+          disabled={isExtractingColor}>
+          {isExtractingColor ? (
+            <ActivityIndicator color={styles.maintext.color} size={styles.maintext.fontSize} />
+          ) : (
+            <Text style={styles.maintext}>Farbe bestimmen</Text>
+          )}
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity 
         style={styles.button} 
         onPress={() => {
           setUri(null);
           setSoilColor(null);
+          setMunsellColor(null);
         }}>
         <Text style={styles.maintext}>Neues Foto aufnehmen</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={() => handleExtractSoilColor(uri)}
-        disabled={isExtractingColor}>
-        {isExtractingColor ? (
-          <ActivityIndicator color={styles.maintext.color} />
-        ) : (
-          <Text style={styles.maintext}>Farbe bestimmen</Text>
-        )}
       </TouchableOpacity>
     </View>
   );
@@ -126,22 +135,23 @@ const renderPicture = (uri: string) => {
 const renderCamera = () => {
   return (
     <View style={[styles.cameraContainer, { gap: 15, justifyContent: 'space-between' }]}>
-      <Text style={styles.maintext}>
-        Bitte platzieren sie die Bodenprobe im kleinen, die GreyCard im großen Rechteck.
-      </Text>
       
       <View style={{ position: 'relative', width: '100%', aspectRatio: 3/4, overflow: 'hidden' }}>
         <CameraView
           style={{ width: '100%', height: '100%' }}
           ref={ref}
-          mode={mode}
-          facing={facing}
+          mode="picture"
+          facing="back"
           responsiveOrientationWhenOrientationLocked
         />
         
         <View style={overlayStyles.largeRectangle} />
         <View style={overlayStyles.smallRectangle} />
       </View>
+
+      <Text style={styles.maintext}>
+        Bitte platzieren sie die Bodenprobe im kleinen, die GreyCard im großen Rechteck.
+      </Text>
       
       <TouchableOpacity style={styles.button} onPress={takePicture}>
         <Text style={styles.maintext}>Foto aufnehmen</Text>

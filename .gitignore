@@ -28,6 +28,9 @@ yarn-error.*
 
 # macOS
 .DS_Store
+
+# Munsell data source
+real.dat
 *.pem
 
 # local env files

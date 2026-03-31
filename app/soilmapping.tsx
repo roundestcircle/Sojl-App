@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { styles } from '../styles/styles.js';
+import { styles } from '../styles/styles';
 
 export default function SoilMappingScreen() {
   return (

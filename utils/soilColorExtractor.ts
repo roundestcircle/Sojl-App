@@ -1,5 +1,5 @@
 import { Skia } from '@shopify/react-native-skia';
-import { rgbToMunsell } from '../utils/munsellLookup';
+import { rgbToMunsell } from './munsellLookup';
 
 /**
  * Rectangle coordinates for image regions
@@ -191,5 +191,3 @@ export const extractSoilColor = async (
     throw error;
   }
 };
-
-

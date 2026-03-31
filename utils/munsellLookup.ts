@@ -1,11 +1,7 @@
 /**
  * Munsell Color Lookup and RGB to Munsell Conversion
  * Uses the official RIT Munsell Renotation Dataset with Delta-E color distance matching.
- *
- * To regenerate the data file, download real.dat from:
- *   http://www.rit-mcsl.org/MunsellRenotation/real.dat
- * Place it in the project root, then run:
- *   node scripts/generateMunsellData.js
+ * The dataset is stored in munsellData.ts as an array of objects with RGB and Munsell values.
  */
 
 import { MUNSELL_DATA } from './munsellData';

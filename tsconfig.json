@@ -6,8 +6,10 @@
       "@/*": [
         "./*"
       ]
-    }
-  },
+    },
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+    },
   "include": [
     "**/*.ts",
     "**/*.tsx",

@@ -4,14 +4,15 @@ import { colors } from './colors';
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 15,
   },
   containerfull: {
     flex: 1,
-    paddingHorizontal: 15,
+    paddingHorizontal: 0,
     paddingVertical: 10,
   },
   footnote: {
@@ -31,7 +32,7 @@ export const styles = StyleSheet.create({
   button: {
     width: '100%',
     padding: 18,
-    borderRadius: 25,
+    borderRadius: 10,
     borderWidth: 5,
     backgroundColor: '#fff',
     borderColor: colors.primary,
@@ -48,6 +49,109 @@ export const styles = StyleSheet.create({
   camera: {
     width: '100%',
     aspectRatio: 3/4,
-
+  },
+  labelContainer: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  labelBox: {
+    backgroundColor: '#fff',
+    borderColor: colors.primary,
+    borderWidth: 5,
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
+  label: {
+    fontSize: 64,
+    fontWeight: '600',
+    letterSpacing: -2,
+    color: '#000',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 25,
+    width: '85%',
+    maxWidth: 400,
+    borderColor: colors.primary,
+    borderWidth: 3,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 15,
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: 4,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+  },
+  checkboxText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: '#333',
+  },
+  modalButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  resetButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    borderWidth: 5,
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  resetButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

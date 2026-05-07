@@ -13,6 +13,7 @@ export default function RootLayout() {
       <Stack.Screen name="soilcolor" options={{ title: 'Bodenfarbe' }} />
       <Stack.Screen name="soilmapping" options={{ title: 'Kartierung' }} />
       <Stack.Screen name="soiltexture" options={{ title: 'Bodenart' }} />
+      <Stack.Screen name="soilshare" options={{ title: 'Anteil' }} />
     </Stack>
   );
 }

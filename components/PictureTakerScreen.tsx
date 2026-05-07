@@ -8,6 +8,7 @@ import { Image } from "expo-image";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import { extractSoilColor } from "../utils/soilColorExtractor";
+import { InstructionModal, ResetInstructionButton } from "./InstructionModal";
 
 const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } = {
   largeRectangle: {
@@ -39,6 +40,12 @@ export default function PictureTakerScreen() {
   const [soilColor, setSoilColor] = useState<{ r: number; g: number; b: number } | null>(null);
   const [munsellColor, setMunsellColor] = useState<string | null>(null);
   const [isExtractingColor, setIsExtractingColor] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
+
+  const handleReset = () => {
+    // Force InstructionModal to remount by changing its key
+    setModalKey(prev => prev + 1);
+  };
 
   if (!permission) {
     return null;
@@ -108,7 +115,7 @@ const renderPicture = (uri: string) => {
       
       {!soilColor && (
         <TouchableOpacity 
-          style={styles.button} 
+          style={[styles.button, , { position: 'absolute', bottom: 160 }]} 
           onPress={() => handleExtractSoilColor(uri)}
           disabled={isExtractingColor}>
           {isExtractingColor ? (
@@ -120,13 +127,13 @@ const renderPicture = (uri: string) => {
       )}
 
       <TouchableOpacity 
-        style={styles.button} 
+        style={[styles.button, { position: 'absolute', bottom: 70 }]} 
         onPress={() => {
           setUri(null);
           setSoilColor(null);
           setMunsellColor(null);
         }}>
-        <Text style={styles.maintext}>Neues Foto aufnehmen</Text>
+        <Text style={[styles.maintext]}>Neues Foto aufnehmen</Text>
       </TouchableOpacity>
     </View>
   );
@@ -149,20 +156,32 @@ const renderCamera = () => {
         <View style={overlayStyles.smallRectangle} />
       </View>
 
-      <Text style={styles.maintext}>
+      <Text style={[styles.maintext, { position: 'absolute', bottom: 160 }]}>
         Bitte platzieren sie die Bodenprobe im kleinen, die GreyCard im großen Rechteck.
       </Text>
       
-      <TouchableOpacity style={styles.button} onPress={takePicture}>
+      <TouchableOpacity style={[styles.button, { position: 'absolute', bottom: 70 }]} onPress={takePicture}>
         <Text style={styles.maintext}>Foto aufnehmen</Text>
       </TouchableOpacity>
+
     </View>
   );
 };
 
   return (
     <View style={styles.containerfull}>
+      <InstructionModal
+        key={modalKey} // remount when key changes
+        title="Anleitung"
+        instructionText="Platziere die Bodenprobe im kleinen, die GreyCard im großen Rechteck. Du kannst jede beliebige 18%-Greycard vom Fotofchhandel oder Amazon verwenden. Drücke auf 'Foto aufnehmen'."
+        storageKey="soilColDontShowAgain"
+      />
       {uri ? renderPicture(uri) : renderCamera()}
+      <ResetInstructionButton
+        storageKey="soilColDontShowAgain"
+        onReset={handleReset}
+        style={{ alignSelf: 'stretch', width: 'auto', marginTop: 20, bottom: 15, left: 0, right: 0 }}
+      />
     </View>
   );
 }

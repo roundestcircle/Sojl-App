@@ -20,6 +20,11 @@ export default function Index() {
         Nur Bodenfarbe bestimmen
         </Text>
       </Link>
+      <Link href="/soilshare" style={styles.button}>
+        <Text style={styles.maintext}>
+        Nur Bodenanteil (z.B. Skelett) bestimmen
+        </Text>
+      </Link>
       <Link href="/about" style={styles.button}>
         <Text style={styles.maintext}>
         About

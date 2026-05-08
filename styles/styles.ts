@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 import { colors } from './colors';
 
 export const styles = StyleSheet.create({
+  // Base container - centered flex layout for screens with normal vertical flow
   container: {
     flex: 1,
     paddingHorizontal: 15,
@@ -10,25 +11,31 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 15,
   },
+
+  // Simple wrapper for full-screen components (just flex and padding, no centering)
   containerfull: {
     flex: 1,
-    paddingHorizontal: 0,
+    paddingHorizontal: 15,
     paddingVertical: 10,
   },
+
   footnote: {
     fontSize: 9,
     position: 'absolute',
     bottom: 20,
   },
+
   text: {
     fontSize: 16,
     color: '#333',
   },
+
   maintext: {
     fontSize: 25,
     color: '#333',
     fontWeight: 'bold',
   },
+
   button: {
     width: '100%',
     padding: 18,
@@ -39,43 +46,37 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   link: {
     color: '#007AFF',
     textDecorationLine: 'underline',
   },
+
   cameraContainer: {
     flex: 1,
   },
-  camera: {
-    width: '100%',
-    aspectRatio: 3/4,
-  },
+
   labelContainer: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  labelBox: {
-    backgroundColor: '#fff',
-    borderColor: colors.primary,
-    borderWidth: 5,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-  },
+
   label: {
     fontSize: 64,
     fontWeight: '600',
     letterSpacing: -2,
     color: '#000',
   },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   modalContent: {
     backgroundColor: '#fff',
     borderRadius: 20,
@@ -85,23 +86,27 @@ export const styles = StyleSheet.create({
     borderColor: colors.primary,
     borderWidth: 3,
   },
+
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: colors.primary,
     marginBottom: 15,
   },
+
   modalText: {
     fontSize: 16,
     color: '#333',
     lineHeight: 24,
     marginBottom: 20,
   },
+
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
   },
+
   checkbox: {
     width: 24,
     height: 24,
@@ -112,18 +117,22 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   checkboxChecked: {
     backgroundColor: colors.primary,
   },
+
   checkboxText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
+
   checkboxLabel: {
     fontSize: 14,
     color: '#333',
   },
+
   modalButton: {
     backgroundColor: colors.primary,
     paddingVertical: 12,
@@ -131,11 +140,13 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
+
   modalButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
+
   resetButton: {
     position: 'absolute',
     bottom: 20,
@@ -149,6 +160,7 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
+
   resetButtonText: {
     color: '#fff',
     fontSize: 14,

@@ -4,7 +4,7 @@ import { styles } from '../styles/styles';
 
 export default function SoilColorScreen() {
 return (
-  <View style={styles.container}>
+  <View style={styles.containerfull}>
     <PictureTakerScreen />
   </View>
 );

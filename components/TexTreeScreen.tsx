@@ -5,59 +5,94 @@ import { styles } from '../styles/styles';
 import { SoilTexTree } from '../utils/SoilTexTree';
 import { InstructionModal, ResetInstructionButton } from '@/components/InstructionModal';
 
+/**
+ * TexTreeScreen Component
+ * 
+ * Implements an interactive decision tree for determining soil texture through a series of
+ * yes/no questions. Users navigate through the tree structure by answering questions about
+ * soil properties, with the ability to navigate back through previous decisions.
+ */
 export default function TexTreeScreen() {
+  // Track the current position in the decision tree
   const [currentNode, setCurrentNode] = useState(SoilTexTree.id);
+  
+  // Store history of visited nodes to enable back navigation
   const [history, setHistory] = useState<string[]>([]);
-  const [modalKey, setModalKey] = useState(0); // for resetting modal
+  
+  // Key to force remount of InstructionModal after reset
+  const [modalKey, setModalKey] = useState(0);
 
+  /**
+   * Retrieves a node from the tree structure by its ID
+   * @param id - The unique identifier of the node
+   * @returns The node object containing question/options or result
+   */
   const getNode = (id: string) => {
-    if (id === SoilTexTree.id) return SoilTexTree;
+    if (id === SoilTexTree.id) return SoilTexTree; // Root node
     return SoilTexTree.nodes[id as keyof typeof SoilTexTree.nodes];
   };
 
+  // Get the current node data to display
   const node = getNode(currentNode);
 
+  /**
+   * Navigates to the next node
+   * Saves current node to history before moving forward
+   * @param nextId - The ID of the next node to navigate to
+   */
   const handlePress = (nextId: string) => {
-    setHistory([...history, currentNode]);
+    setHistory([...history, currentNode]); // Save current for back navigation
     setCurrentNode(nextId);
   };
 
+  /**
+   * Navigates back one step in the tree
+   * Pops the last node from history and returns to it
+   */
   const handleBack = () => {
     if (history.length > 0) {
       const newHistory = [...history];
-      const previousNode = newHistory.pop()!;
+      const previousNode = newHistory.pop()!; // Remove and get last node
       setHistory(newHistory);
       setCurrentNode(previousNode);
     }
   };
 
+  /**
+   * Resets the instruction modal to show again
+   * Used when user clicks the reset instruction button
+   */
   const handleReset = () => {
     setModalKey(prev => prev + 1);
   };
 
+  // Check if current node is a result node (end of decision tree)
   const isResult = 'result' in node;
 
   return (
     <View style={styles.container}>
-      {/* Instruction Modal */}
+      {/* Instruction Modal - Displays usage instructions */}
       <InstructionModal
-        key={modalKey}
+        key={modalKey} // Remount when key changes to reset shown state
         title="Anleitung"
         instructionText="Nimm eine Murmelgroße Bodenprobe, feuchte sie an und knete sie gut durch. Beantworte die Fragen, um die Bodenart zu bestimmen."
-        storageKey="soilTexDontShowAgain" // use a unique key for this screen
+        storageKey="soilTexDontShowAgain" // Unique storage key for this screen
       />
 
+      {/* Display the current question at the top */}
       <Text style={[styles.maintext, { position: 'absolute', top: 20 }]}>
         {node.question}
       </Text>
 
+      {/* Display answer options if current node is NOT a result */}
       {!isResult && 'options' in node && (
         <View style={{ gap: 10 }}>
+          {/* Map through all available options for this question */}
           {node.options.map((option, index) => (
             <TouchableOpacity
               key={index}
               style={[styles.button, { minWidth: '100%' }]}
-              onPress={() => handlePress(option.next)}
+              onPress={() => handlePress(option.next)} // Navigate to next node
             >
               <Text style={styles.maintext}>{option.text}</Text>
             </TouchableOpacity>
@@ -65,6 +100,7 @@ export default function TexTreeScreen() {
         </View>
       )}
 
+      {/* Display final result when decision tree is complete */}
       {isResult && 'result' in node && (
         <View
           style={{
@@ -86,6 +122,7 @@ export default function TexTreeScreen() {
         </View>
       )}
 
+      {/* Back button - Only visible if there's navigation history */}
       {history.length > 0 && (
         <TouchableOpacity
           style={[styles.button, { position: 'absolute', bottom: 70 }]}
@@ -95,22 +132,24 @@ export default function TexTreeScreen() {
         </TouchableOpacity>
       )}
 
+      {/* Restart button - Only visible after reaching a result */}
       {history.length > 0 && isResult === true && (
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            setCurrentNode(SoilTexTree.id);
-            setHistory([]);
+            setCurrentNode(SoilTexTree.id); // Reset to root node
+            setHistory([]); // Clear history
           }}
         >
           <Text style={styles.maintext}>Neu Starten</Text>
         </TouchableOpacity>
       )}
 
-      {/* Reset instruction button */}
+      {/* Reset instruction button - Allows user to show instructions again */}
       <ResetInstructionButton
         storageKey="soilTexDontShowAgain"
         onReset={handleReset}
+        style={{ alignSelf: 'stretch', width: 'auto', marginTop: 20, bottom: 15, left: 0, right: 0 }}
       />
     </View>
   );

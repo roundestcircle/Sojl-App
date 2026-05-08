@@ -10,6 +10,18 @@ import { colors } from "@/styles/colors";
 import { extractSoilColor } from "../utils/soilColorExtractor";
 import { InstructionModal, ResetInstructionButton } from "./InstructionModal";
 
+/**
+ * PictureTakerScreen Component
+ * 
+ * Allows users to capture photos of soil samples positioned with a grey card reference.
+ * Uses AI-based color extraction to determine soil color in RGB and Munsell notation.
+ */
+
+/**
+ * Overlay rectangles guide proper positioning:
+ * - largeRectangle: For grey card reference (18% grey card)
+ * - smallRectangle: For soil sample placement
+ */
 const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } = {
   largeRectangle: {
     position: 'absolute',
@@ -19,7 +31,7 @@ const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } = 
     height: '50%',
     borderWidth: 3,
     borderColor: 'white',
-    backgroundColor: 'transparent'
+    backgroundColor: 'transparent' // Transparent so camera view shows through
   },
   smallRectangle: {
     position: 'absolute',
@@ -34,14 +46,31 @@ const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } = 
 };
 
 export default function PictureTakerScreen() {
+  // Request and track camera permissions
   const [permission, requestPermission] = useCameraPermissions();
+  
+  // Reference to the camera component
   const ref = useRef<CameraView>(null);
+  
+  // Store the URI of the taken photo
   const [uri, setUri] = useState<string | null>(null);
+  
+  // Store extracted RGB color values
   const [soilColor, setSoilColor] = useState<{ r: number; g: number; b: number } | null>(null);
+  
+  // Store Munsell color notation
   const [munsellColor, setMunsellColor] = useState<string | null>(null);
+  
+  // Loading state while extracting color
   const [isExtractingColor, setIsExtractingColor] = useState(false);
+  
+  // Key to force remount of InstructionModal after reset
   const [modalKey, setModalKey] = useState(0);
 
+  /**
+   * Resets the instruction modal to show again
+   * Used when user clicks the reset instruction button
+   */
   const handleReset = () => {
     // Force InstructionModal to remount by changing its key
     setModalKey(prev => prev + 1);
@@ -51,6 +80,7 @@ export default function PictureTakerScreen() {
     return null;
   }
 
+  // Show permission request if not yet granted
   if (!permission.granted) {
     return (
       <View style={styles.container}>
@@ -66,17 +96,27 @@ export default function PictureTakerScreen() {
     );
   }
 
+  /**
+   * Captures a photo from the camera
+   * Stores the image URI for processing
+   */
   const takePicture = async () => {
     const photo = await ref.current?.takePictureAsync();
-    if (photo?.uri) setUri(photo.uri);
+    if (photo?.uri) setUri(photo.uri); // Save image URI
   };
 
+  /**
+   * Extracts soil color from the photo using AI-based analysis
+   * Accounts for the grey card reference for accurate color correction
+   * @param photoUri - URI of the photo to analyze
+   */
   const handleExtractSoilColor = async (photoUri: string) => {
     try {
       setIsExtractingColor(true);
+      // Extract color and convert to Munsell notation
       const { correctedColor, correctedColorMunsell } = await extractSoilColor(photoUri);
-      setSoilColor(correctedColor);
-      setMunsellColor(correctedColorMunsell.full);
+      setSoilColor(correctedColor); // Store RGB values
+      setMunsellColor(correctedColorMunsell.full); // Store full Munsell notation
     } catch (error) {
       console.error('Error extracting soil color:', error);
       setSoilColor(null);
@@ -86,97 +126,120 @@ export default function PictureTakerScreen() {
     }
   };
 
-const renderPicture = (uri: string) => {
-  return (
-    <View style={[styles.cameraContainer, { gap: 15, justifyContent: 'space-between' }]}>
-      
-      <View style={{ position: 'relative', width: '100%', aspectRatio: 3/4 }}>
-        <Image
-          source={{ uri }}
-          style={{ width: '100%', height: '100%' }}
-        />
+  /**
+   * Renders the picture review screen
+   * Displays the captured photo with overlay rectangles and extracted color results
+   * @param uri - URI of the captured photo
+   */
+  const renderPicture = (uri: string) => {
+    return (
+      <View style={[styles.cameraContainer, { gap: 5 }]}>
         
-        <View style={overlayStyles.largeRectangle} />
-        <View style={overlayStyles.smallRectangle} />
-      </View>
-
-      {soilColor && (
-        <View style={{backgroundColor: colors.primary, borderRadius: 25, padding: 20, gap: 10, minWidth: '100%', alignItems: 'center'}}>
-          <Text style={[styles.maintext, { color: '#fff' }]}>
-            RGB: R={soilColor.r} G={soilColor.g} B={soilColor.b}
-          </Text>
-          {munsellColor && (
-            <Text style={[styles.maintext, { color: '#fff' }]}>
-              Munsell: {munsellColor}
-            </Text>
-          )}
+        {/* Display captured photo with overlay guides */}
+        <View style={{ width: '100%', aspectRatio: 3/4 }}>
+          <Image
+            source={{ uri }}
+            style={{ width: '100%', height: '100%' }}
+          />
+          
+          {/* Overlay rectangles showing where grey card and sample should be positioned */}
+          <View style={overlayStyles.largeRectangle} />
+          <View style={overlayStyles.smallRectangle} />
         </View>
-      )}
-      
-      {!soilColor && (
-        <TouchableOpacity 
-          style={[styles.button, , { position: 'absolute', bottom: 160 }]} 
-          onPress={() => handleExtractSoilColor(uri)}
-          disabled={isExtractingColor}>
-          {isExtractingColor ? (
-            <ActivityIndicator color={styles.maintext.color} size={styles.maintext.fontSize} />
-          ) : (
-            <Text style={styles.maintext}>Farbe bestimmen</Text>
-          )}
-        </TouchableOpacity>
-      )}
 
-      <TouchableOpacity 
-        style={[styles.button, { position: 'absolute', bottom: 70 }]} 
-        onPress={() => {
-          setUri(null);
-          setSoilColor(null);
-          setMunsellColor(null);
-        }}>
-        <Text style={[styles.maintext]}>Neues Foto aufnehmen</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const renderCamera = () => {
-  return (
-    <View style={[styles.cameraContainer, { gap: 15, justifyContent: 'space-between' }]}>
-      
-      <View style={{ position: 'relative', width: '100%', aspectRatio: 3/4, overflow: 'hidden' }}>
-        <CameraView
-          style={{ width: '100%', height: '100%' }}
-          ref={ref}
-          mode="picture"
-          facing="back"
-          responsiveOrientationWhenOrientationLocked
-        />
+        {/* Display extracted color results once available */}
+        {soilColor && (
+          <View style={{backgroundColor: colors.primary, borderRadius: 10, padding: 20, gap: 10, minWidth: '100%', alignItems: 'center'}}>
+            <Text style={[styles.maintext, { color: '#fff' }]}>
+              RGB: R={soilColor.r} G={soilColor.g} B={soilColor.b}
+            </Text>
+            {munsellColor && (
+              <Text style={[styles.maintext, { color: '#fff' }]}>
+                Munsell: {munsellColor}
+              </Text>
+            )}
+          </View>
+        )}
         
-        <View style={overlayStyles.largeRectangle} />
-        <View style={overlayStyles.smallRectangle} />
+        {/* Extract color button - Only visible if color hasn't been extracted yet */}
+        {!soilColor && (
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={() => handleExtractSoilColor(uri)}
+            disabled={isExtractingColor}>
+            {isExtractingColor ? (
+              <ActivityIndicator color={styles.maintext.color} size={styles.maintext.fontSize} />
+            ) : (
+              <Text style={styles.maintext}>Farbe bestimmen</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {/* Retake photo button - Clears current photo and extracted results */}
+        <TouchableOpacity 
+          style={[styles.button, { position: 'absolute', bottom: 70 }]}
+          onPress={() => {
+            setUri(null);
+            setSoilColor(null);
+            setMunsellColor(null);
+          }}>
+          <Text style={[styles.maintext]}>Neues Foto aufnehmen</Text>
+        </TouchableOpacity>
       </View>
+    );
+  };
 
-      <Text style={[styles.maintext, { position: 'absolute', bottom: 160 }]}>
-        Bitte platzieren sie die Bodenprobe im kleinen, die GreyCard im großen Rechteck.
-      </Text>
-      
-      <TouchableOpacity style={[styles.button, { position: 'absolute', bottom: 70 }]} onPress={takePicture}>
-        <Text style={styles.maintext}>Foto aufnehmen</Text>
-      </TouchableOpacity>
+  /**
+   * Renders the camera capture screen
+   * Shows live camera feed with overlay guides for proper positioning
+   */
+  const renderCamera = () => {
+    return (
+      <View style={[styles.cameraContainer, { gap: 15 }]}>
+        
+        {/* Live camera feed with overlay guides */}
+        <View style={{ width: '100%', aspectRatio: 3/4, overflow: 'hidden' }}>
+          <CameraView
+            style={{ width: '100%', height: '100%' }}
+            ref={ref}
+            mode="picture"
+            facing="back"
+            responsiveOrientationWhenOrientationLocked
+          />
+          
+          {/* Overlay rectangles guide proper positioning */}
+          <View style={overlayStyles.largeRectangle} />
+          <View style={overlayStyles.smallRectangle} />
+        </View>
 
-    </View>
-  );
-};
+        {/* Instruction text for proper positioning */}
+        <Text style={[styles.maintext]}>
+          Bitte platzieren sie die Bodenprobe im kleinen, die GreyCard im großen Rechteck.
+        </Text>
+        
+        {/* Capture photo button */}
+        <TouchableOpacity style={[styles.button, { position: 'absolute', bottom: 70 }]} onPress={takePicture}>
+          <Text style={styles.maintext}>Foto aufnehmen</Text>
+        </TouchableOpacity>
+
+      </View>
+    );
+  };
 
   return (
-    <View style={styles.containerfull}>
+    <View style={{ flex: 1 }}>
+      {/* Instruction Modal - Displays usage instructions and tips */}
       <InstructionModal
-        key={modalKey} // remount when key changes
+        key={modalKey} // Remount when key changes to reset shown state
         title="Anleitung"
         instructionText="Platziere die Bodenprobe im kleinen, die GreyCard im großen Rechteck. Du kannst jede beliebige 18%-Greycard vom Fotofchhandel oder Amazon verwenden. Drücke auf 'Foto aufnehmen'."
         storageKey="soilColDontShowAgain"
       />
+      
+      {/* Conditionally render camera or picture review screen */}
       {uri ? renderPicture(uri) : renderCamera()}
+      
+      {/* Reset instruction button - Allows user to show instructions again */}
       <ResetInstructionButton
         storageKey="soilColDontShowAgain"
         onReset={handleReset}

@@ -5,9 +5,9 @@ import { styles } from '../styles/styles';
 export default function Index() {
   return (
     <View style={styles.container}>
-      <Link href="/soilmapping" style={styles.button}>
+      <Link href={"/mapping" as any} style={styles.button}>
         <Text style={styles.maintext}>
-        Kartierung beginnen
+        Kartierung
         </Text>
       </Link>
       <Link href="/soiltexture" style={styles.button}>

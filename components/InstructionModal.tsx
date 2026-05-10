@@ -57,7 +57,7 @@ export const InstructionModal: React.FC<InstructionModalProps> = ({
           {children}
           <Pressable style={styles.checkboxContainer} onPress={() => setDontShowAgain(!dontShowAgain)}>
             <View style={[styles.checkbox, dontShowAgain && styles.checkboxChecked]}>
-              {dontShowAgain && <Text style={styles.checkboxText}>✓</Text>}
+              {dontShowAgain && <Text style={styles.modalButtonText}>✓</Text>}
             </View>
             <Text style={styles.checkboxLabel}>Nicht mehr anzeigen</Text>
           </Pressable>

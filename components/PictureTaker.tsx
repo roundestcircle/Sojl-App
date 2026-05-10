@@ -11,13 +11,6 @@ import { extractSoilColor } from "../utils/soilColorExtractor";
 import { InstructionModal, ResetInstructionButton } from "./InstructionModal";
 
 /**
- * PictureTakerScreen Component
- * 
- * Allows users to capture photos of soil samples positioned with a grey card reference.
- * Uses AI-based color extraction to determine soil color in RGB and Munsell notation.
- */
-
-/**
  * Overlay rectangles guide proper positioning:
  * - largeRectangle: For grey card reference (18% grey card)
  * - smallRectangle: For soil sample placement
@@ -45,7 +38,7 @@ const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } = 
   }
 };
 
-export default function PictureTakerScreen() {
+export default function PictureTaker() {
   // Request and track camera permissions
   const [permission, requestPermission] = useCameraPermissions();
   

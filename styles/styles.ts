@@ -31,7 +31,7 @@ export const styles = StyleSheet.create({
   },
 
   maintext: {
-    fontSize: 25,
+    fontSize: 18,
     color: '#333',
     fontWeight: 'bold',
   },
@@ -122,12 +122,6 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
 
-  checkboxText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-
   checkboxLabel: {
     fontSize: 14,
     color: '#333',
@@ -165,5 +159,74 @@ export const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+
+  // ─── Shared form & list styles ──────────────────────────────────────────────
+
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#222',
+    backgroundColor: '#fafafa',
+  },
+
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    color: colors.primary,
+    marginBottom: 4,
+  },
+
+  fieldLabel: {
+    fontSize: 13,
+    color: '#555',
+    marginBottom: 2,
+  },
+
+  emptyText: {
+    textAlign: 'center',
+    color: '#888',
+    marginTop: 40,
+    fontSize: 16,
+  },
+
+  list: {
+    gap: 10,
+    paddingVertical: 16,
+    flexGrow: 1,
+  },
+
+  rowSub: {
+    fontSize: 13,
+    color: '#777',
+    marginTop: 2,
+  },
+
+  rowTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#222',
+  },
+
+  section: {
+    gap: 8,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#ccc',
+  },
+
+  formRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+
+  halfField: {
+    flex: 1,
+    gap: 4,
   },
 });

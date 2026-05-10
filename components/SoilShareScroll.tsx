@@ -24,7 +24,7 @@ function seededRandom(seed: number) {
   };
 }
 
-export default function SoilShareDisplay() {
+export default function SoilShareScroll() {
   // Track the percentage of visible squares (0-100%)
   const [percent, setPercent] = useState(0);
   

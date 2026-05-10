@@ -1,6 +1,5 @@
-import { View } from 'react-native';
-import TexTreeScreen from '../components/TexTreeScreen';
+import TexTree from '../components/TexTree';
 
 export default function SoilTextureScreen() {
-  return <TexTreeScreen />;
+  return <TexTree />;
 }

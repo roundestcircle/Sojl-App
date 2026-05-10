@@ -5,14 +5,7 @@ import { styles } from '../styles/styles';
 import { SoilTexTree } from '../utils/SoilTexTree';
 import { InstructionModal, ResetInstructionButton } from '@/components/InstructionModal';
 
-/**
- * TexTreeScreen Component
- * 
- * Implements an interactive decision tree for determining soil texture through a series of
- * yes/no questions. Users navigate through the tree structure by answering questions about
- * soil properties, with the ability to navigate back through previous decisions.
- */
-export default function TexTreeScreen() {
+export default function TexTree() {
   // Track the current position in the decision tree
   const [currentNode, setCurrentNode] = useState(SoilTexTree.id);
   
@@ -70,7 +63,7 @@ export default function TexTreeScreen() {
   const isResult = 'result' in node;
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1, padding: 20, alignItems: 'center', justifyContent: 'center' }}>
       {/* Instruction Modal - Displays usage instructions */}
       <InstructionModal
         key={modalKey} // Remount when key changes to reset shown state
@@ -105,7 +98,7 @@ export default function TexTreeScreen() {
         <View
           style={{
             backgroundColor: colors.primary,
-            borderRadius: 25,
+            borderRadius: 10,
             padding: 20,
             gap: 10,
             minWidth: '100%',
@@ -135,7 +128,7 @@ export default function TexTreeScreen() {
       {/* Restart button - Only visible after reaching a result */}
       {history.length > 0 && isResult === true && (
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, { marginTop: 16 }]}
           onPress={() => {
             setCurrentNode(SoilTexTree.id); // Reset to root node
             setHistory([]); // Clear history
@@ -149,7 +142,7 @@ export default function TexTreeScreen() {
       <ResetInstructionButton
         storageKey="soilTexDontShowAgain"
         onReset={handleReset}
-        style={{ alignSelf: 'stretch', width: 'auto', marginTop: 20, bottom: 15, left: 0, right: 0 }}
+        style={{ alignSelf: 'stretch', width: 'auto', marginTop: 20, bottom: 15, left: 20, right: 20 }}
       />
     </View>
   );

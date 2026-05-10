@@ -2,7 +2,7 @@ import { useLayoutEffect } from 'react';
 import { Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { styles } from '../styles/styles';
-import SoilShareDisplay from '../components/SoilShareDisplay';
+import SoilShareScroll from '../components/SoilShareScroll';
 
 export default function SoilShareScreen() {
   const navigation = useNavigation();
@@ -15,7 +15,7 @@ export default function SoilShareScreen() {
 
   return (
     <View style={styles.containerfull}>
-      <SoilShareDisplay />
+      <SoilShareScroll />
     </View>
   );
 }

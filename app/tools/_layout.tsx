@@ -3,6 +3,10 @@ import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/styles/colors';
 
+/**
+ * Stack layout for the /tools section.
+ * Registers all soil determination tool screens with a consistent header.
+ */
 export default function ToolsLayout() {
   return (
     <Stack screenOptions={{
@@ -20,11 +24,11 @@ export default function ToolsLayout() {
       <Stack.Screen name="anteil" options={{ title: 'Anteil' }} />
       <Stack.Screen name="humusgehalt" options={{ title: 'Humusgehalt' }} />
       <Stack.Screen name="carbonat" options={{ title: 'Carbonatgehalt' }} />
-      <Stack.Screen name="pflanzenreste" options={{ title: 'Pflanzenreste' }} />
+      <Stack.Screen name="lagerungsdichte" options={{ title: 'Lagerungsdichte' }} />
       <Stack.Screen name="feinwurzeln" options={{ title: 'Feinwurzeln' }} />
-      <Stack.Screen name="gefuegestabilitaet" options={{ title: 'Gefügestabilität' }} />
       <Stack.Screen name="gefuege" options={{ title: 'Gefüge' }} />
       <Stack.Screen name="bodentyp" options={{ title: 'Bodentyp' }} />
+      <Stack.Screen name="horizonte" options={{ title: 'Horizontsymbole' }} />
     </Stack>
   );
 }

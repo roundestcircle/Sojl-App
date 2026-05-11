@@ -1,6 +1,10 @@
 import { Linking, Text, View } from 'react-native';
 import { styles } from '../styles/styles';
 
+/**
+ * About screen – shows a brief project description and contact links.
+ * Part of a Bachelor's thesis on digitalizing soil mapping.
+ */
 export default function AboutScreen() {
   return (
     <View style={[styles.container, { justifyContent: 'flex-start' }]}>

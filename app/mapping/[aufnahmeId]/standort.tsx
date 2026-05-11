@@ -7,18 +7,29 @@ import { getAufnahme, saveAufnahmeDetails, type AufnahmeDetails } from "@/utils/
 import AufnahmeForm from "@/components/AufnahmeForm";
 import type { Aufnahme } from "@/utils/MappingQueries";
 
+/**
+ * Standortdaten screen.
+ * Renders AufnahmeForm for the location and profile fields of an Aufnahme.
+ * Autosaves on every form change via the onSave callback.
+ */
 export default function StandortScreen() {
   const { aufnahmeId: param } = useLocalSearchParams<{ aufnahmeId: string }>();
   const aufnahmeId = parseInt(param, 10);
 
+  // The Aufnahme record loaded from the database, used to seed form defaults
   const [aufnahme, setAufnahme] = useState<Aufnahme | null>(null);
 
+  // Reload the record whenever the screen comes back into focus
   useFocusEffect(
     useCallback(() => {
       setAufnahme(getAufnahme(aufnahmeId));
     }, [aufnahmeId]),
   );
 
+  /**
+   * Persists partial form data on every watch callback from AufnahmeForm.
+   * Called on every keystroke/change, so no explicit save button is needed.
+   */
   const handleSave = (data: AufnahmeDetails) => {
     saveAufnahmeDetails(aufnahmeId, data);
   };

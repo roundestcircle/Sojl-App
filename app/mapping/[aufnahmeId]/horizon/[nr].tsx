@@ -7,18 +7,27 @@ import { colors } from "@/styles/colors";
 import { getHorizont, saveHorizont, type Horizont } from "@/utils/HorizonQueries";
 import HorizontFormular, { type HorizontFormData } from "@/components/HorizonForm";
 
+/**
+ * Individual horizon detail screen.
+ * Loads the horizon by aufnahme_id + nummer, passes it to HorizontFormular,
+ * and autosaves every form change to SQLite.
+ */
 export default function HorizontScreen() {
   const { aufnahmeId: aufnahmeIdParam, nr: nrParam } = useLocalSearchParams<{ aufnahmeId: string; nr: string }>();
   const navigation = useNavigation();
 
+  // Route params may arrive as arrays in edge cases; normalize to numbers
   const aufnahmeId = Array.isArray(aufnahmeIdParam) ? parseInt(aufnahmeIdParam[0], 10) : parseInt(aufnahmeIdParam, 10);
   const nummer = Array.isArray(nrParam) ? parseInt(nrParam[0], 10) : parseInt(nrParam, 10);
 
+  // Set header title once nummer is available
   useLayoutEffect(() => {
     navigation.setOptions({ title: `Horizont ${nummer}` });
   }, [nummer]);
 
+  // The Horizont record used to seed form defaults
   const [horizont, setHorizont] = useState<Horizont | null>(null);
+  // Prevents rendering the form before the DB read completes
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -29,6 +38,10 @@ export default function HorizontScreen() {
     }, [aufnahmeId, nummer]),
   );
 
+  /**
+   * Persists form data to SQLite on every watch callback from HorizontFormular.
+   * Status is derived automatically inside saveHorizont based on filled fields.
+   */
   const handleSave = (data: HorizontFormData) => {
     const parseNum = (s: string) => { const n = parseFloat(s); return isNaN(n) ? null : n; };
     saveHorizont(aufnahmeId, nummer, {
@@ -42,10 +55,10 @@ export default function HorizontScreen() {
       tiefe_unten:   data.tiefe_unten || null,
       ph_cacl2:      parseNum(data.ph_cacl2),
       humus:         data.humus || null,
+      humus_pct:     data.humus_pct || null,
       carbonat:      data.carbonat || null,
-      pflanzenreste: data.pflanzenreste || null,
+      lagerungsdichte: data.lagerungsdichte || null,
       feinwurzeln:   data.feinwurzeln || null,
-      trennbarkeit:  data.trennbarkeit || null,
       lagerungsart:  data.lagerungsart || null,
       maechtigk_dm:  data.maechtigk_dm || null,
     });
@@ -62,7 +75,7 @@ export default function HorizontScreen() {
   return (
     <View style={{ flex: 1 }}>
       <HorizontFormular
-initialData={horizont ?? undefined}
+        initialData={horizont ?? undefined}
         onSave={handleSave}
       />
     </View>

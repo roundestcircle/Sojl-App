@@ -22,9 +22,17 @@ import {
 import { InstructionModal } from "@/components/InstructionModal";
 import StatusBadge from "@/components/StatusBadge";
 
+/**
+ * Feldkampagnen overview screen.
+ * Lists all campaigns with their status badge; long-pressing a row opens a delete confirmation.
+ * The "Neue Kampagne" button opens a creation modal and navigates directly into the new campaign.
+ */
 export default function FeldkampagnenScreen() {
+  // Full list of campaigns, reloaded on every focus to reflect changes from child screens
   const [kampagnen, setKampagnen] = useState<Feldkampagne[]>([]);
+  // Controls visibility of the "create campaign" input modal
   const [creating, setCreating] = useState(false);
+  // Bound to the name input inside the create modal
   const [newName, setNewName] = useState("");
 
   useFocusEffect(
@@ -33,6 +41,10 @@ export default function FeldkampagnenScreen() {
     }, []),
   );
 
+  /**
+   * Creates a new Feldkampagne with the current name, then navigates to its detail screen.
+   * No-ops if the name is empty.
+   */
   const handleCreate = () => {
     const name = newName.trim();
     if (!name) return;
@@ -42,15 +54,21 @@ export default function FeldkampagnenScreen() {
     router.push(`/mapping/kampagne/${id}` as any);
   };
 
+  /** Closes the create modal and resets the name input without creating anything. */
   const handleCancel = () => {
     setCreating(false);
     setNewName("");
   };
 
+  // The campaign queued for deletion; non-null triggers the confirmation modal
   const [deleteTarget, setDeleteTarget] = useState<Feldkampagne | null>(null);
 
   const handleDelete = (item: Feldkampagne) => setDeleteTarget(item);
 
+  /**
+   * Permanently deletes the target campaign (and all its Aufnahmen + Horizonte via CASCADE),
+   * then refreshes the list.
+   */
   const confirmDelete = () => {
     if (!deleteTarget) return;
     deleteFeldkampagne(deleteTarget.id);
@@ -168,6 +186,7 @@ export default function FeldkampagnenScreen() {
   );
 }
 
+/** Formats an ISO datetime string to "YYYY-MM-DD HH:MM" for display. */
 function formatDate(iso: string): string {
   return iso.replace("T", " ").slice(0, 16);
 }

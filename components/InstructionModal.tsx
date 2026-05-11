@@ -1,4 +1,3 @@
-// InstructionModal.tsx
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, Pressable, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,11 +7,17 @@ import { ViewStyle } from 'react-native';
 interface InstructionModalProps {
   title?: string;           // default "Anleitung"
   instructionText: string;
-  storageKey: string;       // e.g. 'soilShareDontShowAgain'
-  children?: React.ReactNode; // optional extra content inside modal
-  onClose?: () => void;     // callback when modal is closed
+  storageKey: string;       // AsyncStorage key used to persist "don't show again"
+  children?: React.ReactNode; // optional extra content inside the modal body
+  onClose?: () => void;     // callback fired when the modal is dismissed
 }
 
+/**
+ * Auto-showing instruction modal.
+ * On mount it checks AsyncStorage for the given storageKey; if not set, the modal
+ * is displayed immediately. The user can suppress future appearances via the
+ * "Nicht mehr anzeigen" checkbox.
+ */
 export const InstructionModal: React.FC<InstructionModalProps> = ({
   title = "Anleitung",
   instructionText,
@@ -20,22 +25,32 @@ export const InstructionModal: React.FC<InstructionModalProps> = ({
   children,
   onClose,
 }) => {
+  // Whether the modal is currently visible (initially false until async check resolves)
   const [showModal, setShowModal] = useState(false);
+  // Tracks the state of the "don't show again" checkbox
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   useEffect(() => {
+    /**
+     * Reads the stored preference and shows the modal unless the user previously
+     * opted out.
+     */
     const checkAndLoad = async () => {
       try {
         const saved = await AsyncStorage.getItem(storageKey);
         setShowModal(saved !== 'true');
       } catch (error) {
         console.error(error);
-        setShowModal(true);
+        setShowModal(true); // Default to showing if storage read fails
       }
     };
     checkAndLoad();
   }, [storageKey]);
 
+  /**
+   * Closes the modal and, when the checkbox is ticked, persists the "don't show again"
+   * flag to AsyncStorage so it stays suppressed across app restarts.
+   */
   const handleClose = async () => {
     if (dontShowAgain) {
       try {
@@ -70,8 +85,11 @@ export const InstructionModal: React.FC<InstructionModalProps> = ({
   );
 };
 
-// Separate reset button component (optional)
-export const ResetInstructionButton: React.FC< { 
+/**
+ * Standalone button that clears the "don't show again" flag from AsyncStorage
+ * and calls an optional callback so the parent can remount InstructionModal.
+ */
+export const ResetInstructionButton: React.FC< {
   storageKey: string; 
   onReset?: () => void;
   style?: ViewStyle; // custom style overrides

@@ -15,13 +15,19 @@ import {
   getAufnahme,
   type Aufnahme,
 } from "@/utils/MappingQueries";
-import { addHorizont, getHorizonteForAufnahme, type Horizont } from "@/utils/HorizonQueries";
+import { addHorizont, deleteHorizont, getHorizonteForAufnahme, type Horizont } from "@/utils/HorizonQueries";
 import HorizontButton from "@/components/HorizonButton";
 
 // ─── Standortdaten status ─────────────────────────────────────────────────────
 
 type StandortStatus = "leer" | "begonnen" | "abgeschlossen";
 
+/**
+ * Derives a completion status for the Standortdaten section of an Aufnahme.
+ *   - abgeschlossen: GPS + all required profile/climate fields are filled
+ *   - begonnen:      at least one meaningful field has been entered
+ *   - leer:          no fields filled at all
+ */
 function deriveStandortStatus(a: Aufnahme): StandortStatus {
   const hasGps = a.gps_lat != null || a.utm_easting != null;
   const allFilled =
@@ -48,15 +54,27 @@ const standortBadge: Record<StandortStatus, { label: string; bg: string }> = {
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
+/**
+ * Aufnahme overview screen.
+ * Shows a "Standortdaten" button with a derived completion badge, followed by the list
+ * of Horizonte. Long-pressing a horizon row triggers delete confirmation.
+ * The "Abschließen" button warns when incomplete horizons exist.
+ */
 export default function HorizonOverview() {
   const { aufnahmeId: aufnahmeIdParam } = useLocalSearchParams<{ aufnahmeId: string }>();
   const aufnahmeId = parseInt(aufnahmeIdParam, 10);
   const navigation = useNavigation();
 
+  // All horizons belonging to this Aufnahme, ordered by nummer
   const [horizonte, setHorizonte] = useState<Horizont[]>([]);
+  // The parent Aufnahme record (used for status derivation and navigation after close)
   const [aufnahme, setAufnahme] = useState<Aufnahme | null>(null);
+  // Whether to show the "incomplete horizons" warning before closing
   const [showUnvollstaendigModal, setShowUnvollstaendigModal] = useState(false);
+  // Horizon queued for deletion; non-null triggers the delete confirmation modal
+  const [deleteTarget, setDeleteTarget] = useState<Horizont | null>(null);
 
+  // Reload both the Aufnahme and its horizons whenever the screen comes back into focus
   useFocusEffect(
     useCallback(() => {
       setHorizonte(getHorizonteForAufnahme(aufnahmeId));
@@ -64,21 +82,28 @@ export default function HorizonOverview() {
     }, [aufnahmeId]),
   );
 
+  // Update the navigation bar title once the Aufnahme is loaded
   useLayoutEffect(() => {
     if (aufnahme) {
       navigation.setOptions({ title: `Aufnahme ${aufnahme.nummer ?? aufnahme.id}` });
     }
   }, [navigation, aufnahme]);
 
+  /** Inserts a new empty Horizont and refreshes the list. */
   const handleAddHorizont = () => {
     addHorizont(aufnahmeId);
     setHorizonte(getHorizonteForAufnahme(aufnahmeId));
   };
 
+  /** Navigates to the detail screen for the tapped Horizont. */
   const handleHorizontPress = (horizont: Horizont) => {
     router.push(`/mapping/${aufnahmeId}/horizon/${horizont.nummer}`);
   };
 
+  /**
+   * Marks the Aufnahme as abgeschlossen and returns to the parent campaign screen.
+   * Falls back to the campaign list root if the parent campaign id is unknown.
+   */
   const doClose = () => {
     closeAufnahme(aufnahmeId);
     const kampagneId = aufnahme?.feldkampagne_id;
@@ -89,6 +114,10 @@ export default function HorizonOverview() {
     }
   };
 
+  /**
+   * Guards closing the Aufnahme: shows an "incomplete horizons" warning when any
+   * horizon is not yet vollständig, otherwise closes immediately.
+   */
   const handleAbschliessen = () => {
     const offene = horizonte.filter((h) => h.status !== "vollstaendig");
     if (offene.length > 0) {
@@ -128,6 +157,7 @@ export default function HorizonOverview() {
               key={horizont.id}
               horizont={horizont}
               onPress={() => handleHorizontPress(horizont)}
+              onLongPress={() => setDeleteTarget(horizont)}
             />
           ))}
           <TouchableOpacity style={styles.actionButton} onPress={handleAddHorizont}>
@@ -141,6 +171,36 @@ export default function HorizonOverview() {
         </TouchableOpacity>
 
       </ScrollView>
+
+      {/* ── Delete Horizont confirmation modal ── */}
+      <Modal visible={deleteTarget !== null} transparent animationType="fade" onRequestClose={() => setDeleteTarget(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Horizont löschen</Text>
+            <Text style={styles.modalText}>
+              H{deleteTarget?.nummer}{deleteTarget?.horizontname ? ` – ${deleteTarget.horizontname}` : ""} löschen?
+            </Text>
+            <View style={localStyles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#c0392b" }]}
+                onPress={() => {
+                  if (deleteTarget) deleteHorizont(deleteTarget.id);
+                  setDeleteTarget(null);
+                  setHorizonte(getHorizonteForAufnahme(aufnahmeId));
+                }}
+              >
+                <Text style={styles.modalButtonText}>Löschen</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#888" }]}
+                onPress={() => setDeleteTarget(null)}
+              >
+                <Text style={styles.modalButtonText}>Abbrechen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Unvollständig confirmation modal ── */}
       <Modal visible={showUnvollstaendigModal} transparent animationType="fade">

@@ -3,6 +3,10 @@ import { Stack, router } from "expo-router";
 import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+/**
+ * Stack layout for the /mapping section.
+ * Registers all mapping screens with a consistent green header and home button.
+ */
 export default function MappingLayout() {
   return (
     <Stack screenOptions={{

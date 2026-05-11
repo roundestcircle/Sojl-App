@@ -5,6 +5,10 @@ type Props = {
   status: "offen" | "abgeschlossen";
 };
 
+/**
+ * Colored pill badge showing the open/closed status of a Kampagne or Aufnahme.
+ * Green for abgeschlossen, amber for offen.
+ */
 export default function StatusBadge({ status }: Props) {
   return (
     <View style={[localStyles.badge, { backgroundColor: status === "abgeschlossen" ? colors.primary : "#e0a020" }]}>

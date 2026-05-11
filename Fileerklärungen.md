@@ -82,10 +82,10 @@ Einzelner Horizont-Formularscreen. Setzt den Header-Titel auf `Horizont {nummer}
 ## Kartierungsunterstützungs-Screens (`app/tools/`)
 
 ### `app/tools/_layout.tsx`
-Innerer Stack-Navigator für alle Kartierungsunterstützungs-Tools. Registriert alle Tool-Screens mit deutschen Titeln. Zeigt Haus-Icon als `headerRight`.
+Innerer Stack-Navigator für alle Kartierungsunterstützungs-Tools. Registriert alle Tool-Screens mit deutschen Titeln: `bodenart`, `bodentyp`, `anteil`, `humusgehalt`, `carbonat`, `lagerungsdichte`, `feinwurzeln`, `gefuege`, `horizonte`. Zeigt Haus-Icon als `headerRight`. `gefuegestabilitaet` und `pflanzenreste` wurden entfernt.
 
 ### `app/tools/index.tsx`
-Übersichtsscreen der verfügbaren Kartierungstools. Links zu: Bodenart bestimmen, Bodentyp bestimmen, Anteil schätzen, Humusgehalt bestimmen, Carbonatgehalt bestimmen, Pflanzenreste bestimmen, Feinwurzeln bestimmen, Gefügestabilität bestimmen, Gefüge bestimmen.
+Übersichtsscreen der verfügbaren Kartierungstools. Links zu: Horizontlexikon, Bodenart bestimmen, Bodentyp bestimmen, Anteil schätzen, Humusgehalt bestimmen, Carbonatgehalt bestimmen, **Lagerungsdichte bestimmen**, Feinwurzeln bestimmen, Gefüge bestimmen. Gefügestabilität und Pflanzenreste wurden entfernt.
 
 ### `app/tools/bodenart.tsx`
 Dünner Wrapper für `TexTree`. Kein eigener Zustand.
@@ -97,19 +97,16 @@ Dünner Wrapper für `BodenTypTool`. Kein eigener Zustand.
 Wrapper für `SoilShareScroll` mit `paddingHorizontal: 20`.
 
 ### `app/tools/humusgehalt.tsx`
-Wrapper für `HumusgehaltTool`.
+Wrapper für `HumusgehaltTool`. Kein eigener Zustand, kein `onConfirm` (standalone-Nutzung).
 
 ### `app/tools/carbonat.tsx`
 Wrapper für `CarbonatTool`.
 
-### `app/tools/pflanzenreste.tsx`
-Wrapper für `PflanzenresteTool`.
+### `app/tools/lagerungsdichte.tsx`
+Wrapper für `LagerungsdichteTool`. Ersetzt den früheren `pflanzenreste.tsx`-Screen.
 
 ### `app/tools/feinwurzeln.tsx`
 Wrapper für `FeinwurzelnTool`.
-
-### `app/tools/gefuegestabilitaet.tsx`
-Wrapper für `GefuegestabilitaetTool`.
 
 ### `app/tools/gefuege.tsx`
 Wrapper für `GefuegeTool`.
@@ -119,7 +116,7 @@ Wrapper für `GefuegeTool`.
 ## Komponenten (`components/`)
 
 ### `components/DecisionTree.tsx`
-Generische, wiederverwendbare Entscheidungsbaum-Komponente. Enthält die gesamte Navigationslogik (History-Stack, Zurück, Neu starten). Props: `tree` (DecisionTreeData), `onConfirm` (optional), `instructionText`, `storageKey`. Zeigt an Ergebnis-Knoten: grüne Ergebniskarte, "Wert übernehmen"- und "Neu Starten"-Button. Zeigt optionalen `hint`-Text (kleiner, grau) unterhalb der Frage. Rendert `InstructionModal` beim ersten Aufruf und `ResetInstructionButton` am unteren Rand.
+Generische, wiederverwendbare Entscheidungsbaum-Komponente. Enthält die gesamte Navigationslogik (History-Stack, Zurück, Neu starten). Props: `tree` (DecisionTreeData), `onConfirm` (optional), `instructionText`, `storageKey`. Zeigt an Ergebnis-Knoten: grüne Ergebniskarte, "Wert übernehmen"- und "Neu Starten"-Button. Zeigt optionalen `hint`-Text (kleiner, grau) unterhalb der Frage. Rendert `InstructionModal` beim ersten Aufruf und `ResetInstructionButton` am unteren Rand. Layout: Frage im Normalfluss (`marginBottom: 16`), Optionen darunter — verhindert Kollision mit Zurück-/Instruktions-Buttons.
 
 ### `components/TexTree.tsx`
 Dünner Wrapper um `DecisionTree` mit `SoilTexTree`-Daten. Akzeptiert optionalen `onConfirm`-Prop.
@@ -130,20 +127,17 @@ Dünner Wrapper um `DecisionTree` mit `BodenTypTree`-Daten für die Bodentyp-Bes
 ### `components/GefuegeTool.tsx`
 Dünner Wrapper um `DecisionTree` mit `GefuegeFormTree`-Daten für die Gefüge-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop.
 
-### `components/GefuegestabilitaetTool.tsx`
-Platzhalter-Tool für die Gefügestabilitäts-Bestimmung. Zeigt "Inhalt folgt"-Hinweis. Akzeptiert optionalen `onConfirm`-Prop.
-
 ### `components/CarbonatTool.tsx`
 Dünner Wrapper um `DecisionTree` mit `KarbonatGehaltTree`-Daten für die Carbonatgehalt-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop.
 
 ### `components/FeinwurzelnTool.tsx`
 Dünner Wrapper um `DecisionTree` mit `FeinwurzelIntensityTree`-Daten für die Feinwurzel-Intensitätsbestimmung. Akzeptiert optionalen `onConfirm`-Prop.
 
-### `components/HumusgehaltTool.tsx`
-Platzhalter-Tool für die Humusgehalt-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop.
+### `components/LagerungsdichteTool.tsx`
+Dünner Wrapper um `DecisionTree` mit `LagerungsdichteTree`-Daten für die Lagerungsdichte-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop. Ersetzt das frühere `PflanzenresteTool` vollständig.
 
-### `components/PflanzenresteTool.tsx`
-Platzhalter-Tool für die Pflanzenreste-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop.
+### `components/HumusgehaltTool.tsx`
+Interaktives Berechnungstool für den Humusgehalt nach Renger et al. (1987). Eingaben: Munsell-Chroma (3-Button-Auswahl: hoch/mittel/niedrig), Munsell-Value, Bodenart (mit "Ton abschätzen"-Button → `bodenartToClay()`), Tongehalt (%), pH (CaCl₂). Ergebnis wird live per `useMemo` mit trilinearer Interpolation aus `utils/renger1987.ts` berechnet. Props: `onConfirm(klasse, pct)` (optional), `initialFarbeMunsell`, `initialPH`, `initialBodenart` (Pre-fill aus HorizonForm). Bestätigen übergibt Klasse (h1–h6) und Prozentwert getrennt.
 
 ### `components/StatusBadge.tsx`
 Wiederverwendbare Status-Badge-Komponente. Nimmt `status: "offen" | "abgeschlossen"` und rendert eine farbige Pill (amber für offen, primary-Grün für abgeschlossen). Wird in der Kampagnenliste und der Aufnahmeliste verwendet.
@@ -157,15 +151,18 @@ Klickbarer Button für einen einzelnen Horizont. Zeilenlayout (weiß, volle Brei
 Zeigt `H{nummer} – {horizontname}` (oder nur `H{nummer}` wenn kein Name).
 
 ### `components/HorizonForm.tsx`
-React-Hook-Form-Formular für einen einzelnen Horizont. Auto-speichert auf jede Feldänderung via `watch`-Subscription. Alle Felder mit Tool-Button verwenden `Controller` (reaktiver `value`-Prop), damit Werte aus Tool-Modals sofort im Feld erscheinen. Felder in Sektionen:
-- **Horizontname**, **Tiefe Von/Bis** (cm)
-- **Bodenfarbe (Munsell)**: Texteingabe + "Farbe bestimmen"-Button → PictureTaker-Modal.
+React-Hook-Form-Formular für einen einzelnen Horizont. Auto-speichert auf jede Feldänderung via `watch`-Subscription. Alle Felder mit Tool-Button verwenden `Controller` (reaktiver `value`-Prop), damit Werte aus Tool-Modals sofort im Feld erscheinen. `activeModal`-State steuert, welches der parallelen (nicht verschachtelten) Modals geöffnet ist.
+
+Felder in Sektionen:
+- **Horizontname**: Freies Textfeld mit Horizontlexikon-Button (öffnet `HorizontLexikonContent`-Modal).
+- **Bodenfarbe (Munsell)**: Ganz oben — Texteingabe + "Farbe bestimmen"-Button → PictureTaker-Modal. Pre-filled per `watch('farbe_munsell')` für den HumusgehaltTool.
+- **Tiefe Von/Bis** (cm).
 - **Bodenart / Textur**: Texteingabe + "bestimmen"-Button → TexTree-Modal.
-- **Skelettanteil**: Texteingabe + "bestimmen"-Button → SoilShareScroll-Modal.
-- **Bodeneigenschaften**: pH (CaCl₂), Mächtigkeit (dm), Humusgehalt, Carbonatgehalt (+CarbonatTool), Pflanzenreste, Feinwurzeln (+FeinwurzelnTool), Gefügestabilität, Gefüge (+GefuegeTool), Bodenfarbe, Skelettanteil.
+- **Skelettanteil**: Texteingabe (mit `%`-Suffix, rein visuell) + "bestimmen"-Button → SoilShareScroll-Modal.
+- **Bodeneigenschaften**: pH (CaCl₂), Mächtigkeit (dm), Humusgehalt (zwei Felder: Kürzel `h1`–`h6` + Prozentwert mit `%`-Suffix, beide per HumusgehaltTool befüllbar), Carbonatgehalt (+CarbonatTool), Lagerungsdichte (+LagerungsdichteTool), Feinwurzeln (+FeinwurzelnTool), Lagerungsart, Gefüge (+GefuegeTool).
 - **Notizen**: Mehrzeiliges Textfeld.
 
-Jedes Tool-Modal hat einen "Schließen"-Header-Button und wird in `SafeAreaView` eingebettet.
+Jedes Tool-Modal hat einen "Schließen"-Header-Button und wird in `SafeAreaView` eingebettet. `Gefügestabilität` und `Pflanzenreste` wurden entfernt.
 
 ### `components/AufnahmeForm.tsx`
 React-Hook-Form-Formular für alle Standortdaten einer Aufnahme. Auto-speichert auf jede Änderung via `watch`-Subscription. Felder in Sektionen:
@@ -202,9 +199,11 @@ Visueller Anteil-Schätzer. Akzeptiert optionalen `onConfirm`-Prop. Rendert ein 
 - `horizonte` (id, aufnahme_id, nummer, farbe_munsell, farbe_rgb, bodenart, anteil, notizen, status)
 
 Enthält ALTER-TABLE-Migrationen (try/catch, sicher bei Wiederholung) für:
-- `horizonte`: `horizontname`, `tiefe_oben`, `tiefe_unten`, `ph_cacl2`, `humus`, `carbonat`, `pflanzenreste`, `feinwurzeln`, `trennbarkeit`, `lagerungsart`, `maechtigk_dm`
+- `horizonte`: `horizontname`, `tiefe_oben`, `tiefe_unten`, `ph_cacl2`, `humus`, `humus_pct`, `carbonat`, `lagerungsdichte`, `feinwurzeln`, `lagerungsart`, `maechtigk_dm` — sowie ein `RENAME COLUMN pflanzenreste TO lagerungsdichte` für bestehende Installationen.
 - `aufnahmen`: `feldkampagne_id`, `utm_easting`, `utm_northing`, `utm_zone`, `nummer`, `bodentyp`, `bodtyp_abk`, `humusform`, `humsfrm_abk`, `m_ue_nn`, `witterung`, `mittl_n`, `mittl_temp`, `nutzung`, `vegetation`, `reliefpos`, `expos`, `ausgangsgestein`, `grundigkeit`
 - `feldkampagnen`: `status`
+
+`trennbarkeit` und `pflanzenreste` wurden aus der Spaltenstruktur entfernt; `gefuegestabilitaet` wurde nie hinzugefügt.
 
 ### `utils/DecisionTreeTypes.ts`
 Gemeinsame TypeScript-Typen für alle Entscheidungsbäume:
@@ -232,7 +231,7 @@ CRUD für die `aufnahmen`-Tabelle. Typ `Aufnahme` enthält: `id`, `nummer`, `fel
 - `closeAufnahme(id)` / `reopenAufnahme(id)` – Status-Steuerung.
 
 ### `utils/HorizonQueries.ts`
-CRUD für die `horizonte`-Tabelle. Typ `Horizont` umfasst alle Formularfelder: `horizontname`, `tiefe_oben`, `tiefe_unten`, `farbe_munsell`, `farbe_rgb`, `bodenart`, `anteil`, `notizen`, `ph_cacl2`, `humus`, `carbonat`, `pflanzenreste`, `feinwurzeln`, `trennbarkeit`, `lagerungsart`, `maechtigk_dm`, `status`. Funktionen:
+CRUD für die `horizonte`-Tabelle. Typ `Horizont` umfasst alle Formularfelder: `horizontname`, `tiefe_oben`, `tiefe_unten`, `farbe_munsell`, `farbe_rgb`, `bodenart`, `anteil`, `notizen`, `ph_cacl2`, `humus`, `humus_pct`, `carbonat`, `lagerungsdichte`, `feinwurzeln`, `lagerungsart`, `maechtigk_dm`, `status`. (`pflanzenreste` und `trennbarkeit` wurden entfernt.) Funktionen:
 - `addHorizont(aufnahmeId)` – fügt neuen leeren Horizont an (MAX(nummer)+1).
 - `getHorizonteForAufnahme(aufnahmeId)` – alle Horizonte sortiert nach nummer.
 - `getHorizont(aufnahmeId, nummer)` – Einzeldatensatz.
@@ -241,13 +240,27 @@ CRUD für die `horizonte`-Tabelle. Typ `Horizont` umfasst alle Formularfelder: `
 ### `utils/csvExport.ts`
 Exportiert Aufnahmen + Horizonte als ZIP-Datei mit zwei CSVs:
 - `aufnahmen.csv` – eine Zeile pro Aufnahme mit allen Standort-, Profil- und Klimadaten.
-- `horizonte.csv` – eine Zeile pro Horizont mit allen Bodeneigenschaftsfeldern, verknüpft via `aufnahme_id`.
+- `horizonte.csv` – eine Zeile pro Horizont mit allen Bodeneigenschaftsfeldern, verknüpft via `aufnahme_id`. Enthält `humus`, `humus_pct`, `carbonat`, `lagerungsdichte`, `feinwurzeln`, `lagerungsart`, `maechtigk_dm`; `pflanzenreste` und `trennbarkeit` wurden entfernt.
 
 Interne Funktion `buildAndShareZip(aufnahmen, zipFilename, dialogTitle)` wird von beiden öffentlichen Funktionen genutzt:
 - `exportAufnahmeAsZip(aufnahme)` – exportiert eine einzelne Aufnahme.
 - `exportKampagneAsZip(kampagneId, kampagneName)` – exportiert alle Aufnahmen einer Kampagne.
 
 Verwendet `JSZip` (typ: `uint8array`), schreibt via `expo-file-system` (`File`/`Paths`-API) in den App-Cache und öffnet das native Share-Sheet via `expo-sharing`.
+
+### `utils/renger1987.ts`
+Digitalisierte Lookup-Tabelle und Berechnungsfunktionen für die Humusgehalt-Schätzung nach Renger et al. (1987). Da das Original ein grafisches Nomogramm ohne hinterlegte Formeln ist, werden die Werte per trilinearer Interpolation aus einem 3D-Gitter abgeschätzt.
+
+Drei Tabellen `HIGH`/`MID`/`LOW` (Chroma-Klassen) sind je als `[valueIdx][phIdx][clayIdx]` indiziert. Achsen: `VALUE_GRID` (1–7), `PH_GRID` (3–7), `CLAY_GRID` (2, 5, 8, 17, 25, 45, 65 %).
+
+Öffentliche API:
+- `estimateHumus(value, chromaClass, pH, clay)` → Humusgehalt % (gerundet auf 0,1).
+- `humusKlasse(humus)` → `{ klasse: 'h1'–'h6', label: string }`.
+- `bodenartToClay(bodenart)` → Tongehalt % aus KA5-Kürzel (stripped von Ziffernsuffix, z. B. "Su2" → "Su"). Gibt `null` zurück wenn unbekannt.
+- `parseMunsell(s)` → `{ value, chroma } | null` aus "10YR 4/3".
+- `chromaToClass(chroma)` → `ChromaClass`.
+
+⚠️ Tabellenwerte sind Näherungen — vom Nutzer zur Überprüfung gegen das Original-Diagramm vorgemerkt.
 
 ### `utils/utmConversion.ts`
 Bidirektionale WGS84 ↔ UTM-Konvertierung (Transversale Mercator-Projektion, WGS84-Ellipsoid):
@@ -286,3 +299,6 @@ Entscheidungsbaum zur Carbonatgehalt-Bestimmung (Salzsäureprobe). Sieben Stufen
 
 ### `utils/trees/WurzelTree.ts`
 Entscheidungsbaum zur Feinwurzel-Intensitätsbestimmung. Sieben Stufen von `Wf0` (keine Wurzeln) bis `Wf6` (extrem stark / Wurzelfilz) anhand der Anzahl sichtbarer Feinwurzeln pro dm².
+
+### `utils/trees/LagerungsdichteTree.ts`
+Entscheidungsbaum zur Lagerungsdichte-Bestimmung im Gelände (Stechzylinderprobe und Fingerprobe). Klassifiziert nach KA5-Stufen von `Ld1` (sehr locker) bis `Ld5` (sehr fest).

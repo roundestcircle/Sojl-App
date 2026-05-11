@@ -111,14 +111,17 @@ export function initDatabase() {
     try { db.execSync(`ALTER TABLE aufnahmen ${col}`); } catch {}
   }
 
+  // Migration: rename pflanzenreste → lagerungsdichte (runs before ADD COLUMN so new installs skip gracefully)
+  try { db.execSync(`ALTER TABLE horizonte RENAME COLUMN pflanzenreste TO lagerungsdichte`); } catch {}
+
   // Migration: add detailed horizon fields
   for (const col of [
     'ADD COLUMN ph_cacl2 REAL',
     'ADD COLUMN humus TEXT',
+    'ADD COLUMN humus_pct TEXT',
     'ADD COLUMN carbonat TEXT',
-    'ADD COLUMN pflanzenreste TEXT',
+    'ADD COLUMN lagerungsdichte TEXT',
     'ADD COLUMN feinwurzeln TEXT',
-    'ADD COLUMN trennbarkeit TEXT',
     'ADD COLUMN lagerungsart TEXT',
     'ADD COLUMN maechtigk_dm TEXT',
   ]) {

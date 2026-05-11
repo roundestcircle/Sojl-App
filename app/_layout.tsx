@@ -4,12 +4,17 @@ import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { initDatabase } from "@/utils/db";
 
+// Home icon rendered in the header right slot on most screens
 const homeButton = () => (
   <TouchableOpacity onPress={() => router.replace('/')} style={{ marginRight: 4 }}>
     <Ionicons name="home" size={24} color="#fff" />
   </TouchableOpacity>
 );
 
+/**
+ * Root layout for the whole app.
+ * Initializes the SQLite database on first render and defines top-level navigation screens.
+ */
 export default function RootLayout() {
   initDatabase();
   return (

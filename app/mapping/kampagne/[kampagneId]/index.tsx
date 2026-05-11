@@ -22,24 +22,41 @@ import { getHorizonteForAufnahme } from "@/utils/HorizonQueries";
 import { exportAufnahmeAsZip, exportKampagneAsZip } from "@/utils/csvExport";
 import { createAufnahme, deleteAufnahme, type Aufnahme } from "@/utils/MappingQueries";
 
+// Extends Aufnahme with a derived horizon count used in the list subtitle
 type AufnahmeRow = Aufnahme & { horizontCount: number };
 
+/**
+ * Campaign detail screen.
+ * Lists all Aufnahmen in a campaign with their horizon count and status badge.
+ * Provides per-Aufnahme ZIP export, campaign-wide ZIP export, and campaign close flow.
+ */
 export default function SessionDetailScreen() {
   const { kampagneId } = useLocalSearchParams<{ kampagneId: string }>();
   const id = parseInt(kampagneId, 10);
 
   const navigation = useNavigation();
+  // Name of this campaign, displayed as the navigation bar title
   const [sessionName, setSessionName] = useState("");
+  // All Aufnahmen enriched with their horizon count
   const [aufnahmen, setAufnahmen] = useState<AufnahmeRow[]>([]);
+  // ID of the Aufnahme currently being exported (drives the spinner on that row)
   const [exportingId, setExportingId] = useState<number | null>(null);
+  // Drives the spinner on the campaign export button
   const [exportingCampaign, setExportingCampaign] = useState(false);
+  // Aufnahme queued for deletion; non-null triggers the delete confirmation modal
   const [deleteTarget, setDeleteTarget] = useState<AufnahmeRow | null>(null);
+  // Whether to show the "still open Aufnahmen" warning before closing the campaign
   const [showOffeneWarnung, setShowOffeneWarnung] = useState(false);
 
+  // Update header title whenever the session name is loaded
   useLayoutEffect(() => {
     if (sessionName) navigation.setOptions({ title: sessionName });
   }, [navigation, sessionName]);
 
+  /**
+   * Reloads the campaign name and Aufnahmen list from the database.
+   * Invoked on focus so the list stays up-to-date after returning from a child screen.
+   */
   const reload = useCallback(() => {
     const session = getFeldkampagne(id);
     setSessionName(session?.name ?? "");
@@ -52,6 +69,10 @@ export default function SessionDetailScreen() {
 
   useFocusEffect(reload);
 
+  /**
+   * Exports a single Aufnahme as a ZIP (aufnahmen.csv + horizonte.csv)
+   * and opens the system share dialog.
+   */
   const handleExport = async (aufnahme: AufnahmeRow) => {
     try {
       setExportingId(aufnahme.id);
@@ -63,6 +84,9 @@ export default function SessionDetailScreen() {
     }
   };
 
+  /**
+   * Exports the entire campaign as a single ZIP and opens the system share dialog.
+   */
   const handleExportCampaign = async () => {
     try {
       setExportingCampaign(true);
@@ -74,6 +98,10 @@ export default function SessionDetailScreen() {
     }
   };
 
+  /**
+   * Guards closing the campaign: shows a warning modal when any Aufnahme is still open,
+   * otherwise closes immediately.
+   */
   const handleBeenden = () => {
     const offene = aufnahmen.filter((a) => a.status !== "abgeschlossen");
     if (offene.length > 0) {
@@ -83,11 +111,16 @@ export default function SessionDetailScreen() {
     }
   };
 
+  /** Marks the campaign as abgeschlossen and navigates back to the campaign list. */
   const doBeenden = () => {
     closeFeldkampagne(id);
     router.replace("/mapping");
   };
 
+  /**
+   * Permanently deletes the targeted Aufnahme (and its Horizonte via CASCADE),
+   * then refreshes the list.
+   */
   const confirmDelete = () => {
     if (!deleteTarget) return;
     deleteAufnahme(deleteTarget.id);
@@ -227,6 +260,7 @@ export default function SessionDetailScreen() {
   );
 }
 
+/** Formats an ISO datetime string to "YYYY-MM-DD HH:MM" for display. */
 function formatDate(iso: string): string {
   return iso.replace("T", " ").slice(0, 16);
 }

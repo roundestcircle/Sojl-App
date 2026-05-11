@@ -3,6 +3,10 @@ import { GefuegeFormTree } from '@/utils/trees/GefuegeTree';
 
 type Props = { onConfirm?: (result: string) => void };
 
+/**
+ * Soil structure (Gefüge) determination tool.
+ * Wraps DecisionTree with the GefuegeFormTree classification data.
+ */
 export default function GefuegeTool({ onConfirm }: Props) {
   return (
     <DecisionTree

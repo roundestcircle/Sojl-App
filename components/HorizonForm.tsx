@@ -6,13 +6,13 @@ import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import type { Horizont } from "@/utils/HorizonQueries";
 import PictureTaker from "@/components/PictureTaker";
+import HorizontLexikonContent from "@/components/HorizontLexikonContent";
 import TexTree from "@/components/TexTree";
 import SoilShareScroll from "@/components/SoilShareScroll";
 import HumusgehaltTool from "@/components/HumusgehaltTool";
 import CarbonatTool from "@/components/CarbonatTool";
-import PflanzenresteTool from "@/components/PflanzenresteTool";
+import LagerungsdichteTool from "@/components/LagerungsdichteTool";
 import FeinwurzelnTool from "@/components/FeinwurzelnTool";
-import GefuegestabilitaetTool from "@/components/GefuegestabilitaetTool";
 import GefuegeTool from "@/components/GefuegeTool";
 
 // ─── Form shape ────────────────────────────────────────────────────────────────
@@ -27,10 +27,10 @@ export type HorizontFormData = {
   tiefe_unten: string;
   ph_cacl2: string;
   humus: string;
+  humus_pct: string;
   carbonat: string;
-  pflanzenreste: string;
+  lagerungsdichte: string;
   feinwurzeln: string;
-  trennbarkeit: string;
   lagerungsart: string;
   maechtigk_dm: string;
 };
@@ -42,10 +42,18 @@ type Props = {
   onSave: (data: HorizontFormData) => void;
 };
 
-type ActiveModal = 'farbe' | 'bodenart' | 'anteil' | 'humus' | 'carbonat' | 'pflanzenreste' | 'feinwurzeln' | 'trennbarkeit' | 'lagerungsart' | null;
+type ActiveModal = 'farbe' | 'bodenart' | 'anteil' | 'humus' | 'carbonat' | 'lagerungsdichte' | 'feinwurzeln' | 'lagerungsart' | 'lexikon' | null;
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
+/**
+ * Horizon detail form.
+ * Renders all horizon fields grouped into sections; fields with associated determination
+ * tools show a "bestimmen" button that opens the tool in a fullscreen modal.
+ * All field changes autosave via the onSave callback (no explicit save button).
+ * Fields that receive values from tools use Controller with a reactive value prop
+ * so the input re-renders immediately when setValue is called.
+ */
 export default function HorizontFormular({ initialData, onSave }: Props) {
   const methods = useForm<HorizontFormData>({
     defaultValues: {
@@ -58,22 +66,28 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
       tiefe_unten:   initialData?.tiefe_unten ?? "",
       ph_cacl2:      initialData?.ph_cacl2 != null ? String(initialData.ph_cacl2) : "",
       humus:         initialData?.humus ?? "",
+      humus_pct:     initialData?.humus_pct ?? "",
       carbonat:      initialData?.carbonat ?? "",
-      pflanzenreste: initialData?.pflanzenreste ?? "",
+      lagerungsdichte: initialData?.lagerungsdichte ?? "",
       feinwurzeln:   initialData?.feinwurzeln ?? "",
-      trennbarkeit:  initialData?.trennbarkeit ?? "",
       lagerungsart:  initialData?.lagerungsart ?? "",
       maechtigk_dm:  initialData?.maechtigk_dm ?? "",
     },
   });
 
   const { setValue, control, watch } = methods;
+  // Which tool modal is currently open; null means all modals are closed
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
+  // Autosave: subscribe to every form change and call onSave with the full data snapshot
   useEffect(() => {
     const { unsubscribe } = watch((data) => onSave(data as HorizontFormData));
     return unsubscribe;
   }, [onSave]);
+
+  const watchedFarbe    = watch('farbe_munsell');
+  const watchedPH       = watch('ph_cacl2');
+  const watchedBodenart = watch('bodenart');
 
   return (
     <>
@@ -85,13 +99,33 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
 
           {/* ── Horizontname ── */}
           <Section title="Horizontname">
-            <TextInput
-              style={styles.input}
-              placeholder="z.B. Ap, Bv, C"
-              placeholderTextColor={colors.primary + "66"}
-              onChangeText={(v) => setValue("horizontname", v)}
-              defaultValue={initialData?.horizontname ?? ""}
-            />
+            <View style={localStyles.fieldWithTool}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="z.B. Ap, Bv, C"
+                placeholderTextColor={colors.primary + "66"}
+                onChangeText={(v) => setValue("horizontname", v)}
+                defaultValue={initialData?.horizontname ?? ""}
+              />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('lexikon')}>
+                <Text style={styles.actionButtonText}>Lexikon</Text>
+              </TouchableOpacity>
+            </View>
+          </Section>
+
+          {/* ── Bodenfarbe ── */}
+          <Section title="Bodenfarbe">
+            <View style={localStyles.fieldWithTool}>
+              <Controller control={control} name="farbe_munsell"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 10YR 4/3"
+                    placeholderTextColor={colors.primary + "66"} onChangeText={onChange} value={value} />
+                )}
+              />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('farbe')}>
+                <Text style={styles.actionButtonText}>bestimmen</Text>
+              </TouchableOpacity>
+            </View>
           </Section>
 
           {/* ── Tiefe ── */}
@@ -175,10 +209,20 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
 
             <Text style={styles.fieldLabel}>Humusgehalt</Text>
             <View style={localStyles.fieldWithTool}>
-              <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. h2"
-                placeholderTextColor={colors.primary + "66"}
-                onChangeText={(v) => setValue("humus", v)}
-                defaultValue={initialData?.humus ?? ""} />
+              <Controller control={control} name="humus" render={({ field: { onChange, value } }) => (
+                <TextInput style={[styles.input, { width: 60 }]} placeholder="h2"
+                  placeholderTextColor={colors.primary + "66"}
+                  onChangeText={onChange} value={value} />
+              )} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 4 }}>
+                <Controller control={control} name="humus_pct" render={({ field: { onChange, value } }) => (
+                  <TextInput style={[styles.input, { flex: 1 }]} placeholder="Humus"
+                    placeholderTextColor={colors.primary + "66"}
+                    keyboardType="decimal-pad"
+                    onChangeText={onChange} value={value} />
+                )} />
+                <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 18 }}>%</Text>
+              </View>
               <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('humus')}>
                 <Text style={styles.actionButtonText}>bestimmen</Text>
               </TouchableOpacity>
@@ -196,14 +240,14 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Pflanzenreste</Text>
+            <Text style={styles.fieldLabel}>Lagerungsdichte</Text>
             <View style={localStyles.fieldWithTool}>
-              <Controller control={control} name="pflanzenreste" render={({ field: { onChange, value } }) => (
+              <Controller control={control} name="lagerungsdichte" render={({ field: { onChange, value } }) => (
                 <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 4"
                   placeholderTextColor={colors.primary + "66"}
                   onChangeText={onChange} value={value} />
               )} />
-              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('pflanzenreste')}>
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('lagerungsdichte')}>
                 <Text style={styles.actionButtonText}>bestimmen</Text>
               </TouchableOpacity>
             </View>
@@ -220,18 +264,6 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Gefügestabilität</Text>
-            <View style={localStyles.fieldWithTool}>
-              <Controller control={control} name="trennbarkeit" render={({ field: { onChange, value } }) => (
-                <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. t2"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={onChange} value={value} />
-              )} />
-              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('trennbarkeit')}>
-                <Text style={styles.actionButtonText}>bestimmen</Text>
-              </TouchableOpacity>
-            </View>
-
             <Text style={styles.fieldLabel}>Gefüge</Text>
             <View style={localStyles.fieldWithTool}>
               <Controller control={control} name="lagerungsart" render={({ field: { onChange, value } }) => (
@@ -244,27 +276,17 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Bodenfarbe (Munsell)</Text>
-            <View style={localStyles.fieldWithTool}>
-              <Controller control={control} name="farbe_munsell"
-                render={({ field: { onChange, value } }) => (
-                  <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 10YR 4/3"
-                    placeholderTextColor={colors.primary + "66"} onChangeText={onChange} value={value} />
-                )}
-              />
-              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('farbe')}>
-                <Text style={styles.actionButtonText}>bestimmen</Text>
-              </TouchableOpacity>
-            </View>
-
             <Text style={styles.fieldLabel}>Skelettanteil</Text>
             <View style={localStyles.fieldWithTool}>
-              <Controller control={control} name="anteil"
-                render={({ field: { onChange, value } }) => (
-                  <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 35" keyboardType="number-pad"
-                    placeholderTextColor={colors.primary + "66"} onChangeText={onChange} value={value} />
-                )}
-              />
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 4 }}>
+                <Controller control={control} name="anteil"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 35" keyboardType="number-pad"
+                      placeholderTextColor={colors.primary + "66"} onChangeText={onChange} value={value} />
+                  )}
+                />
+                <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 18 }}>%</Text>
+              </View>
               <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('anteil')}>
                 <Text style={styles.actionButtonText}>bestimmen</Text>
               </TouchableOpacity>
@@ -320,7 +342,12 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
       <Modal visible={activeModal === 'humus'} animationType="slide" onRequestClose={() => setActiveModal(null)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
           <ModalHeader onClose={() => setActiveModal(null)} />
-          <HumusgehaltTool onConfirm={(v) => { setValue('humus', v); setActiveModal(null); }} />
+          <HumusgehaltTool
+            onConfirm={(klasse, pct) => { setValue('humus', klasse); setValue('humus_pct', pct); setActiveModal(null); }}
+            initialFarbeMunsell={watchedFarbe}
+            initialPH={watchedPH}
+            initialBodenart={watchedBodenart}
+          />
         </SafeAreaView>
       </Modal>
 
@@ -332,11 +359,11 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
         </SafeAreaView>
       </Modal>
 
-      {/* ── Pflanzenreste modal ── */}
-      <Modal visible={activeModal === 'pflanzenreste'} animationType="slide" onRequestClose={() => setActiveModal(null)}>
+      {/* ── Lagerungsdichte modal ── */}
+      <Modal visible={activeModal === 'lagerungsdichte'} animationType="slide" onRequestClose={() => setActiveModal(null)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
           <ModalHeader onClose={() => setActiveModal(null)} />
-          <PflanzenresteTool onConfirm={(v) => { setValue('pflanzenreste', v); setActiveModal(null); }} />
+          <LagerungsdichteTool onConfirm={(v) => { setValue('lagerungsdichte', v); setActiveModal(null); }} />
         </SafeAreaView>
       </Modal>
 
@@ -348,19 +375,19 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
         </SafeAreaView>
       </Modal>
 
-      {/* ── Gefügestabilität modal ── */}
-      <Modal visible={activeModal === 'trennbarkeit'} animationType="slide" onRequestClose={() => setActiveModal(null)}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-          <ModalHeader onClose={() => setActiveModal(null)} />
-          <GefuegestabilitaetTool onConfirm={(v) => { setValue('trennbarkeit', v); setActiveModal(null); }} />
-        </SafeAreaView>
-      </Modal>
-
       {/* ── Gefüge modal ── */}
       <Modal visible={activeModal === 'lagerungsart'} animationType="slide" onRequestClose={() => setActiveModal(null)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
           <ModalHeader onClose={() => setActiveModal(null)} />
           <GefuegeTool onConfirm={(v) => { setValue('lagerungsart', v); setActiveModal(null); }} />
+        </SafeAreaView>
+      </Modal>
+
+      {/* ── Horizontlexikon modal ── */}
+      <Modal visible={activeModal === 'lexikon'} animationType="slide" onRequestClose={() => setActiveModal(null)}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+          <ModalHeader onClose={() => setActiveModal(null)} />
+          <HorizontLexikonContent />
         </SafeAreaView>
       </Modal>
     </>
@@ -369,6 +396,7 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
 
 // ─── Modal header with close button ───────────────────────────────────────────
 
+/** Reusable header rendered at the top of every fullscreen tool modal. */
 function ModalHeader({ onClose }: { onClose: () => void }) {
   return (
     <View style={localStyles.modalHeader}>
@@ -381,6 +409,7 @@ function ModalHeader({ onClose }: { onClose: () => void }) {
 
 // ─── Section wrapper ───────────────────────────────────────────────────────────
 
+/** Wraps a group of related form fields with a section title and bottom divider. */
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={styles.section}>

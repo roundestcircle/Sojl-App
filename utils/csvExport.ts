@@ -49,10 +49,10 @@ type HorizontCSVRow = {
   anteil: string;
   ph_cacl2: string;
   humus: string;
+  humus_pct: string;
   carbonat: string;
-  pflanzenreste: string;
+  lagerungsdichte: string;
   feinwurzeln: string;
-  trennbarkeit: string;
   lagerungsart: string;
   notizen: string;
   status: string;
@@ -106,10 +106,10 @@ function buildRows(aufnahmen: Aufnahme[]): { aufnahmenRows: AufnahmeCSVRow[]; ho
         anteil:        h.anteil ?? "",
         ph_cacl2:      h.ph_cacl2 != null ? String(h.ph_cacl2) : "",
         humus:         h.humus ?? "",
+        humus_pct:     h.humus_pct ?? "",
         carbonat:      h.carbonat ?? "",
-        pflanzenreste: h.pflanzenreste ?? "",
+        lagerungsdichte: h.lagerungsdichte ?? "",
         feinwurzeln:   h.feinwurzeln ?? "",
-        trennbarkeit:  h.trennbarkeit ?? "",
         lagerungsart:  h.lagerungsart ?? "",
         notizen:       h.notizen ?? "",
         status:        h.status,

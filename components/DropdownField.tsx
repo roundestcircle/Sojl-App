@@ -11,9 +11,18 @@ type Props = {
   onChange: (value: string) => void;
 };
 
+/**
+ * A minimal single-select dropdown backed by a fullscreen modal sheet.
+ * Tapping the trigger opens the option list; tapping the overlay or an item closes it.
+ */
 export default function DropdownField({ value, options, placeholder = 'Auswählen...', onChange }: Props) {
+  // Controls whether the option-list modal is visible
   const [open, setOpen] = useState(false);
 
+  /**
+   * Selects or de-selects an item.
+   * Tapping the already-selected item clears the value (acts as a toggle).
+   */
   const handleSelect = (item: string) => {
     onChange(item === value ? '' : item);
     setOpen(false);

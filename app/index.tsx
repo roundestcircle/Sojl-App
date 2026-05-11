@@ -3,6 +3,10 @@ import { Text, View, Image } from 'react-native';
 import Constants from 'expo-constants';
 import { styles } from '../styles/styles';
 
+/**
+ * Home screen – main entry point.
+ * Provides navigation links to the mapping workflow, soil color tool, additional tools, and the about page.
+ */
 export default function Index() {
   return (
     <View style={styles.container}>

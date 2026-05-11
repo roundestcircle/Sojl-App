@@ -17,10 +17,10 @@ export type Horizont = {
   status: "leer" | "angefangen" | "vollstaendig";
   ph_cacl2: number | null;
   humus: string | null;
+  humus_pct: string | null;
   carbonat: string | null;
-  pflanzenreste: string | null;
+  lagerungsdichte: string | null;
   feinwurzeln: string | null;
-  trennbarkeit: string | null;
   lagerungsart: string | null;
   maechtigk_dm: string | null;
 };
@@ -39,6 +39,11 @@ export function addHorizont(aufnahmeId: number): void {
     aufnahmeId,
     nextNummer,
   );
+}
+
+/** Deletes a Horizont by id. */
+export function deleteHorizont(id: number): void {
+  db.runSync(`DELETE FROM horizonte WHERE id = ?`, id);
 }
 
 /** Returns all Horizonte for a given Aufnahme, ordered by nummer. */
@@ -70,8 +75,8 @@ export function saveHorizont(
   data: Partial<Pick<Horizont,
     | "horizontname" | "farbe_munsell" | "farbe_rgb" | "bodenart" | "anteil"
     | "notizen" | "tiefe_oben" | "tiefe_unten"
-    | "ph_cacl2" | "humus" | "carbonat" | "pflanzenreste"
-    | "feinwurzeln" | "trennbarkeit" | "lagerungsart" | "maechtigk_dm"
+    | "ph_cacl2" | "humus" | "humus_pct" | "carbonat" | "lagerungsdichte"
+    | "feinwurzeln" | "lagerungsart" | "maechtigk_dm"
   >>,
 ) {
   const isFull = data.farbe_munsell && data.bodenart;
@@ -89,10 +94,10 @@ export function saveHorizont(
          tiefe_unten   = ?,
          ph_cacl2      = ?,
          humus         = ?,
+         humus_pct     = ?,
          carbonat      = ?,
-         pflanzenreste = ?,
+         lagerungsdichte = ?,
          feinwurzeln   = ?,
-         trennbarkeit  = ?,
          lagerungsart  = ?,
          maechtigk_dm  = ?,
          status        = ?
@@ -107,10 +112,10 @@ export function saveHorizont(
     data.tiefe_unten ?? null,
     data.ph_cacl2 ?? null,
     data.humus ?? null,
+    data.humus_pct ?? null,
     data.carbonat ?? null,
-    data.pflanzenreste ?? null,
+    data.lagerungsdichte ?? null,
     data.feinwurzeln ?? null,
-    data.trennbarkeit ?? null,
     data.lagerungsart ?? null,
     data.maechtigk_dm ?? null,
     status,

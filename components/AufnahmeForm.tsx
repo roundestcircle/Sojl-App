@@ -9,6 +9,7 @@ import { latLonToUTM, utmToLatLon } from '@/utils/utmConversion';
 import type { Aufnahme, AufnahmeDetails } from '@/utils/MappingQueries';
 import DropdownField from '@/components/DropdownField';
 import BodenTypTool from '@/components/BodenTypTool';
+import HorizontLexikonContent from '@/components/HorizontLexikonContent';
 
 // ─── Dropdown options (placeholders where noted) ──────────────────────────────
 
@@ -50,12 +51,14 @@ type Props = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Parses a UTM zone string like "32N" into its numeric zone and hemisphere components. */
 function parseZone(s: string): { number: number; hemisphere: 'N' | 'S' } | null {
   const m = s.trim().toUpperCase().match(/^(\d+)([NS])$/);
   if (!m) return null;
   return { number: parseInt(m[1], 10), hemisphere: m[2] as 'N' | 'S' };
 }
 
+/** Parses a string to a float, returning null if the result is NaN. */
 const parseNum = (s: string | undefined): number | null => {
   const n = parseFloat(s ?? '');
   return isNaN(n) ? null : n;
@@ -63,7 +66,15 @@ const parseNum = (s: string | undefined): number | null => {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+/**
+ * Site data form for an Aufnahme.
+ * Supports both UTM and decimal-degree coordinate entry with live bidirectional conversion.
+ * All field changes autosave via the onSave callback (no explicit save button).
+ * A "Bodentyp bestimmen" modal embeds the BodenTypTool and splits its result
+ * into the Abk. and Bodentyp fields automatically.
+ */
 export default function AufnahmeForm({ initialData, onSave }: Props) {
+  // Derive initial UTM and lat/lon values from whichever coordinate format is stored
   let initUtm: { easting: string; northing: string; zone: string } | null = null;
   let initDeg: { lat: string; lon: string } | null = null;
 
@@ -91,10 +102,16 @@ export default function AufnahmeForm({ initialData, onSave }: Props) {
     }
   }
 
+  // Which coordinate input mode is currently shown
   const [mode, setMode] = useState<'utm' | 'degrees'>('utm');
+  // Ref mirrors mode so the watch callback (running in a closure) always sees the current value
   const modeRef = useRef<'utm' | 'degrees'>('utm');
+  // Drives the spinner on the GPS button while location is being fetched
   const [locating, setLocating] = useState(false);
+  // Controls visibility of the Bodentyp determination modal
   const [bodentypModal, setBodentypModal] = useState(false);
+  // Controls visibility of the Horizontlexikon modal (openable from within the Bodentyp modal)
+  const [lexikonVisible, setLexikonVisible] = useState(false);
 
   const { control, setValue, watch, getValues } = useForm<FormData>({
     defaultValues: {
@@ -178,6 +195,10 @@ export default function AufnahmeForm({ initialData, onSave }: Props) {
     return unsubscribe;
   }, [onSave]);
 
+  /**
+   * Toggles between UTM and decimal-degree input modes.
+   * Converts the currently filled coordinates to the other format so no data is lost.
+   */
   const handleToggleMode = () => {
     const newMode = mode === 'utm' ? 'degrees' : 'utm';
     modeRef.current = newMode;
@@ -205,6 +226,10 @@ export default function AufnahmeForm({ initialData, onSave }: Props) {
     setMode(newMode);
   };
 
+  /**
+   * Requests GPS location, converts it to UTM, and populates both coordinate fields.
+   * Shows an alert if permission is denied or the location cannot be determined.
+   */
   const handleGetLocation = async () => {
     try {
       setLocating(true);
@@ -429,6 +454,9 @@ export default function AufnahmeForm({ initialData, onSave }: Props) {
       <Modal visible={bodentypModal} animationType="slide" onRequestClose={() => setBodentypModal(false)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
           <View style={localStyles.modalHeader}>
+            <TouchableOpacity style={localStyles.lexikonBtn} onPress={() => setLexikonVisible(true)}>
+              <Text style={localStyles.lexikonBtnText}>Horizontlexikon</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => setBodentypModal(false)}>
               <Text style={localStyles.modalClose}>✕ Schließen</Text>
             </TouchableOpacity>
@@ -439,6 +467,17 @@ export default function AufnahmeForm({ initialData, onSave }: Props) {
               setValue('bodentyp', name ?? v);
               setBodentypModal(false);
             }} />
+        </SafeAreaView>
+      </Modal>
+
+      <Modal visible={lexikonVisible} animationType="slide" onRequestClose={() => setLexikonVisible(false)}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+          <View style={localStyles.modalHeader}>
+            <TouchableOpacity onPress={() => setLexikonVisible(false)}>
+              <Text style={localStyles.modalClose}>✕ Schließen</Text>
+            </TouchableOpacity>
+          </View>
+          <HorizontLexikonContent />
         </SafeAreaView>
       </Modal>
     </>
@@ -468,7 +507,8 @@ const localStyles = StyleSheet.create({
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -477,6 +517,18 @@ const localStyles = StyleSheet.create({
   modalClose: {
     color: colors.primary,
     fontSize: 16,
+    fontWeight: '600',
+  },
+  lexikonBtn: {
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  lexikonBtnText: {
+    color: colors.primary,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

@@ -5,7 +5,9 @@ import { styles } from '../styles/styles';
 import { SoilTexTree } from '../utils/SoilTexTree';
 import { InstructionModal, ResetInstructionButton } from '@/components/InstructionModal';
 
-export default function TexTree() {
+type Props = { onConfirm?: (result: string) => void };
+
+export default function TexTree({ onConfirm }: Props) {
   // Track the current position in the decision tree
   const [currentNode, setCurrentNode] = useState(SoilTexTree.id);
   
@@ -122,6 +124,16 @@ export default function TexTree() {
           onPress={handleBack}
         >
           <Text style={styles.maintext}>Zurück</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Confirm button – only shown when opened from the form */}
+      {isResult && onConfirm && (
+        <TouchableOpacity
+          style={[styles.actionButton, { alignSelf: 'stretch', marginTop: 16 }]}
+          onPress={() => onConfirm((node as any).result.title)}
+        >
+          <Text style={styles.actionButtonText}>Wert übernehmen</Text>
         </TouchableOpacity>
       )}
 

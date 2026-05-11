@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Alert,
   Modal,
   KeyboardAvoidingView,
   Platform,
@@ -20,6 +19,7 @@ import {
   deleteFeldkampagne,
   type Feldkampagne,
 } from "@/utils/FeldkampagneQueries";
+import { InstructionModal } from "@/components/InstructionModal";
 
 export default function FeldkampagnenScreen() {
   const [kampagnen, setKampagnen] = useState<Feldkampagne[]>([]);
@@ -38,7 +38,7 @@ export default function FeldkampagnenScreen() {
     const id = createFeldkampagne(name);
     setCreating(false);
     setNewName("");
-    router.push(`/mapping/session/${id}` as any);
+    router.push(`/mapping/kampagne/${id}` as any);
   };
 
   const handleCancel = () => {
@@ -46,26 +46,24 @@ export default function FeldkampagnenScreen() {
     setNewName("");
   };
 
-  const handleDelete = (item: Feldkampagne) => {
-    Alert.alert(
-      "Kampagne löschen",
-      `"${item.name}" und alle enthaltenen Aufnahmen löschen?`,
-      [
-        { text: "Abbrechen", style: "cancel" },
-        {
-          text: "Löschen",
-          style: "destructive",
-          onPress: () => {
-            deleteFeldkampagne(item.id);
-            setKampagnen(getAllFeldkampagnen());
-          },
-        },
-      ],
-    );
+  const [deleteTarget, setDeleteTarget] = useState<Feldkampagne | null>(null);
+
+  const handleDelete = (item: Feldkampagne) => setDeleteTarget(item);
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteFeldkampagne(deleteTarget.id);
+    setKampagnen(getAllFeldkampagnen());
+    setDeleteTarget(null);
   };
 
   return (
     <View style={styles.containerfull}>
+
+      <InstructionModal
+        storageKey="mappingDontShowAgain"
+        instructionText="Erstelle eine neue Kampagne. Innerhalb der Kampagne kannst du mehrere Bodenaufnahmen erstellen und in diesen deine erhobenen Daten eintragen. Die Daten werden automatisch gespeichert. Am Ende kannst du sowohl einzelne Aufnahmen als auch die gesamte Kampagne als ZIP exportieren. Diese Datei enthält zwei CSV-Dateien mit den Aufnahme- und Horizontdaten."
+      />
 
       <FlatList
         data={kampagnen}
@@ -78,7 +76,7 @@ export default function FeldkampagnenScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={localStyles.row}
-            onPress={() => router.push(`/mapping/session/${item.id}` as any)}
+            onPress={() => router.push(`/mapping/kampagne/${item.id}` as any)}
             onLongPress={() => handleDelete(item)}
           >
             <View style={{ flex: 1 }}>
@@ -138,6 +136,32 @@ export default function FeldkampagnenScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* ── Delete campaign modal ── */}
+      <Modal visible={deleteTarget !== null} transparent animationType="fade" onRequestClose={() => setDeleteTarget(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Kampagne löschen</Text>
+            <Text style={styles.modalText}>
+              „{deleteTarget?.name}" und alle enthaltenen Aufnahmen löschen?
+            </Text>
+            <View style={localStyles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#c0392b" }]}
+                onPress={confirmDelete}
+              >
+                <Text style={styles.modalButtonText}>Löschen</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#888" }]}
+                onPress={() => setDeleteTarget(null)}
+              >
+                <Text style={styles.modalButtonText}>Abbrechen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -150,7 +174,7 @@ const localStyles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 5,
+    borderWidth: 3,
     borderColor: colors.primary,
     borderRadius: 10,
     paddingHorizontal: 16,
@@ -187,5 +211,9 @@ const localStyles = StyleSheet.create({
   },
   createBtn: {
     flex: 1,
+  },
+  modalButtons: {
+    gap: 10,
+    marginTop: 8,
   },
 });

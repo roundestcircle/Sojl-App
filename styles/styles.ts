@@ -40,11 +40,25 @@ export const styles = StyleSheet.create({
     width: '100%',
     padding: 18,
     borderRadius: 10,
-    borderWidth: 5,
+    borderWidth: 3,
     backgroundColor: '#fff',
     borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  actionButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: 'center' as const,
+  },
+
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600' as const,
   },
 
   link: {

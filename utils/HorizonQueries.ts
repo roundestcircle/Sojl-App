@@ -19,6 +19,20 @@ export type Horizont = {
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
+/** Appends a new empty Horizont to an Aufnahme, numbered after the current last one. */
+export function addHorizont(aufnahmeId: number): void {
+  const row = db.getFirstSync<{ max_nummer: number | null }>(
+    `SELECT MAX(nummer) as max_nummer FROM horizonte WHERE aufnahme_id = ?`,
+    aufnahmeId,
+  );
+  const nextNummer = (row?.max_nummer ?? 0) + 1;
+  db.runSync(
+    `INSERT INTO horizonte (aufnahme_id, nummer, status) VALUES (?, ?, 'leer')`,
+    aufnahmeId,
+    nextNummer,
+  );
+}
+
 /** Returns all Horizonte for a given Aufnahme, ordered by nummer. */
 export function getHorizonteForAufnahme(aufnahmeId: number): Horizont[] {
   return db.getAllSync<Horizont>(

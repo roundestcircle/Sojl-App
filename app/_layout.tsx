@@ -1,16 +1,25 @@
 import { colors } from "@/styles/colors";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { initDatabase } from "@/utils/db";
 
+const homeButton = () => (
+  <TouchableOpacity onPress={() => router.replace('/')} style={{ marginRight: 4 }}>
+    <Ionicons name="home" size={24} color="#fff" />
+  </TouchableOpacity>
+);
+
 export default function RootLayout() {
-  initDatabase(); 
+  initDatabase();
   return (
     <Stack screenOptions={{
       headerStyle: { backgroundColor: colors.primary },
       headerTintColor: '#fff',
       headerTitleStyle: { fontWeight: 'bold', fontSize: 25},
+      headerRight: homeButton,
     }}>
-      <Stack.Screen name="index" options={{ title: 'Home' }} />
+      <Stack.Screen name="index" options={{ title: 'Home', headerRight: () => null }} />
       <Stack.Screen name="about" options={{ title: 'About' }} />
       <Stack.Screen name="soilcolor" options={{ title: 'Bodenfarbe' }} />
       <Stack.Screen name="mapping" options={{ headerShown: false }} />

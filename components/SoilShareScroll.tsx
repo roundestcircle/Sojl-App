@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Dimensions, StyleSheet } from 'react-native';
 import { Canvas, Rect } from '@shopify/react-native-skia';
 import { styles } from '../styles/styles';
 import { InstructionModal, ResetInstructionButton } from './InstructionModal';
@@ -24,7 +24,9 @@ function seededRandom(seed: number) {
   };
 }
 
-export default function SoilShareScroll() {
+type Props = { onConfirm?: (percent: string) => void };
+
+export default function SoilShareScroll({ onConfirm }: Props) {
   // Track the percentage of visible squares (0-100%)
   const [percent, setPercent] = useState(0);
   
@@ -139,6 +141,15 @@ export default function SoilShareScroll() {
         }}
         scrollEventThrottle={16} // Update frequency: 16ms throttle (~60fps)
       />
+
+      {/* Confirm button – only shown when opened from the form, rendered after ScrollView so it receives touches */}
+      {onConfirm && (
+        <View style={{ position: 'absolute', bottom: 80, left: 0, right: 0 }}>
+          <TouchableOpacity style={[styles.actionButton, { alignSelf: 'stretch' }]} onPress={() => onConfirm(String(percent))}>
+            <Text style={styles.actionButtonText}>Wert übernehmen ({percent}%)</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Button to reset instruction modal visibility */}
       <ResetInstructionButton

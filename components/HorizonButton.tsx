@@ -7,84 +7,58 @@ type Props = {
   onPress: () => void;
 };
 
-/**
- * HorizontButton
- *
- * Displays a single horizon as a tappable button.
- * Color reflects completion status:
- *   leer          → grey   (not started)
- *   angefangen    → amber  (in progress)
- *   vollstaendig  → green  (complete)
- */
 export default function HorizontButton({ horizont, onPress }: Props) {
-  const { label, bg, text } = statusStyle[horizont.status];
+  const { label, badgeBg } = statusStyle[horizont.status];
 
   return (
     <TouchableOpacity
-      style={[localStyles.button, { backgroundColor: bg }]}
+      style={localStyles.button}
       onPress={onPress}
       activeOpacity={0.75}
     >
-      <Text style={[localStyles.number, { color: text }]}>
+      <Text style={localStyles.name}>
         H{horizont.nummer}{horizont.horizontname ? ` – ${horizont.horizontname}` : ""}
       </Text>
-      <View style={[localStyles.badge, { borderColor: text }]}>
-        <Text style={[localStyles.badgeText, { color: text }]}>{label}</Text>
+      <View style={[localStyles.badge, { backgroundColor: badgeBg }]}>
+        <Text style={localStyles.badgeText}>{label}</Text>
       </View>
     </TouchableOpacity>
   );
 }
 
-// ─── Status styles ─────────────────────────────────────────────────────────────
-
-const statusStyle: Record<
-  Horizont["status"],
-  { label: string; bg: string; text: string }
-> = {
-  leer: {
-    label: "leer",
-    bg: "#e0e0e0",
-    text: "#555555",
-  },
-  angefangen: {
-    label: "angefangen",
-    bg: "#fff3cd",
-    text: "#856404",
-  },
-  vollstaendig: {
-    label: "vollständig",
-    bg: "#d1e7dd",
-    text: "#0f5132",
-  },
+const statusStyle: Record<Horizont["status"], { label: string; badgeBg: string }> = {
+  leer: { label: "leer", badgeBg: "#6c757d" },
+  angefangen: { label: "begonnen", badgeBg: "#e0a020" },
+  vollstaendig: { label: "vollständig", badgeBg: colors.primary },
 };
-
-// ─── Styles ────────────────────────────────────────────────────────────────────
 
 const localStyles = StyleSheet.create({
   button: {
-    flex: 1,
-    minWidth: "40%",
-    borderRadius: 10,
-    borderWidth: 5,
-    borderColor: colors.primary,
-    padding: 18,
+    flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    borderWidth: 3,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
   },
-  number: {
-    fontSize: 26,
+  name: {
+    flex: 1,
+    fontSize: 18,
     fontWeight: "700",
+    color: "#333",
   },
   badge: {
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
   badgeText: {
+    color: "#fff",
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
 });

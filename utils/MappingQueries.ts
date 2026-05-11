@@ -4,10 +4,14 @@ import db from "./db";
 
 export type Aufnahme = {
   id: number;
+  nummer: number | null;
   feldkampagne_id: number | null;
   erstellt_am: string;
   gps_lat: number | null;
   gps_lon: number | null;
+  utm_easting: number | null;
+  utm_northing: number | null;
+  utm_zone: string | null;
   notizen: string | null;
   status: "offen" | "abgeschlossen";
 };
@@ -22,9 +26,15 @@ export function createAufnahme(
   anzahlHorizonte: number,
   feldkampagneId: number,
 ): number {
-  const result = db.runSync(
-    `INSERT INTO aufnahmen (status, feldkampagne_id) VALUES ('offen', ?)`,
+  const row = db.getFirstSync<{ max_nummer: number | null }>(
+    `SELECT MAX(nummer) as max_nummer FROM aufnahmen WHERE feldkampagne_id = ?`,
     feldkampagneId,
+  );
+  const nextNummer = (row?.max_nummer ?? 0) + 1;
+  const result = db.runSync(
+    `INSERT INTO aufnahmen (status, feldkampagne_id, nummer) VALUES ('offen', ?, ?)`,
+    feldkampagneId,
+    nextNummer,
   );
   const aufnahmeId = result.lastInsertRowId;
 
@@ -47,15 +57,17 @@ export function getAufnahme(id: number): Aufnahme | null {
   ) ?? null;
 }
 
+export type AufnahmeDetails = Pick<Aufnahme, "gps_lat" | "gps_lon" | "utm_easting" | "utm_northing" | "utm_zone" | "notizen">;
+
 /** Saves location details (GPS + notes) for an Aufnahme. */
-export function saveAufnahmeDetails(
-  id: number,
-  data: Pick<Aufnahme, "gps_lat" | "gps_lon" | "notizen">,
-) {
+export function saveAufnahmeDetails(id: number, data: AufnahmeDetails) {
   db.runSync(
-    `UPDATE aufnahmen SET gps_lat = ?, gps_lon = ?, notizen = ? WHERE id = ?`,
+    `UPDATE aufnahmen SET gps_lat = ?, gps_lon = ?, utm_easting = ?, utm_northing = ?, utm_zone = ?, notizen = ? WHERE id = ?`,
     data.gps_lat ?? null,
     data.gps_lon ?? null,
+    data.utm_easting ?? null,
+    data.utm_northing ?? null,
+    data.utm_zone ?? null,
     data.notizen ?? null,
     id,
   );
@@ -67,6 +79,11 @@ export function closeAufnahme(aufnahmeId: number) {
     `UPDATE aufnahmen SET status = 'abgeschlossen' WHERE id = ?`,
     aufnahmeId,
   );
+}
+
+/** Deletes an Aufnahme and its Horizonte (via CASCADE). */
+export function deleteAufnahme(id: number) {
+  db.runSync(`DELETE FROM aufnahmen WHERE id = ?`, id);
 }
 
 /** Marks an Aufnahme as offen again to allow re-editing. */

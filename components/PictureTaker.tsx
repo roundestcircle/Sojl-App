@@ -38,7 +38,9 @@ const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } = 
   }
 };
 
-export default function PictureTaker() {
+type Props = { onConfirm?: (munsell: string) => void };
+
+export default function PictureTaker({ onConfirm }: Props) {
   // Request and track camera permissions
   const [permission, requestPermission] = useCameraPermissions();
   
@@ -153,7 +155,13 @@ export default function PictureTaker() {
             )}
           </View>
         )}
-        
+
+        {munsellColor && onConfirm && (
+          <TouchableOpacity style={[styles.actionButton, { alignSelf: 'stretch' }]} onPress={() => onConfirm(munsellColor)}>
+            <Text style={styles.actionButtonText}>Wert übernehmen</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Extract color button - Only visible if color hasn't been extracted yet */}
         {!soilColor && (
           <TouchableOpacity 

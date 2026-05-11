@@ -1,5 +1,7 @@
 import { colors } from "@/styles/colors";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function MappingLayout() {
   return (
@@ -7,12 +9,16 @@ export default function MappingLayout() {
       headerStyle: { backgroundColor: colors.primary },
       headerTintColor: '#fff',
       headerTitleStyle: { fontWeight: 'bold', fontSize: 25 },
+      headerRight: () => (
+        <TouchableOpacity onPress={() => router.replace('/')} style={{ marginRight: 4 }}>
+          <Ionicons name="home" size={24} color="#fff" />
+        </TouchableOpacity>
+      ),
     }}>
       <Stack.Screen name="index" options={{ title: 'Feldkampagnen' }} />
-      <Stack.Screen name="session/[sessionId]" options={{ title: 'Kampagne' }} />
-      <Stack.Screen name="soilmapping" options={{ title: 'Neue Aufnahme' }} />
-      <Stack.Screen name="[id]/HorizonOverview" options={{ title: 'Horizonte' }} />
-      <Stack.Screen name="[id]/horizon/[nr]" options={{ title: 'Horizont' }} />
+      <Stack.Screen name="kampagne/[kampagneId]/index" options={{ title: 'Kampagne' }} />
+      <Stack.Screen name="[aufnahmeId]/index" options={{ title: 'Aufnahme' }} />
+      <Stack.Screen name="[aufnahmeId]/horizon/[nr]" options={{ title: 'Horizont' }} />
     </Stack>
   );
 }

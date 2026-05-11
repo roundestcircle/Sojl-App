@@ -69,6 +69,22 @@ export function initDatabase() {
   } catch {
     // Column already exists — safe to ignore
   }
+
+  // Migration: add UTM columns to aufnahmen if absent
+  try {
+    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN utm_easting REAL`);
+  } catch {}
+  try {
+    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN utm_northing REAL`);
+  } catch {}
+  try {
+    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN utm_zone TEXT`);
+  } catch {}
+
+  // Migration: add campaign-scoped sequence number to aufnahmen
+  try {
+    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN nummer INTEGER`);
+  } catch {}
 }
 
 export default db;

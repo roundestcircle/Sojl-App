@@ -13,7 +13,7 @@ Expo-Projektkonfiguration. Definiert App-Name (`bachelorproject`), Version, Icon
 TypeScript-Konfiguration. Erweitert `expo/tsconfig.base`, aktiviert `strict`-Modus und mappt den Alias `@/*` auf das Projektstamm­verzeichnis. Erlaubt `esModuleInterop` und `allowSyntheticDefaultImports`.
 
 ### `package.json`
-Abhängigkeiten und NPM-Skripte. Wichtigste Dependencies: `expo`, `expo-router`, `expo-sqlite`, `expo-camera`, `expo-location`, `expo-sharing`, `expo-file-system` (v18), `@shopify/react-native-skia`, `react-hook-form`, `papaparse`, `@react-native-async-storage/async-storage`. Dev-Dependencies: TypeScript 5.9, ESLint mit Expo-Config, `@types/papaparse`.
+Abhängigkeiten und NPM-Skripte. Wichtigste Dependencies: `expo`, `expo-router`, `expo-sqlite`, `expo-camera`, `expo-location`, `expo-sharing`, `expo-file-system`, `@shopify/react-native-skia`, `react-hook-form`, `papaparse`, `jszip`, `@react-native-async-storage/async-storage`. Dev-Dependencies: TypeScript 5.9, ESLint mit Expo-Config, `@types/papaparse`, `@types/jszip`.
 
 ---
 
@@ -26,10 +26,12 @@ Definiert zwei globale Farben: `primary: '#145600'` (dunkelgrün) und `brown: '#
 Globales `StyleSheet`-Objekt mit wiederverwendbaren Stilen:
 - `container` – Zentriertes Flex-Layout für normale Screens.
 - `containerfull` – Vollflächen-Wrapper ohne Zentrierung.
-- `button` – Weißer Button mit grünem Rahmen (borderWidth 5, borderRadius 10, borderColor primary).
+- `button` – Weißer Button mit grünem Rahmen (borderWidth 3, borderRadius 10, borderColor primary, width 100%).
+- `actionButton` / `actionButtonText` – Gefüllter grüner Button (backgroundColor primary, borderRadius 8) ohne feste Breite; wird für Aktions-Buttons wie "GPS bestimmen", "Horizont hinzufügen" etc. verwendet.
 - `maintext` – Fett, 18 px, dunkelgrau.
 - `cameraContainer`, `labelContainer`, `label` – Für den Kamera-/Anteil-Screen.
-- `modalOverlay`, `modalContent`, `modalTitle`, `modalText`, `checkboxContainer`, `checkbox*`, `modalButton*`, `resetButton*` – Vollständiges Style-Set für Instruction-Modals.
+- `modalOverlay`, `modalContent`, `modalTitle`, `modalText`, `checkboxContainer`, `checkbox*`, `modalButton*`, `resetButton*` – Vollständiges Style-Set für Modals.
+- Formular-Stile: `input`, `sectionTitle`, `fieldLabel`, `section`, `formRow`, `halfField`, `emptyText`, `list`, `rowTitle`, `rowSub`.
 
 ---
 
@@ -48,10 +50,10 @@ Startbildschirm. Enthält Navigations-Buttons zu den Hauptfunktionen: Kartierung
 Statischer Infoscreen über das Bachelorprojekt. Zeigt GitHub-Link und Kontakt-E-Mail.
 
 ### `app/soilcolor.tsx`
-Dünner Wrapper, der `PictureTakerScreen` in einem Fullscreen-Container rendert. Kein eigener Zustand.
+Dünner Wrapper, der `PictureTaker` in einem Fullscreen-Container rendert. Kein eigener Zustand.
 
 ### `app/soiltexture.tsx`
-Dünner Wrapper für `TexTreeScreen`. Kein eigener Zustand.
+Dünner Wrapper für `TexTree`. Kein eigener Zustand.
 
 ### `app/soilshare.tsx`
 Wrapper für `SoilShareScroll`. Setzt den Navigations-Titel via `useLayoutEffect` auf "Anteil".
@@ -61,68 +63,74 @@ Wrapper für `SoilShareScroll`. Setzt den Navigations-Titel via `useLayoutEffect
 ## Kartierungs-Screens (`app/mapping/`)
 
 ### `app/mapping/_layout.tsx`
-Innerer Stack-Navigator für alle Kartierungs-Routen. Registriert: `index`, `session/[sessionId]`, `soilmapping`, `[id]/HorizonOverview`, `[id]/horizon/[nr]`. Zeigt eigene Header, da der Root-Navigator `headerShown: false` setzt.
+Innerer Stack-Navigator für alle Kartierungs-Routen. Registriert: `index`, `kampagne/[kampagneId]/index`, `[aufnahmeId]/index`, `[aufnahmeId]/horizon/[nr]`. Zeigt eigene Header, da der Root-Navigator `headerShown: false` setzt.
 
 ### `app/mapping/index.tsx`
-Feldkampagnen-Listenscreen. Zeigt alle vorhandenen Kampagnen in einer `FlatList`; langer Druck löscht eine Kampagne (mit Bestätigungsdialog). Der "Neue Kampagne"-Button öffnet ein `Modal` mit einem `TextInput` für den Kampagnennamen – keyboard-sicher über `KeyboardAvoidingView` innerhalb des Modals. Nach dem Erstellen wird zu `/mapping/session/[id]` navigiert.
+Feldkampagnen-Listenscreen. Zeigt alle vorhandenen Kampagnen in einer `FlatList`; langer Druck öffnet ein styled Modal zur Bestätigung des Löschvorgangs (rot/grau gestapelte Buttons). "Neue Kampagne"-Button öffnet ein `Modal` mit `TextInput` für den Namen – keyboard-sicher über `KeyboardAvoidingView`. Nach dem Erstellen wird zu `kampagne/[id]` navigiert.
 
-### `app/mapping/session/[sessionId].tsx`
-Session-Detailscreen. Listet alle Aufnahmen der Kampagne mit Horizontanzahl, Status-Badge (offen/abgeschlossen) und einem CSV-Export-Button je Zeile. "Neue Aufnahme" navigiert zu `soilmapping` mit `?sessionId=` als Query-Parameter.
+### `app/mapping/kampagne/[kampagneId]/index.tsx`
+Kampagnen-Detailscreen. Listet alle Aufnahmen der Kampagne mit kampagnen-lokalem Nummer (`Aufnahme {nummer}`), Horizontanzahl, Status-Badge (offen/abgeschlossen) und ZIP-Export-Button je Zeile. Langer Druck auf eine Zeile öffnet ein Lösch-Modal mit Warnung über die Anzahl der betroffenen Horizonte. Unten: "Neue Aufnahme" (erstellt Aufnahme direkt), "Kampagne beenden" (Navigation zurück), "Kampagne exportieren (ZIP)" (exportiert alle Aufnahmen + Horizonte als ZIP).
 
-### `app/mapping/soilmapping.tsx`
-Horizont-Anzahl-Picker für eine neue Aufnahme. Liest `sessionId` aus Query-Parametern, erstellt via `createAufnahme(anzahl, sessionId)` eine neue Aufnahme mit leeren Horizonten und navigiert zur HorizonOverview.
+### `app/mapping/[aufnahmeId]/index.tsx`
+Zentraler Aufnahme-Screen. Enthält:
+- **AufnahmeForm**: GPS/Notizen-Formular (auto-speichernd).
+- **Horizont-Liste**: Vertikale Liste aus `HorizontButton`-Komponenten. "+ Horizont hinzufügen"-Button (actionButton-Stil) fügt einen neuen leeren Horizont an.
+- **Abschließen-Button**: Markiert die Aufnahme als abgeschlossen und navigiert zurück zur Kampagne. Bei unvollständigen Horizonten öffnet sich ein Bestätigungs-Modal.
 
-### `app/mapping/[id]/HorizonOverview.tsx`
-Zentraler Mapping-Screen. Enthält:
-- **Standortdaten**: GPS-Button ("GPS automatisch bestimmen" via `expo-location`), UTM-Easting/Northing-Eingabefelder, Zonenbezeichnung, Notizen-Feld. GPS konvertiert WGS84 → UTM zur Anzeige; beim Speichern wird UTM → WGS84 zurückkonvertiert für die DB.
-- **Horizont-Raster**: Grid aus `HorizontButton`-Komponenten, navigiert bei Druck zu `horizon/[nr]`.
-- **Abschließen-Button**: Speichert Standortdaten, schließt die Aufnahme ab, navigiert zurück zur Session-Detailseite.
-
-### `app/mapping/[id]/horizon/[nr].tsx`
-Einzelner Horizont-Formularscreen. Lädt per `useFocusEffect` die Horizont-Daten aus SQLite, rendert `HorizontFormular` und speichert beim Submit via `saveHorizont` (inkl. `horizontname`).
+### `app/mapping/[aufnahmeId]/horizon/[nr].tsx`
+Einzelner Horizont-Formularscreen. Lädt per `useFocusEffect` die Horizont-Daten aus SQLite, rendert `HorizontFormular` und speichert auto-saves auf jede Änderung via `saveHorizont`.
 
 ---
 
 ## Komponenten (`components/`)
 
 ### `components/HorizonButton.tsx`
-Klickbarer Button für einen einzelnen Horizont. Die Hintergrundfarbe spiegelt den Status wider:
-- `leer` → grau
-- `angefangen` → amber
-- `vollstaendig` → grün
+Klickbarer Button für einen einzelnen Horizont. Zeilenlayout (weiß, volle Breite) mit rechtsbündigem Status-Badge:
+- `leer` → grau (#6c757d)
+- `angefangen` → amber (#e0a020)
+- `vollstaendig` → grün (primary)
 
-Zeigt `H{nummer} – {horizontname}` (oder nur `H{nummer}` wenn kein Name). Stil entspricht `styles.button` (borderRadius 10, borderWidth 5, borderColor primary).
+Zeigt `H{nummer} – {horizontname}` (oder nur `H{nummer}` wenn kein Name). borderWidth 3.
 
 ### `components/HorizonForm.tsx`
-React-Hook-Form-Formular für einen einzelnen Horizont. Felder: Horizontname, Tiefe Von/Bis, Bodenart (Platzhalter-TextInput), Anteil (Platzhalter-TextInput), Notizen (mehrzeilig). Der Typ `HorizontFormData` umfasst `horizontname`, `farbe`, `bodenart`, `anteil`, `notizen`, `tiefe_oben`, `tiefe_unten`. Farbe und Bodenart sind als Platzhalter markiert (TODO: durch spezialisierte Felder ersetzen).
+React-Hook-Form-Formular für einen einzelnen Horizont. Auto-speichert auf jede Feldänderung via `watch`-Subscription. Felder: Horizontname, Tiefe Von/Bis, Bodenfarbe (Munsell), Bodenart, Anteil, Notizen. Für Farbe, Bodenart und Anteil gibt es je einen `actionButton`, der ein vollbild-Modal öffnet:
+- **Farbe-Modal**: `PictureTaker` mit `onConfirm` – übernimmt Munsell-Wert ins Formular.
+- **Bodenart-Modal**: `TexTree` mit `onConfirm` – übernimmt Bodenart-Kürzel ins Formular.
+- **Anteil-Modal**: `SoilShareScroll` mit `onConfirm` – übernimmt Prozentwert ins Formular.
 
-### `components/ColorPicker.tsx`
-Enthält `extractSoilColor` – Kernfunktion der Farbanalyse. Verwendet Skia, um Bildpixel zu lesen. Probiert einen Graukarten-Bereich (Mitte 60×35 % des Bildes) und einen Bodenproben-Bereich (unten Mitte 16×10 %). Berechnet Korrekturfaktoren (Zielwert 128 für 18 %-Graukarte), wendet diese auf die Bodenfarbe an und konvertiert anschließend zu Munsell.
+Jedes Modal hat einen "Schließen"-Header-Button und wird in `SafeAreaView` (react-native-safe-area-context) mit `padding: 20` eingebettet.
 
-### `components/ColorPickerField.tsx`
-Leere Datei (Platzhalter für zukünftige Integration als React-Hook-Form-Feld-Komponente).
+### `components/AufnahmeForm.tsx`
+React-Hook-Form-Formular für Standortdaten einer Aufnahme. Auto-speichert auf jede Änderung. Zwei umschaltbare Modi:
+- **UTM** (Standard): Easting, Northing, Zone (z. B. "32N") in einer Zeile.
+- **Dezimalgrad**: Breite und Länge als Dezimalzahlen.
 
-### `components/TexTreeField.tsx`
-Leere Datei (Platzhalter für zukünftige Integration des Textur-Entscheidungsbaums als Formularfeld).
-
-### `components/SoilShareField.tsx`
-Leere Datei (Platzhalter für zukünftige Integration der Anteil-Visualisierung als Formularfeld).
+"Zu Dezimalgrad wechseln / Zu UTM wechseln"-Button konvertiert die aktuellen Werte in den jeweils anderen Modus und befüllt die Felder. "GPS automatisch bestimmen" füllt beide Formate gleichzeitig. Speichert sowohl lat/lon als auch UTM in die DB. Verwendet `modeRef` und `zoneRef` um stale-closure-Probleme in der `watch`-Subscription zu vermeiden.
 
 ### `components/InstructionModal.tsx`
-Wiederverwendbares Modal für Erstnutzer-Anleitungen. Speichert "Nicht mehr anzeigen"-Präferenz in `AsyncStorage` (Schlüssel per `storageKey`-Prop). Exportiert zusätzlich `ResetInstructionButton`, der das AsyncStorage-Flag löscht und so das Modal zurücksetzt.
+Wiederverwendbares Modal für Erstnutzer-Anleitungen. Speichert "Nicht mehr anzeigen"-Präferenz in `AsyncStorage` (Schlüssel per `storageKey`-Prop). Exportiert zusätzlich `ResetInstructionButton` (positioniert absolut am unteren Rand), der das AsyncStorage-Flag löscht und so das Modal zurücksetzt.
 
-### `components/PictureTakerScreen.tsx`
-Kamera-Screen für die Bodenfarb-Analyse. Zwei Zustände:
-1. **Kamera-Ansicht**: Live-Vorschau mit Overlay-Rechtecken, die Position von Graukarte (groß) und Bodenprobe (klein) anzeigen. Button "Foto aufnehmen".
-2. **Foto-Review**: Zeigt das aufgenommene Bild mit Overlays. Button "Farbe bestimmen" ruft `extractSoilColor` auf und zeigt RGB + Munsell. Button "Neues Foto aufnehmen" setzt zurück.
+### `components/PictureTaker.tsx`
+Kamera-Screen für die Bodenfarb-Analyse. Akzeptiert optionalen `onConfirm`-Prop (wird nur angezeigt, wenn aus `HorizonForm` geöffnet). Zwei Zustände:
+1. **Kamera-Ansicht**: Live-Vorschau mit Overlay-Rechtecken für Graukarte (groß) und Bodenprobe (klein). Button "Foto aufnehmen".
+2. **Foto-Review**: Zeigt Bild mit Overlays, RGB + Munsell nach Analyse. "Wert übernehmen"-Button übergibt Munsell-String an `onConfirm`. "Neues Foto aufnehmen" setzt zurück.
 
-Verwaltet Kamera-Berechtigung (expo-camera), Lade-Zustand während der Farb­extraktion und ein zurücksetzbares `InstructionModal`.
+Verwaltet Kamera-Berechtigung, Lade-Zustand und `InstructionModal`.
 
 ### `components/SoilShareScroll.tsx`
-Visueller Anteil-Schätzer. Rendert ein Skia-Canvas mit bis zu 1000 schwarzen Quadraten in einem zufällig gemischten Grid (deterministisch per Seed 42 und Fisher-Yates). Eine unsichtbare `ScrollView` (5× Bildschirmhöhe) liegt darüber; ihr Scroll-Fortschritt (0–100 %) bestimmt, wie viele Quadrate sichtbar sind. Zeigt den Prozentwert zentriert. Zeigt `InstructionModal` beim ersten Aufruf.
+Visueller Anteil-Schätzer. Akzeptiert optionalen `onConfirm`-Prop. Rendert ein Skia-Canvas mit bis zu 1000 schwarzen Quadraten (deterministisch per Seed 42, Fisher-Yates-Shuffle). Eine unsichtbare `ScrollView` (5× Bildschirmhöhe) steuert den Prozentsatz (0–100 %). "Wert übernehmen"-Button am unteren Rand übergibt den Prozentwert. Zeigt `InstructionModal` beim ersten Aufruf.
 
-### `components/TexTreeScreen.tsx`
-Interaktiver Entscheidungsbaum zur Bodenart-Bestimmung. Navigiert durch `SoilTexTree` per Ja/Nein-Buttons, speichert den Pfad in einem History-Stack für Zurück-Navigation. Am Ergebnis-Knoten wird die Bodenart als grüne Karte angezeigt; danach erscheint ein "Neu Starten"-Button. Zeigt `InstructionModal` beim ersten Aufruf.
+### `components/TexTree.tsx`
+Interaktiver Entscheidungsbaum zur Bodenart-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop. Navigiert durch `SoilTexTree` per Buttons, History-Stack für Zurück-Navigation. Am Ergebnis-Knoten: grüne Ergebniskarte, separater "Wert übernehmen"-Button (übergibt nur das Kürzel, z. B. "Sl"), "Neu Starten"-Button. Zeigt `InstructionModal` beim ersten Aufruf.
+
+### `components/ColorPickerField.tsx`
+Leere Datei (Platzhalter).
+
+### `components/TexTreeField.tsx`
+Leere Datei (Platzhalter).
+
+### `components/SoilShareField.tsx`
+Leere Datei (Platzhalter).
 
 ---
 
@@ -134,7 +142,7 @@ Interaktiver Entscheidungsbaum zur Bodenart-Bestimmung. Navigiert durch `SoilTex
 - `aufnahmen` (id, feldkampagne_id, erstellt_am, gps_lat, gps_lon, notizen, status)
 - `horizonte` (id, aufnahme_id, nummer, farbe_munsell, farbe_rgb, bodenart, anteil, notizen, status)
 
-Enthält zwei ALTER-TABLE-Migrationen (mit try/catch): `feldkampagne_id` zu `aufnahmen` und `horizontname` zu `horizonte`.
+Enthält ALTER-TABLE-Migrationen (try/catch, sicher bei Wiederholung) für: `feldkampagne_id`, `horizontname`, `tiefe_oben`, `tiefe_unten` (horizonte), sowie `utm_easting`, `utm_northing`, `utm_zone`, `nummer` (aufnahmen).
 
 ### `utils/FeldkampagneQueries.ts`
 CRUD für die `feldkampagnen`-Tabelle:
@@ -145,27 +153,38 @@ CRUD für die `feldkampagnen`-Tabelle:
 - `deleteFeldkampagne(id)` → löscht per CASCADE auch alle Aufnahmen und Horizonte
 
 ### `utils/MappingQueries.ts`
-CRUD für die `aufnahmen`-Tabelle. Typ `Aufnahme` hat `feldkampagne_id: number | null`. Wichtige Funktionen:
-- `createAufnahme(anzahlHorizonte, feldkampagneId)` – legt Aufnahme + n leere Horizonte an
-- `getAufnahme(id)`, `getAllAufnahmen()`
-- `saveAufnahmeDetails(id, {gps_lat, gps_lon, notizen})` – Standortdaten
-- `closeAufnahme(id)` / `reopenAufnahme(id)` – Status-Steuerung
+CRUD für die `aufnahmen`-Tabelle. Typ `Aufnahme` enthält: `id`, `nummer` (kampagnen-lokale Sequenznummer), `feldkampagne_id`, `erstellt_am`, `gps_lat`, `gps_lon`, `utm_easting`, `utm_northing`, `utm_zone`, `notizen`, `status`. Exportiert `AufnahmeDetails` als Pick-Typ für Speicher-Operationen. Wichtige Funktionen:
+- `createAufnahme(anzahlHorizonte, feldkampagneId)` – legt Aufnahme an, vergibt `nummer` als MAX(nummer)+1 innerhalb der Kampagne, fügt n leere Horizonte ein.
+- `getAufnahme(id)`
+- `saveAufnahmeDetails(id, AufnahmeDetails)` – speichert lat/lon, UTM (easting, northing, zone) und Notizen.
+- `deleteAufnahme(id)` – löscht Aufnahme + Horizonte per CASCADE.
+- `closeAufnahme(id)` / `reopenAufnahme(id)` – Status-Steuerung.
 
 ### `utils/HorizonQueries.ts`
-CRUD für die `horizonte`-Tabelle. Typ `Horizont` umfasst `horizontname: string | null`. `saveHorizont` aktualisiert alle Felder inkl. `horizontname`. Status wird automatisch abgeleitet: `vollstaendig` wenn `farbe_munsell` und `bodenart` beide belegt, sonst `angefangen`.
+CRUD für die `horizonte`-Tabelle. Typ `Horizont` umfasst alle Formularfelder inkl. `horizontname`, `tiefe_oben`, `tiefe_unten`. Funktionen:
+- `addHorizont(aufnahmeId)` – fügt neuen leeren Horizont an (MAX(nummer)+1).
+- `getHorizonteForAufnahme(aufnahmeId)` – alle Horizonte sortiert nach nummer.
+- `getHorizont(aufnahmeId, nummer)` – Einzeldatensatz.
+- `saveHorizont(aufnahmeId, nummer, data)` – aktualisiert alle Felder; Status wird automatisch abgeleitet: `vollstaendig` wenn `farbe_munsell` und `bodenart` beide belegt, sonst `angefangen`.
 
 ### `utils/csvExport.ts`
-`exportAufnahmeAsCSV(aufnahme)`: Lädt alle Horizonte der Aufnahme, baut CSV-Zeilen (eine je Horizont) mit Metadaten (GPS, Datum), schreibt die Datei in den App-Cache via `expo-file-system` v18 (`new File(Paths.cache, filename)`, `file.write(csv)`) und öffnet das native Share-Sheet via `expo-sharing`.
+Exportiert Aufnahmen + Horizonte als ZIP-Datei mit zwei CSVs:
+- `aufnahmen.csv` – eine Zeile pro Aufnahme mit allen Standortdaten (GPS, UTM, Notizen, Status).
+- `horizonte.csv` – eine Zeile pro Horizont, verknüpft via `aufnahme_id`.
+
+Interne Funktion `buildAndShareZip(aufnahmen, zipFilename, dialogTitle)` wird von beiden öffentlichen Funktionen genutzt:
+- `exportAufnahmeAsZip(aufnahme)` – exportiert eine einzelne Aufnahme.
+- `exportKampagneAsZip(kampagneId, kampagneName)` – exportiert alle Aufnahmen einer Kampagne.
+
+Verwendet `JSZip` (typ: `uint8array`), schreibt via `expo-file-system` (`File`/`Paths`-API) in den App-Cache und öffnet das native Share-Sheet via `expo-sharing`.
 
 ### `utils/utmConversion.ts`
 Bidirektionale WGS84 ↔ UTM-Konvertierung (Transversale Mercator-Projektion, WGS84-Ellipsoid):
-- `latLonToUTM(lat, lon)` → `{ easting, northing, zone, hemisphere, label }`
+- `latLonToUTM(lat, lon)` → `{ easting, northing, zone, hemisphere, label }` (label z. B. "32N")
 - `utmToLatLon(easting, northing, zone, hemisphere)` → `{ lat, lon }`
 
-Verwendet Standard-TM-Formeln mit den Konstanten a, f, k0 des WGS84-Ellipsoids.
-
 ### `utils/SoilTexTree.ts`
-Statische Datenstruktur des Bodenart-Entscheidungsbaums. Enthält Fragen und Antwort­optionen (mit `next`-Verweisen auf Folgeknoten) sowie Ergebnis­knoten mit `title` und `description`. Wird von `TexTreeScreen` traversiert.
+Statische Datenstruktur des Bodenart-Entscheidungsbaums. Enthält Fragen und Antwort­optionen (mit `next`-Verweisen auf Folgeknoten) sowie Ergebnisknoten mit `title` und `description`. Wird von `TexTree` traversiert.
 
 ### `utils/soilColorExtractor.ts`
 Koordiniert die Bildanalyse für die Bodenfarbe. Lädt das Bild mit Skia, liest Pixeldaten, berechnet per `extractColorFromRegion` Durchschnittsfarben für Graukarten- und Bodenprobenbereich, leitet Korrekturfaktoren ab (Ziel: RGB 128 für 18 %-Graukarte), wendet diese an und ruft `rgbToMunsell` für die Munsell-Notation auf.

@@ -15,6 +15,14 @@ export type Horizont = {
   tiefe_oben: string | null;
   tiefe_unten: string | null;
   status: "leer" | "angefangen" | "vollstaendig";
+  ph_cacl2: number | null;
+  humus: string | null;
+  carbonat: string | null;
+  pflanzenreste: string | null;
+  feinwurzeln: string | null;
+  trennbarkeit: string | null;
+  lagerungsart: string | null;
+  maechtigk_dm: string | null;
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -59,7 +67,12 @@ export function getHorizont(aufnahmeId: number, nummer: number): Horizont | null
 export function saveHorizont(
   aufnahmeId: number,
   nummer: number,
-  data: Partial<Pick<Horizont, "horizontname" | "farbe_munsell" | "farbe_rgb" | "bodenart" | "anteil" | "notizen" | "tiefe_oben" | "tiefe_unten">>,
+  data: Partial<Pick<Horizont,
+    | "horizontname" | "farbe_munsell" | "farbe_rgb" | "bodenart" | "anteil"
+    | "notizen" | "tiefe_oben" | "tiefe_unten"
+    | "ph_cacl2" | "humus" | "carbonat" | "pflanzenreste"
+    | "feinwurzeln" | "trennbarkeit" | "lagerungsart" | "maechtigk_dm"
+  >>,
 ) {
   const isFull = data.farbe_munsell && data.bodenart;
   const status = isFull ? "vollstaendig" : "angefangen";
@@ -74,6 +87,14 @@ export function saveHorizont(
          notizen       = ?,
          tiefe_oben    = ?,
          tiefe_unten   = ?,
+         ph_cacl2      = ?,
+         humus         = ?,
+         carbonat      = ?,
+         pflanzenreste = ?,
+         feinwurzeln   = ?,
+         trennbarkeit  = ?,
+         lagerungsart  = ?,
+         maechtigk_dm  = ?,
          status        = ?
      WHERE aufnahme_id = ? AND nummer = ?`,
     data.horizontname ?? null,
@@ -84,6 +105,14 @@ export function saveHorizont(
     data.notizen ?? null,
     data.tiefe_oben ?? null,
     data.tiefe_unten ?? null,
+    data.ph_cacl2 ?? null,
+    data.humus ?? null,
+    data.carbonat ?? null,
+    data.pflanzenreste ?? null,
+    data.feinwurzeln ?? null,
+    data.trennbarkeit ?? null,
+    data.lagerungsart ?? null,
+    data.maechtigk_dm ?? null,
     status,
     aufnahmeId,
     nummer,

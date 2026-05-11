@@ -38,7 +38,7 @@ Globales `StyleSheet`-Objekt mit wiederverwendbaren Stilen:
 ## App-Screens (`app/`)
 
 ### `app/_layout.tsx`
-Wurzel-Stack-Navigator der gesamten App. Ruft `initDatabase()` beim Start auf. Legt ein dunkles Grün als globale Header-Farbe fest. Das `mapping`-Segment erhält `headerShown: false`, damit der innere Stack seinen eigenen Header zeigen kann ohne doppelten Header.
+Wurzel-Stack-Navigator der gesamten App. Ruft `initDatabase()` beim Start auf. Legt dunkles Grün als globale Header-Farbe fest. Zeigt auf allen Screens (außer Home) ein Haus-Icon (`Ionicons "home"`) als `headerRight`, das per `router.replace('/')` zur Startseite navigiert. Das `mapping`-Segment erhält `headerShown: false`, damit der innere Stack seinen eigenen Header zeigt.
 
 ### `app/index.tsx`
 Startbildschirm. Enthält Navigations-Buttons zu den Hauptfunktionen: Kartierung (`/mapping`), Bodenart (`/soiltexture`), Bodenfarbe (`/soilcolor`), Anteil (`/soilshare`) und Über die App (`/about`).
@@ -63,52 +63,64 @@ Wrapper für `SoilShareScroll`. Setzt den Navigations-Titel via `useLayoutEffect
 ## Kartierungs-Screens (`app/mapping/`)
 
 ### `app/mapping/_layout.tsx`
-Innerer Stack-Navigator für alle Kartierungs-Routen. Registriert: `index`, `kampagne/[kampagneId]/index`, `[aufnahmeId]/index`, `[aufnahmeId]/horizon/[nr]`. Zeigt eigene Header, da der Root-Navigator `headerShown: false` setzt.
+Innerer Stack-Navigator für alle Kartierungs-Routen. Registriert: `index`, `kampagne/[kampagneId]/index`, `[aufnahmeId]/index`, `[aufnahmeId]/standort`, `[aufnahmeId]/horizon/[nr]`. Zeigt eigene Header mit Haus-Icon (`headerRight`) auf allen Screens. Der Root-Navigator setzt `headerShown: false` für das `mapping`-Segment.
 
 ### `app/mapping/index.tsx`
-Feldkampagnen-Listenscreen. Zeigt alle vorhandenen Kampagnen in einer `FlatList`; langer Druck öffnet ein styled Modal zur Bestätigung des Löschvorgangs (rot/grau gestapelte Buttons). "Neue Kampagne"-Button öffnet ein `Modal` mit `TextInput` für den Namen – keyboard-sicher über `KeyboardAvoidingView`. Nach dem Erstellen wird zu `kampagne/[id]` navigiert.
+Feldkampagnen-Listenscreen. Zeigt alle vorhandenen Kampagnen in einer `FlatList`; langer Druck öffnet ein styled Modal zur Bestätigung des Löschvorgangs (rot/grau gestapelte Buttons). "Neue Kampagne"-Button öffnet ein `Modal` mit `TextInput` für den Namen – keyboard-sicher über `KeyboardAvoidingView`. Nach dem Erstellen wird zu `kampagne/[id]` navigiert. Zeigt beim ersten Aufruf ein `InstructionModal` mit Erklärung des Kartierungsworkflows.
 
 ### `app/mapping/kampagne/[kampagneId]/index.tsx`
-Kampagnen-Detailscreen. Listet alle Aufnahmen der Kampagne mit kampagnen-lokalem Nummer (`Aufnahme {nummer}`), Horizontanzahl, Status-Badge (offen/abgeschlossen) und ZIP-Export-Button je Zeile. Langer Druck auf eine Zeile öffnet ein Lösch-Modal mit Warnung über die Anzahl der betroffenen Horizonte. Unten: "Neue Aufnahme" (erstellt Aufnahme direkt), "Kampagne beenden" (Navigation zurück), "Kampagne exportieren (ZIP)" (exportiert alle Aufnahmen + Horizonte als ZIP).
+Kampagnen-Detailscreen. Setzt den Header-Titel dynamisch auf den Kampagnennamen via `useLayoutEffect`. Listet alle Aufnahmen mit kampagnen-lokalem Nummer (`Aufnahme {nummer}`), Horizontanzahl, Status-Badge (offen/abgeschlossen) und ZIP-Export-Button je Zeile. Langer Druck öffnet ein Lösch-Modal mit Warnung über die Anzahl betroffener Horizonte. Unten: "Neue Aufnahme", "Kampagne beenden", "Kampagne exportieren (ZIP)".
 
 ### `app/mapping/[aufnahmeId]/index.tsx`
-Zentraler Aufnahme-Screen. Enthält:
-- **AufnahmeForm**: GPS/Notizen-Formular (auto-speichernd).
-- **Horizont-Liste**: Vertikale Liste aus `HorizontButton`-Komponenten. "+ Horizont hinzufügen"-Button (actionButton-Stil) fügt einen neuen leeren Horizont an.
+Zentraler Aufnahme-Screen. Setzt den Header-Titel dynamisch auf `Aufnahme {nummer}`. Enthält:
+- **Standortdaten-Button**: Gleiche Optik wie `HorizonButton` (Rahmen, Badge). Status-Badge leitet sich aus dem Füllstand der Aufnahme ab: `leer` (nichts ausgefüllt) → grau, `begonnen` (teilweise) → amber, `abgeschlossen` (alle 14 Profilfelder + GPS ausgefüllt) → grün. Navigiert zu `[aufnahmeId]/standort`.
+- **Horizont-Liste**: Vertikale Liste aus `HorizontButton`-Komponenten. "+ Horizont hinzufügen"-Button fügt einen neuen leeren Horizont an.
 - **Abschließen-Button**: Markiert die Aufnahme als abgeschlossen und navigiert zurück zur Kampagne. Bei unvollständigen Horizonten öffnet sich ein Bestätigungs-Modal.
 
+### `app/mapping/[aufnahmeId]/standort.tsx`
+Screen für das Standortdaten-Formular einer Aufnahme. Lädt per `useFocusEffect` die Aufnahme-Daten aus SQLite, rendert `AufnahmeForm` in einer `ScrollView` und speichert auto-saves auf jede Änderung.
+
 ### `app/mapping/[aufnahmeId]/horizon/[nr].tsx`
-Einzelner Horizont-Formularscreen. Lädt per `useFocusEffect` die Horizont-Daten aus SQLite, rendert `HorizontFormular` und speichert auto-saves auf jede Änderung via `saveHorizont`.
+Einzelner Horizont-Formularscreen. Setzt den Header-Titel auf `Horizont {nummer}` via `useLayoutEffect`. Lädt per `useFocusEffect` die Horizont-Daten aus SQLite, rendert `HorizontFormular` und speichert auto-saves auf jede Änderung via `saveHorizont`.
 
 ---
 
 ## Komponenten (`components/`)
 
 ### `components/HorizonButton.tsx`
-Klickbarer Button für einen einzelnen Horizont. Zeilenlayout (weiß, volle Breite) mit rechtsbündigem Status-Badge:
+Klickbarer Button für einen einzelnen Horizont. Zeilenlayout (weiß, volle Breite, borderWidth 3) mit rechtsbündigem Status-Badge:
 - `leer` → grau (#6c757d)
 - `angefangen` → amber (#e0a020)
 - `vollstaendig` → grün (primary)
 
-Zeigt `H{nummer} – {horizontname}` (oder nur `H{nummer}` wenn kein Name). borderWidth 3.
+Zeigt `H{nummer} – {horizontname}` (oder nur `H{nummer}` wenn kein Name).
 
 ### `components/HorizonForm.tsx`
-React-Hook-Form-Formular für einen einzelnen Horizont. Auto-speichert auf jede Feldänderung via `watch`-Subscription. Felder: Horizontname, Tiefe Von/Bis, Bodenfarbe (Munsell), Bodenart, Anteil, Notizen. Für Farbe, Bodenart und Anteil gibt es je einen `actionButton`, der ein vollbild-Modal öffnet:
-- **Farbe-Modal**: `PictureTaker` mit `onConfirm` – übernimmt Munsell-Wert ins Formular.
-- **Bodenart-Modal**: `TexTree` mit `onConfirm` – übernimmt Bodenart-Kürzel ins Formular.
-- **Anteil-Modal**: `SoilShareScroll` mit `onConfirm` – übernimmt Prozentwert ins Formular.
+React-Hook-Form-Formular für einen einzelnen Horizont. Auto-speichert auf jede Feldänderung via `watch`-Subscription. Felder in Sektionen:
+- **Horizontname**, **Tiefe Von/Bis** (cm)
+- **Bodenfarbe (Munsell)**: Texteingabe + "Farbe bestimmen"-Button → PictureTaker-Modal.
+- **Bodenart / Textur**: Texteingabe + "Bodenart bestimmen"-Button → TexTree-Modal.
+- **Anteil**: Texteingabe + "Anteil schätzen"-Button → SoilShareScroll-Modal.
+- **Notizen**: Mehrzeiliges Textfeld.
+- **Bodeneigenschaften**: pH (CaCl₂), Mächtigkeit (dm), Humusgehalt, Carbonatgehalt, Pflanzenreste, Feinwurzeln, Trennbarkeit, Lagerungsart.
 
-Jedes Modal hat einen "Schließen"-Header-Button und wird in `SafeAreaView` (react-native-safe-area-context) mit `padding: 20` eingebettet.
+Jedes Tool-Modal hat einen "Schließen"-Header-Button und wird in `SafeAreaView` mit `padding: 20` eingebettet.
 
 ### `components/AufnahmeForm.tsx`
-React-Hook-Form-Formular für Standortdaten einer Aufnahme. Auto-speichert auf jede Änderung. Zwei umschaltbare Modi:
-- **UTM** (Standard): Easting, Northing, Zone (z. B. "32N") in einer Zeile.
-- **Dezimalgrad**: Breite und Länge als Dezimalzahlen.
+React-Hook-Form-Formular für alle Standortdaten einer Aufnahme. Auto-speichert auf jede Änderung via `watch`-Subscription. Felder in Sektionen:
+- **Standortdaten**: GPS automatisch bestimmen; UTM (Easting, Northing, Zone) oder Dezimalgrad (Breite, Länge) – umschaltbar. Speichert beide Formate gleichzeitig in die DB. Verwendet `modeRef` gegen stale-closure-Probleme.
+- **Profil**: Bodentyp + Abk., Humusform + Abk., Ausgangsgestein, Gründigkeit (cm), Höhe (m ü. NN).
+- **Standorteigenschaften**: Reliefposition, Exposition, Nutzung, Vegetation – alle vier als `DropdownField`.
+- **Klimadaten**: Witterung (Dropdown), Mittl. Niederschlag (mm), Mittl. Temperatur (°C).
+- **Notizen**: Mehrzeiliges Textfeld.
 
-"Zu Dezimalgrad wechseln / Zu UTM wechseln"-Button konvertiert die aktuellen Werte in den jeweils anderen Modus und befüllt die Felder. "GPS automatisch bestimmen" füllt beide Formate gleichzeitig. Speichert sowohl lat/lon als auch UTM in die DB. Verwendet `modeRef` und `zoneRef` um stale-closure-Probleme in der `watch`-Subscription zu vermeiden.
+Dropdown-Optionen: Reliefpos `[K, O, M, U, H, T, E]`, Expos `[N, NO, O, SO, S, SW, W, NW]`, Witterung/Nutzung/Vegetation als Platzhalter bis Kartieranleitung vorliegt.
+
+### `components/DropdownField.tsx`
+Wiederverwendbares Dropdown-Eingabefeld. Zeigt den aktuellen Wert als Button (im `styles.input`-Look); bei Antippen öffnet sich ein zentriertes Modal mit einer `FlatList` der Optionen. Ausgewählte Option wird hervorgehoben; erneutes Antippen derselben Option hebt die Auswahl auf.
 
 ### `components/InstructionModal.tsx`
-Wiederverwendbares Modal für Erstnutzer-Anleitungen. Speichert "Nicht mehr anzeigen"-Präferenz in `AsyncStorage` (Schlüssel per `storageKey`-Prop). Exportiert zusätzlich `ResetInstructionButton` (positioniert absolut am unteren Rand), der das AsyncStorage-Flag löscht und so das Modal zurücksetzt.
+Wiederverwendbares Modal für Erstnutzer-Anleitungen. Speichert "Nicht mehr anzeigen"-Präferenz in `AsyncStorage` (Schlüssel per `storageKey`-Prop). Exportiert zusätzlich `ResetInstructionButton`, der das AsyncStorage-Flag löscht und so das Modal zurücksetzt.
 
 ### `components/PictureTaker.tsx`
 Kamera-Screen für die Bodenfarb-Analyse. Akzeptiert optionalen `onConfirm`-Prop (wird nur angezeigt, wenn aus `HorizonForm` geöffnet). Zwei Zustände:
@@ -142,7 +154,9 @@ Leere Datei (Platzhalter).
 - `aufnahmen` (id, feldkampagne_id, erstellt_am, gps_lat, gps_lon, notizen, status)
 - `horizonte` (id, aufnahme_id, nummer, farbe_munsell, farbe_rgb, bodenart, anteil, notizen, status)
 
-Enthält ALTER-TABLE-Migrationen (try/catch, sicher bei Wiederholung) für: `feldkampagne_id`, `horizontname`, `tiefe_oben`, `tiefe_unten` (horizonte), sowie `utm_easting`, `utm_northing`, `utm_zone`, `nummer` (aufnahmen).
+Enthält ALTER-TABLE-Migrationen (try/catch, sicher bei Wiederholung) für:
+- `horizonte`: `horizontname`, `tiefe_oben`, `tiefe_unten`, `ph_cacl2`, `humus`, `carbonat`, `pflanzenreste`, `feinwurzeln`, `trennbarkeit`, `lagerungsart`, `maechtigk_dm`
+- `aufnahmen`: `feldkampagne_id`, `utm_easting`, `utm_northing`, `utm_zone`, `nummer`, `bodentyp`, `bodtyp_abk`, `humusform`, `humsfrm_abk`, `m_ue_nn`, `witterung`, `mittl_n`, `mittl_temp`, `nutzung`, `vegetation`, `reliefpos`, `expos`, `ausgangsgestein`, `grundigkeit`
 
 ### `utils/FeldkampagneQueries.ts`
 CRUD für die `feldkampagnen`-Tabelle:
@@ -153,24 +167,24 @@ CRUD für die `feldkampagnen`-Tabelle:
 - `deleteFeldkampagne(id)` → löscht per CASCADE auch alle Aufnahmen und Horizonte
 
 ### `utils/MappingQueries.ts`
-CRUD für die `aufnahmen`-Tabelle. Typ `Aufnahme` enthält: `id`, `nummer` (kampagnen-lokale Sequenznummer), `feldkampagne_id`, `erstellt_am`, `gps_lat`, `gps_lon`, `utm_easting`, `utm_northing`, `utm_zone`, `notizen`, `status`. Exportiert `AufnahmeDetails` als Pick-Typ für Speicher-Operationen. Wichtige Funktionen:
-- `createAufnahme(anzahlHorizonte, feldkampagneId)` – legt Aufnahme an, vergibt `nummer` als MAX(nummer)+1 innerhalb der Kampagne, fügt n leere Horizonte ein.
+CRUD für die `aufnahmen`-Tabelle. Typ `Aufnahme` enthält: `id`, `nummer`, `feldkampagne_id`, `erstellt_am`, `status`, GPS-Felder (`gps_lat`, `gps_lon`, `utm_easting`, `utm_northing`, `utm_zone`), Profilfelder (`bodentyp`, `bodtyp_abk`, `humusform`, `humsfrm_abk`, `ausgangsgestein`, `grundigkeit`, `m_ue_nn`), Standortfelder (`reliefpos`, `expos`, `nutzung`, `vegetation`), Klimafelder (`witterung`, `mittl_n`, `mittl_temp`), `notizen`. `AufnahmeDetails` ist ein Pick aller Felder außer `id`, `nummer`, `feldkampagne_id`, `erstellt_am`, `status`. Funktionen:
+- `createAufnahme(anzahlHorizonte, feldkampagneId)` – legt Aufnahme an, vergibt `nummer` als MAX(nummer)+1 innerhalb der Kampagne.
 - `getAufnahme(id)`
-- `saveAufnahmeDetails(id, AufnahmeDetails)` – speichert lat/lon, UTM (easting, northing, zone) und Notizen.
+- `saveAufnahmeDetails(id, AufnahmeDetails)` – speichert alle 20 Formularfelder.
 - `deleteAufnahme(id)` – löscht Aufnahme + Horizonte per CASCADE.
 - `closeAufnahme(id)` / `reopenAufnahme(id)` – Status-Steuerung.
 
 ### `utils/HorizonQueries.ts`
-CRUD für die `horizonte`-Tabelle. Typ `Horizont` umfasst alle Formularfelder inkl. `horizontname`, `tiefe_oben`, `tiefe_unten`. Funktionen:
+CRUD für die `horizonte`-Tabelle. Typ `Horizont` umfasst alle Formularfelder: `horizontname`, `tiefe_oben`, `tiefe_unten`, `farbe_munsell`, `farbe_rgb`, `bodenart`, `anteil`, `notizen`, `ph_cacl2`, `humus`, `carbonat`, `pflanzenreste`, `feinwurzeln`, `trennbarkeit`, `lagerungsart`, `maechtigk_dm`, `status`. Funktionen:
 - `addHorizont(aufnahmeId)` – fügt neuen leeren Horizont an (MAX(nummer)+1).
 - `getHorizonteForAufnahme(aufnahmeId)` – alle Horizonte sortiert nach nummer.
 - `getHorizont(aufnahmeId, nummer)` – Einzeldatensatz.
-- `saveHorizont(aufnahmeId, nummer, data)` – aktualisiert alle Felder; Status wird automatisch abgeleitet: `vollstaendig` wenn `farbe_munsell` und `bodenart` beide belegt, sonst `angefangen`.
+- `saveHorizont(aufnahmeId, nummer, data)` – aktualisiert alle 16 Felder; Status wird automatisch abgeleitet: `vollstaendig` wenn `farbe_munsell` und `bodenart` beide belegt, sonst `angefangen`.
 
 ### `utils/csvExport.ts`
 Exportiert Aufnahmen + Horizonte als ZIP-Datei mit zwei CSVs:
-- `aufnahmen.csv` – eine Zeile pro Aufnahme mit allen Standortdaten (GPS, UTM, Notizen, Status).
-- `horizonte.csv` – eine Zeile pro Horizont, verknüpft via `aufnahme_id`.
+- `aufnahmen.csv` – eine Zeile pro Aufnahme mit allen Standort-, Profil- und Klimadaten.
+- `horizonte.csv` – eine Zeile pro Horizont mit allen Bodeneigenschaftsfeldern, verknüpft via `aufnahme_id`.
 
 Interne Funktion `buildAndShareZip(aufnahmen, zipFilename, dialogTitle)` wird von beiden öffentlichen Funktionen genutzt:
 - `exportAufnahmeAsZip(aufnahme)` – exportiert eine einzelne Aufnahme.

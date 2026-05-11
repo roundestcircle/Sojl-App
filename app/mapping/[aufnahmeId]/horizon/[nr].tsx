@@ -30,15 +30,24 @@ export default function HorizontScreen() {
   );
 
   const handleSave = (data: HorizontFormData) => {
+    const parseNum = (s: string) => { const n = parseFloat(s); return isNaN(n) ? null : n; };
     saveHorizont(aufnahmeId, nummer, {
-      horizontname: data.horizontname || null,
+      horizontname:  data.horizontname || null,
       farbe_munsell: data.farbe_munsell || null,
-      farbe_rgb: null,
-      bodenart: data.bodenart || null,
-      anteil: data.anteil || null,
-      notizen: data.notizen || null,
-      tiefe_oben: data.tiefe_oben || null,
-      tiefe_unten: data.tiefe_unten || null,
+      farbe_rgb:     null,
+      bodenart:      data.bodenart || null,
+      anteil:        data.anteil || null,
+      notizen:       data.notizen || null,
+      tiefe_oben:    data.tiefe_oben || null,
+      tiefe_unten:   data.tiefe_unten || null,
+      ph_cacl2:      parseNum(data.ph_cacl2),
+      humus:         data.humus || null,
+      carbonat:      data.carbonat || null,
+      pflanzenreste: data.pflanzenreste || null,
+      feinwurzeln:   data.feinwurzeln || null,
+      trennbarkeit:  data.trennbarkeit || null,
+      lagerungsart:  data.lagerungsart || null,
+      maechtigk_dm:  data.maechtigk_dm || null,
     });
   };
 

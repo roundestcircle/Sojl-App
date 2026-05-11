@@ -85,6 +85,40 @@ export function initDatabase() {
   try {
     db.execSync(`ALTER TABLE aufnahmen ADD COLUMN nummer INTEGER`);
   } catch {}
+
+  // Migration: add profile/site fields to aufnahmen
+  for (const col of [
+    'ADD COLUMN bodentyp TEXT',
+    'ADD COLUMN bodtyp_abk TEXT',
+    'ADD COLUMN humusform TEXT',
+    'ADD COLUMN humsfrm_abk TEXT',
+    'ADD COLUMN m_ue_nn REAL',
+    'ADD COLUMN witterung TEXT',
+    'ADD COLUMN mittl_n REAL',
+    'ADD COLUMN mittl_temp REAL',
+    'ADD COLUMN nutzung TEXT',
+    'ADD COLUMN vegetation TEXT',
+    'ADD COLUMN reliefpos TEXT',
+    'ADD COLUMN expos TEXT',
+    'ADD COLUMN ausgangsgestein TEXT',
+    'ADD COLUMN grundigkeit REAL',
+  ]) {
+    try { db.execSync(`ALTER TABLE aufnahmen ${col}`); } catch {}
+  }
+
+  // Migration: add detailed horizon fields
+  for (const col of [
+    'ADD COLUMN ph_cacl2 REAL',
+    'ADD COLUMN humus TEXT',
+    'ADD COLUMN carbonat TEXT',
+    'ADD COLUMN pflanzenreste TEXT',
+    'ADD COLUMN feinwurzeln TEXT',
+    'ADD COLUMN trennbarkeit TEXT',
+    'ADD COLUMN lagerungsart TEXT',
+    'ADD COLUMN maechtigk_dm TEXT',
+  ]) {
+    try { db.execSync(`ALTER TABLE horizonte ${col}`); } catch {}
+  }
 }
 
 export default db;

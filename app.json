@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "bachelorproject",
+    "name": "Sojl",
     "slug": "bachelorproject",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,10 +12,9 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#145600",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "monochromeImage": "./assets/images/icon.png"
       },
       "predictiveBackGestureEnabled": false
     },

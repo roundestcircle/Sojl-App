@@ -9,31 +9,53 @@ import {
 } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { styles } from "@/styles/styles";
+import { colors } from "@/styles/colors";
 import {
   closeAufnahme,
   getAufnahme,
-  saveAufnahmeDetails,
   type Aufnahme,
-  type AufnahmeDetails,
 } from "@/utils/MappingQueries";
 import { addHorizont, getHorizonteForAufnahme, type Horizont } from "@/utils/HorizonQueries";
 import HorizontButton from "@/components/HorizonButton";
-import AufnahmeForm from "@/components/AufnahmeForm";
+
+// ─── Standortdaten status ─────────────────────────────────────────────────────
+
+type StandortStatus = "leer" | "begonnen" | "abgeschlossen";
+
+function deriveStandortStatus(a: Aufnahme): StandortStatus {
+  const hasGps = a.gps_lat != null || a.utm_easting != null;
+  const allFilled =
+    hasGps &&
+    a.bodentyp != null && a.bodtyp_abk != null &&
+    a.humusform != null && a.humsfrm_abk != null &&
+    a.ausgangsgestein != null && a.grundigkeit != null &&
+    a.m_ue_nn != null && a.reliefpos != null && a.expos != null &&
+    a.nutzung != null && a.vegetation != null &&
+    a.witterung != null && a.mittl_n != null && a.mittl_temp != null;
+  const anyFilled =
+    hasGps || a.bodentyp != null || a.humusform != null ||
+    a.reliefpos != null || a.nutzung != null || a.witterung != null;
+  if (allFilled) return "abgeschlossen";
+  if (anyFilled) return "begonnen";
+  return "leer";
+}
+
+const standortBadge: Record<StandortStatus, { label: string; bg: string }> = {
+  leer:          { label: "leer",          bg: "#6c757d" },
+  begonnen:      { label: "begonnen",      bg: "#e0a020" },
+  abgeschlossen: { label: "abgeschlossen", bg: colors.primary },
+};
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function HorizonOverview() {
   const { aufnahmeId: aufnahmeIdParam } = useLocalSearchParams<{ aufnahmeId: string }>();
   const aufnahmeId = parseInt(aufnahmeIdParam, 10);
-
   const navigation = useNavigation();
+
   const [horizonte, setHorizonte] = useState<Horizont[]>([]);
   const [aufnahme, setAufnahme] = useState<Aufnahme | null>(null);
   const [showUnvollstaendigModal, setShowUnvollstaendigModal] = useState(false);
-
-  useLayoutEffect(() => {
-    if (aufnahme) {
-      navigation.setOptions({ title: `Aufnahme ${aufnahme.nummer ?? aufnahme.id}` });
-    }
-  }, [navigation, aufnahme]);
 
   useFocusEffect(
     useCallback(() => {
@@ -42,9 +64,11 @@ export default function HorizonOverview() {
     }, [aufnahmeId]),
   );
 
-  const handleSaveDetails = (data: AufnahmeDetails) => {
-    saveAufnahmeDetails(aufnahmeId, data);
-  };
+  useLayoutEffect(() => {
+    if (aufnahme) {
+      navigation.setOptions({ title: `Aufnahme ${aufnahme.nummer ?? aufnahme.id}` });
+    }
+  }, [navigation, aufnahme]);
 
   const handleAddHorizont = () => {
     addHorizont(aufnahmeId);
@@ -74,6 +98,9 @@ export default function HorizonOverview() {
     }
   };
 
+  const standortStatus = aufnahme ? deriveStandortStatus(aufnahme) : "leer";
+  const badge = standortBadge[standortStatus];
+
   return (
     <>
       <ScrollView
@@ -81,9 +108,18 @@ export default function HorizonOverview() {
         contentContainerStyle={localStyles.content}
         keyboardShouldPersistTaps="handled"
       >
-        {aufnahme && (
-          <AufnahmeForm initialData={aufnahme} onSave={handleSaveDetails} />
-        )}
+
+        {/* ── Standortdaten button ── */}
+        <TouchableOpacity
+          style={localStyles.standortBtn}
+          onPress={() => router.push(`/mapping/${aufnahmeId}/standort` as any)}
+          activeOpacity={0.75}
+        >
+          <Text style={localStyles.standortName}>Standortdaten</Text>
+          <View style={[localStyles.badge, { backgroundColor: badge.bg }]}>
+            <Text style={localStyles.badgeText}>{badge.label}</Text>
+          </View>
+        </TouchableOpacity>
 
         {/* ── Horizon list ── */}
         <View style={localStyles.horizonList}>
@@ -103,8 +139,10 @@ export default function HorizonOverview() {
         <TouchableOpacity style={[styles.button, { marginTop: 8 }]} onPress={handleAbschliessen}>
           <Text style={styles.maintext}>Abschließen</Text>
         </TouchableOpacity>
+
       </ScrollView>
 
+      {/* ── Unvollständig confirmation modal ── */}
       <Modal visible={showUnvollstaendigModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -136,6 +174,34 @@ const localStyles = StyleSheet.create({
     padding: 16,
     gap: 8,
     paddingBottom: 32,
+  },
+  standortBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  standortName: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#333",
+  },
+  badge: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
   horizonList: {
     gap: 12,

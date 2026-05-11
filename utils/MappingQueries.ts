@@ -14,6 +14,20 @@ export type Aufnahme = {
   utm_zone: string | null;
   notizen: string | null;
   status: "offen" | "abgeschlossen";
+  bodentyp: string | null;
+  bodtyp_abk: string | null;
+  humusform: string | null;
+  humsfrm_abk: string | null;
+  m_ue_nn: number | null;
+  witterung: string | null;
+  mittl_n: number | null;
+  mittl_temp: number | null;
+  nutzung: string | null;
+  vegetation: string | null;
+  reliefpos: string | null;
+  expos: string | null;
+  ausgangsgestein: string | null;
+  grundigkeit: number | null;
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -57,18 +71,43 @@ export function getAufnahme(id: number): Aufnahme | null {
   ) ?? null;
 }
 
-export type AufnahmeDetails = Pick<Aufnahme, "gps_lat" | "gps_lon" | "utm_easting" | "utm_northing" | "utm_zone" | "notizen">;
+export type AufnahmeDetails = Pick<Aufnahme,
+  | "gps_lat" | "gps_lon" | "utm_easting" | "utm_northing" | "utm_zone" | "notizen"
+  | "bodentyp" | "bodtyp_abk" | "humusform" | "humsfrm_abk" | "m_ue_nn"
+  | "witterung" | "mittl_n" | "mittl_temp" | "nutzung" | "vegetation"
+  | "reliefpos" | "expos" | "ausgangsgestein" | "grundigkeit"
+>;
 
-/** Saves location details (GPS + notes) for an Aufnahme. */
+/** Saves all form details for an Aufnahme. */
 export function saveAufnahmeDetails(id: number, data: AufnahmeDetails) {
   db.runSync(
-    `UPDATE aufnahmen SET gps_lat = ?, gps_lon = ?, utm_easting = ?, utm_northing = ?, utm_zone = ?, notizen = ? WHERE id = ?`,
+    `UPDATE aufnahmen SET
+       gps_lat = ?, gps_lon = ?, utm_easting = ?, utm_northing = ?, utm_zone = ?,
+       notizen = ?, bodentyp = ?, bodtyp_abk = ?, humusform = ?, humsfrm_abk = ?,
+       m_ue_nn = ?, witterung = ?, mittl_n = ?, mittl_temp = ?,
+       nutzung = ?, vegetation = ?, reliefpos = ?, expos = ?,
+       ausgangsgestein = ?, grundigkeit = ?
+     WHERE id = ?`,
     data.gps_lat ?? null,
     data.gps_lon ?? null,
     data.utm_easting ?? null,
     data.utm_northing ?? null,
     data.utm_zone ?? null,
     data.notizen ?? null,
+    data.bodentyp ?? null,
+    data.bodtyp_abk ?? null,
+    data.humusform ?? null,
+    data.humsfrm_abk ?? null,
+    data.m_ue_nn ?? null,
+    data.witterung ?? null,
+    data.mittl_n ?? null,
+    data.mittl_temp ?? null,
+    data.nutzung ?? null,
+    data.vegetation ?? null,
+    data.reliefpos ?? null,
+    data.expos ?? null,
+    data.ausgangsgestein ?? null,
+    data.grundigkeit ?? null,
     id,
   );
 }

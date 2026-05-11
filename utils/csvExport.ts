@@ -17,6 +17,20 @@ type AufnahmeCSVRow = {
   utm_easting: string;
   utm_northing: string;
   utm_zone: string;
+  m_ue_nn: string;
+  bodentyp: string;
+  bodtyp_abk: string;
+  humusform: string;
+  humsfrm_abk: string;
+  ausgangsgestein: string;
+  grundigkeit: string;
+  reliefpos: string;
+  expos: string;
+  nutzung: string;
+  vegetation: string;
+  witterung: string;
+  mittl_n: string;
+  mittl_temp: string;
   notizen: string;
 };
 
@@ -26,12 +40,20 @@ type HorizontCSVRow = {
   horizontname: string;
   tiefe_oben: string;
   tiefe_unten: string;
+  maechtigk_dm: string;
   farbe_munsell: string;
   farbe_rgb_r: string;
   farbe_rgb_g: string;
   farbe_rgb_b: string;
   bodenart: string;
   anteil: string;
+  ph_cacl2: string;
+  humus: string;
+  carbonat: string;
+  pflanzenreste: string;
+  feinwurzeln: string;
+  trennbarkeit: string;
+  lagerungsart: string;
   notizen: string;
   status: string;
 };
@@ -40,15 +62,29 @@ type HorizontCSVRow = {
 
 function buildRows(aufnahmen: Aufnahme[]): { aufnahmenRows: AufnahmeCSVRow[]; horizonteRows: HorizontCSVRow[] } {
   const aufnahmenRows: AufnahmeCSVRow[] = aufnahmen.map((a) => ({
-    aufnahme_id:  a.id,
-    erstellt_am:  a.erstellt_am,
-    status:       a.status,
-    gps_lat:      a.gps_lat != null ? String(a.gps_lat) : "",
-    gps_lon:      a.gps_lon != null ? String(a.gps_lon) : "",
-    utm_easting:  a.utm_easting != null ? String(a.utm_easting) : "",
-    utm_northing: a.utm_northing != null ? String(a.utm_northing) : "",
-    utm_zone:     a.utm_zone ?? "",
-    notizen:      a.notizen ?? "",
+    aufnahme_id:     a.id,
+    erstellt_am:     a.erstellt_am,
+    status:          a.status,
+    gps_lat:         a.gps_lat != null ? String(a.gps_lat) : "",
+    gps_lon:         a.gps_lon != null ? String(a.gps_lon) : "",
+    utm_easting:     a.utm_easting != null ? String(a.utm_easting) : "",
+    utm_northing:    a.utm_northing != null ? String(a.utm_northing) : "",
+    utm_zone:        a.utm_zone ?? "",
+    m_ue_nn:         a.m_ue_nn != null ? String(a.m_ue_nn) : "",
+    bodentyp:        a.bodentyp ?? "",
+    bodtyp_abk:      a.bodtyp_abk ?? "",
+    humusform:       a.humusform ?? "",
+    humsfrm_abk:     a.humsfrm_abk ?? "",
+    ausgangsgestein: a.ausgangsgestein ?? "",
+    grundigkeit:     a.grundigkeit != null ? String(a.grundigkeit) : "",
+    reliefpos:       a.reliefpos ?? "",
+    expos:           a.expos ?? "",
+    nutzung:         a.nutzung ?? "",
+    vegetation:      a.vegetation ?? "",
+    witterung:       a.witterung ?? "",
+    mittl_n:         a.mittl_n != null ? String(a.mittl_n) : "",
+    mittl_temp:      a.mittl_temp != null ? String(a.mittl_temp) : "",
+    notizen:         a.notizen ?? "",
   }));
 
   const horizonteRows: HorizontCSVRow[] = [];
@@ -61,12 +97,20 @@ function buildRows(aufnahmen: Aufnahme[]): { aufnahmenRows: AufnahmeCSVRow[]; ho
         horizontname:  h.horizontname ?? "",
         tiefe_oben:    h.tiefe_oben ?? "",
         tiefe_unten:   h.tiefe_unten ?? "",
+        maechtigk_dm:  h.maechtigk_dm ?? "",
         farbe_munsell: h.farbe_munsell ?? "",
         farbe_rgb_r:   rgb ? String(rgb.r) : "",
         farbe_rgb_g:   rgb ? String(rgb.g) : "",
         farbe_rgb_b:   rgb ? String(rgb.b) : "",
         bodenart:      h.bodenart ?? "",
         anteil:        h.anteil ?? "",
+        ph_cacl2:      h.ph_cacl2 != null ? String(h.ph_cacl2) : "",
+        humus:         h.humus ?? "",
+        carbonat:      h.carbonat ?? "",
+        pflanzenreste: h.pflanzenreste ?? "",
+        feinwurzeln:   h.feinwurzeln ?? "",
+        trennbarkeit:  h.trennbarkeit ?? "",
+        lagerungsart:  h.lagerungsart ?? "",
         notizen:       h.notizen ?? "",
         status:        h.status,
       });

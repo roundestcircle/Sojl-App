@@ -18,6 +18,7 @@ export default function MappingLayout() {
       <Stack.Screen name="index" options={{ title: 'Feldkampagnen' }} />
       <Stack.Screen name="kampagne/[kampagneId]/index" options={{ title: 'Kampagne' }} />
       <Stack.Screen name="[aufnahmeId]/index" options={{ title: 'Aufnahme' }} />
+      <Stack.Screen name="[aufnahmeId]/standort" options={{ title: 'Standortdaten' }} />
       <Stack.Screen name="[aufnahmeId]/horizon/[nr]" options={{ title: 'Horizont' }} />
     </Stack>
   );

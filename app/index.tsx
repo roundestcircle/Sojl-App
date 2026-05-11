@@ -10,19 +10,14 @@ export default function Index() {
         Kartierung
         </Text>
       </Link>
-      <Link href="/soiltexture" style={styles.button}>
-        <Text style={styles.maintext}>
-        Nur Bodenart bestimmen
-        </Text>
-      </Link>
       <Link href="/soilcolor" style={styles.button}>
         <Text style={styles.maintext}>
         Nur Bodenfarbe bestimmen
         </Text>
       </Link>
-      <Link href="/soilshare" style={styles.button}>
+      <Link href={"/tools" as any} style={styles.button}>
         <Text style={styles.maintext}>
-        Nur Bodenanteil (z.B. Skelett) bestimmen
+        Weitere Kartierungsunterstützung
         </Text>
       </Link>
       <Link href="/about" style={styles.button}>

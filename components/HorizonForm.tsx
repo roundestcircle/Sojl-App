@@ -12,8 +12,8 @@ import HumusgehaltTool from "@/components/HumusgehaltTool";
 import CarbonatTool from "@/components/CarbonatTool";
 import PflanzenresteTool from "@/components/PflanzenresteTool";
 import FeinwurzelnTool from "@/components/FeinwurzelnTool";
-import TrennbarkeitTool from "@/components/TrennbarkeitTool";
-import LagerungsartTool from "@/components/LagerungsartTool";
+import GefuegestabilitaetTool from "@/components/GefuegestabilitaetTool";
+import GefuegeTool from "@/components/GefuegeTool";
 
 // ─── Form shape ────────────────────────────────────────────────────────────────
 
@@ -124,27 +124,30 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
 
           {/* ── Bodenart ── */}
           <Section title="Bodenart / Textur">
-            <Controller
-              control={control}
-              name="bodenart"
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="z.B. Su2"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={onChange}
-                  value={value}
-                />
-              )}
-            />
-            <TouchableOpacity style={styles.actionButton} onPress={() => setActiveModal('bodenart')}>
-              <Text style={styles.actionButtonText}>Bodenart bestimmen</Text>
-            </TouchableOpacity>
+            <View style={localStyles.fieldWithTool}>
+              <Controller
+                control={control}
+                name="bodenart"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    placeholder="z.B. Su2"
+                    placeholderTextColor={colors.primary + "66"}
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                )}
+              />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('bodenart')}>
+                <Text style={styles.actionButtonText}>bestimmen</Text>
+              </TouchableOpacity>
+            </View>
           </Section>
 
           {/* ── Bodeneigenschaften ── */}
           <Section title="Bodeneigenschaften">
 
+            {/* pH + Mächtigkeit: no tools, keep paired layout */}
             <View style={styles.formRow}>
               <View style={styles.halfField}>
                 <Text style={styles.fieldLabel}>pH (CaCl₂)</Text>
@@ -170,131 +173,102 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
               </View>
             </View>
 
-            <View style={styles.formRow}>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Humusgehalt</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="z.B. h2"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={(v) => setValue("humus", v)}
-                  defaultValue={initialData?.humus ?? ""}
-                />
-                <TouchableOpacity style={styles.actionButton} onPress={() => setActiveModal('humus')}>
-                  <Text style={styles.actionButtonText}>Humusgehalt bestimmen</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Carbonatgehalt</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="z.B. C0"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={(v) => setValue("carbonat", v)}
-                  defaultValue={initialData?.carbonat ?? ""}
-                />
-                <TouchableOpacity style={styles.actionButton} onPress={() => setActiveModal('carbonat')}>
-                  <Text style={styles.actionButtonText}>Carbonatgehalt bestimmen</Text>
-                </TouchableOpacity>
-              </View>
+            <Text style={styles.fieldLabel}>Humusgehalt</Text>
+            <View style={localStyles.fieldWithTool}>
+              <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. h2"
+                placeholderTextColor={colors.primary + "66"}
+                onChangeText={(v) => setValue("humus", v)}
+                defaultValue={initialData?.humus ?? ""} />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('humus')}>
+                <Text style={styles.actionButtonText}>bestimmen</Text>
+              </TouchableOpacity>
             </View>
 
-            <View style={styles.formRow}>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Pflanzenreste</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="z.B. 4"
+            <Text style={styles.fieldLabel}>Carbonatgehalt</Text>
+            <View style={localStyles.fieldWithTool}>
+              <Controller control={control} name="carbonat" render={({ field: { onChange, value } }) => (
+                <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. C0"
                   placeholderTextColor={colors.primary + "66"}
-                  onChangeText={(v) => setValue("pflanzenreste", v)}
-                  defaultValue={initialData?.pflanzenreste ?? ""}
-                />
-                <TouchableOpacity style={styles.actionButton} onPress={() => setActiveModal('pflanzenreste')}>
-                  <Text style={styles.actionButtonText}>Pflanzenreste bestimmen</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Feinwurzeln</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="z.B. w2"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={(v) => setValue("feinwurzeln", v)}
-                  defaultValue={initialData?.feinwurzeln ?? ""}
-                />
-                <TouchableOpacity style={styles.actionButton} onPress={() => setActiveModal('feinwurzeln')}>
-                  <Text style={styles.actionButtonText}>Feinwurzeln bestimmen</Text>
-                </TouchableOpacity>
-              </View>
+                  onChangeText={onChange} value={value} />
+              )} />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('carbonat')}>
+                <Text style={styles.actionButtonText}>bestimmen</Text>
+              </TouchableOpacity>
             </View>
 
-            <View style={styles.formRow}>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Trennbarkeit</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="z.B. t2"
+            <Text style={styles.fieldLabel}>Pflanzenreste</Text>
+            <View style={localStyles.fieldWithTool}>
+              <Controller control={control} name="pflanzenreste" render={({ field: { onChange, value } }) => (
+                <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 4"
                   placeholderTextColor={colors.primary + "66"}
-                  onChangeText={(v) => setValue("trennbarkeit", v)}
-                  defaultValue={initialData?.trennbarkeit ?? ""}
-                />
-                <TouchableOpacity style={styles.actionButton} onPress={() => setActiveModal('trennbarkeit')}>
-                  <Text style={styles.actionButtonText}>Trennbarkeit bestimmen</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Lagerungsart</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="z.B. Ld2"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={(v) => setValue("lagerungsart", v)}
-                  defaultValue={initialData?.lagerungsart ?? ""}
-                />
-                <TouchableOpacity style={styles.actionButton} onPress={() => setActiveModal('lagerungsart')}>
-                  <Text style={styles.actionButtonText}>Lagerungsart bestimmen</Text>
-                </TouchableOpacity>
-              </View>
+                  onChangeText={onChange} value={value} />
+              )} />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('pflanzenreste')}>
+                <Text style={styles.actionButtonText}>bestimmen</Text>
+              </TouchableOpacity>
             </View>
 
-            {/* ── Bodenfarbe ── */}
+            <Text style={styles.fieldLabel}>Feinwurzeln</Text>
+            <View style={localStyles.fieldWithTool}>
+              <Controller control={control} name="feinwurzeln" render={({ field: { onChange, value } }) => (
+                <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. w2"
+                  placeholderTextColor={colors.primary + "66"}
+                  onChangeText={onChange} value={value} />
+              )} />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('feinwurzeln')}>
+                <Text style={styles.actionButtonText}>bestimmen</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.fieldLabel}>Gefügestabilität</Text>
+            <View style={localStyles.fieldWithTool}>
+              <Controller control={control} name="trennbarkeit" render={({ field: { onChange, value } }) => (
+                <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. t2"
+                  placeholderTextColor={colors.primary + "66"}
+                  onChangeText={onChange} value={value} />
+              )} />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('trennbarkeit')}>
+                <Text style={styles.actionButtonText}>bestimmen</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.fieldLabel}>Gefüge</Text>
+            <View style={localStyles.fieldWithTool}>
+              <Controller control={control} name="lagerungsart" render={({ field: { onChange, value } }) => (
+                <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. Ld2"
+                  placeholderTextColor={colors.primary + "66"}
+                  onChangeText={onChange} value={value} />
+              )} />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('lagerungsart')}>
+                <Text style={styles.actionButtonText}>bestimmen</Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.fieldLabel}>Bodenfarbe (Munsell)</Text>
-            <Controller
-              control={control}
-              name="farbe_munsell"
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="z.B. 10YR 4/3"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={onChange}
-                  value={value}
-                />
-              )}
-            />
-            <TouchableOpacity style={styles.actionButton} onPress={() => setActiveModal('farbe')}>
-              <Text style={styles.actionButtonText}>Farbe bestimmen</Text>
-            </TouchableOpacity>
+            <View style={localStyles.fieldWithTool}>
+              <Controller control={control} name="farbe_munsell"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 10YR 4/3"
+                    placeholderTextColor={colors.primary + "66"} onChangeText={onChange} value={value} />
+                )}
+              />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('farbe')}>
+                <Text style={styles.actionButtonText}>bestimmen</Text>
+              </TouchableOpacity>
+            </View>
 
-            {/* ── Skelettanteil ── */}
             <Text style={styles.fieldLabel}>Skelettanteil</Text>
-            <Controller
-              control={control}
-              name="anteil"
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="z.B. 35"
-                  keyboardType="number-pad"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={onChange}
-                  value={value}
-                />
-              )}
-            />
-            <TouchableOpacity style={styles.actionButton} onPress={() => setActiveModal('anteil')}>
-              <Text style={styles.actionButtonText}>Anteil schätzen</Text>
-            </TouchableOpacity>
+            <View style={localStyles.fieldWithTool}>
+              <Controller control={control} name="anteil"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 35" keyboardType="number-pad"
+                    placeholderTextColor={colors.primary + "66"} onChangeText={onChange} value={value} />
+                )}
+              />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('anteil')}>
+                <Text style={styles.actionButtonText}>bestimmen</Text>
+              </TouchableOpacity>
+            </View>
 
           </Section>
 
@@ -374,19 +348,19 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
         </SafeAreaView>
       </Modal>
 
-      {/* ── Trennbarkeit modal ── */}
+      {/* ── Gefügestabilität modal ── */}
       <Modal visible={activeModal === 'trennbarkeit'} animationType="slide" onRequestClose={() => setActiveModal(null)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
           <ModalHeader onClose={() => setActiveModal(null)} />
-          <TrennbarkeitTool onConfirm={(v) => { setValue('trennbarkeit', v); setActiveModal(null); }} />
+          <GefuegestabilitaetTool onConfirm={(v) => { setValue('trennbarkeit', v); setActiveModal(null); }} />
         </SafeAreaView>
       </Modal>
 
-      {/* ── Lagerungsart modal ── */}
+      {/* ── Gefüge modal ── */}
       <Modal visible={activeModal === 'lagerungsart'} animationType="slide" onRequestClose={() => setActiveModal(null)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
           <ModalHeader onClose={() => setActiveModal(null)} />
-          <LagerungsartTool onConfirm={(v) => { setValue('lagerungsart', v); setActiveModal(null); }} />
+          <GefuegeTool onConfirm={(v) => { setValue('lagerungsart', v); setActiveModal(null); }} />
         </SafeAreaView>
       </Modal>
     </>
@@ -423,6 +397,14 @@ const localStyles = StyleSheet.create({
     padding: 16,
     gap: 8,
     paddingBottom: 40,
+  },
+  fieldWithTool: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  toolBtn: {
+    paddingHorizontal: 10,
   },
   multiline: {
     minHeight: 100,

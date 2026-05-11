@@ -22,8 +22,9 @@ export default function ToolsLayout() {
       <Stack.Screen name="carbonat" options={{ title: 'Carbonatgehalt' }} />
       <Stack.Screen name="pflanzenreste" options={{ title: 'Pflanzenreste' }} />
       <Stack.Screen name="feinwurzeln" options={{ title: 'Feinwurzeln' }} />
-      <Stack.Screen name="trennbarkeit" options={{ title: 'Trennbarkeit' }} />
-      <Stack.Screen name="lagerungsart" options={{ title: 'Lagerungsart' }} />
+      <Stack.Screen name="gefuegestabilitaet" options={{ title: 'Gefügestabilität' }} />
+      <Stack.Screen name="gefuege" options={{ title: 'Gefüge' }} />
+      <Stack.Screen name="bodentyp" options={{ title: 'Bodentyp' }} />
     </Stack>
   );
 }

@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "Sojl",
-    "slug": "bachelorproject",
-    "version": "1.0.0",
+    "slug": "sojl",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "bachelorproject",
+    "scheme": "sojl",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true

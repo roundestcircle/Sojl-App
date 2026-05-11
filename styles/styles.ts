@@ -20,9 +20,10 @@ export const styles = StyleSheet.create({
   },
 
   footnote: {
-    fontSize: 9,
     position: 'absolute',
     bottom: 20,
+    alignItems: 'center',
+    gap: 4,
   },
 
   text: {

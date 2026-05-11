@@ -8,6 +8,9 @@ export default function ToolsIndex() {
       <Link href="/tools/bodenart" style={styles.button}>
         <Text style={styles.maintext}>Bodenart bestimmen</Text>
       </Link>
+      <Link href="/tools/bodentyp" style={styles.button}>
+        <Text style={styles.maintext}>Bodentyp bestimmen</Text>
+      </Link>
       <Link href="/tools/anteil" style={styles.button}>
         <Text style={styles.maintext}>Anteil schätzen</Text>
       </Link>
@@ -23,11 +26,11 @@ export default function ToolsIndex() {
       <Link href="/tools/feinwurzeln" style={styles.button}>
         <Text style={styles.maintext}>Feinwurzeln bestimmen</Text>
       </Link>
-      <Link href="/tools/trennbarkeit" style={styles.button}>
-        <Text style={styles.maintext}>Trennbarkeit bestimmen</Text>
+      <Link href="/tools/gefuegestabilitaet" style={styles.button}>
+        <Text style={styles.maintext}>Gefügestabilität bestimmen</Text>
       </Link>
-      <Link href="/tools/lagerungsart" style={styles.button}>
-        <Text style={styles.maintext}>Lagerungsart bestimmen</Text>
+      <Link href="/tools/gefuege" style={styles.button}>
+        <Text style={styles.maintext}>Gefüge bestimmen</Text>
       </Link>
     </ScrollView>
   );

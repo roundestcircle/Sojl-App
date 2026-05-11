@@ -20,6 +20,7 @@ import {
   type Feldkampagne,
 } from "@/utils/FeldkampagneQueries";
 import { InstructionModal } from "@/components/InstructionModal";
+import StatusBadge from "@/components/StatusBadge";
 
 export default function FeldkampagnenScreen() {
   const [kampagnen, setKampagnen] = useState<Feldkampagne[]>([]);
@@ -83,6 +84,7 @@ export default function FeldkampagnenScreen() {
               <Text style={styles.rowTitle}>{item.name}</Text>
               <Text style={styles.rowSub}>{formatDate(item.erstellt_am)}</Text>
             </View>
+            <StatusBadge status={item.status} />
             <Text style={localStyles.chevron}>›</Text>
           </TouchableOpacity>
         )}

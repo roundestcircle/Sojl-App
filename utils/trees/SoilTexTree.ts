@@ -1,4 +1,6 @@
-export const SoilTexTree = {
+import type { DecisionTreeData } from '../DecisionTreeTypes';
+
+export const SoilTexTree: DecisionTreeData = {
     id: 'start',
     question: 'Wie gut lässt sich der Boden ausrollen?',
     options: [

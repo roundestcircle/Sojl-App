@@ -7,6 +7,7 @@ export type Feldkampagne = {
   id: number;
   name: string;
   erstellt_am: string;
+  status: "offen" | "abgeschlossen";
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -41,6 +42,11 @@ export function getAufnahmenForFeldkampagne(sessionId: number): Aufnahme[] {
     `SELECT * FROM aufnahmen WHERE feldkampagne_id = ? ORDER BY erstellt_am DESC`,
     sessionId,
   );
+}
+
+/** Sets a Feldkampagne status to 'abgeschlossen'. */
+export function closeFeldkampagne(id: number) {
+  db.runSync(`UPDATE feldkampagnen SET status = 'abgeschlossen' WHERE id = ?`, id);
 }
 
 /** Deletes a Feldkampagne and all its Aufnahmen + Horizonte (via CASCADE). */

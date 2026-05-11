@@ -15,7 +15,9 @@ import { colors } from "@/styles/colors";
 import {
   getAufnahmenForFeldkampagne,
   getFeldkampagne,
+  closeFeldkampagne,
 } from "@/utils/FeldkampagneQueries";
+import StatusBadge from "@/components/StatusBadge";
 import { getHorizonteForAufnahme } from "@/utils/HorizonQueries";
 import { exportAufnahmeAsZip, exportKampagneAsZip } from "@/utils/csvExport";
 import { createAufnahme, deleteAufnahme, type Aufnahme } from "@/utils/MappingQueries";
@@ -32,6 +34,7 @@ export default function SessionDetailScreen() {
   const [exportingId, setExportingId] = useState<number | null>(null);
   const [exportingCampaign, setExportingCampaign] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AufnahmeRow | null>(null);
+  const [showOffeneWarnung, setShowOffeneWarnung] = useState(false);
 
   useLayoutEffect(() => {
     if (sessionName) navigation.setOptions({ title: sessionName });
@@ -71,6 +74,20 @@ export default function SessionDetailScreen() {
     }
   };
 
+  const handleBeenden = () => {
+    const offene = aufnahmen.filter((a) => a.status !== "abgeschlossen");
+    if (offene.length > 0) {
+      setShowOffeneWarnung(true);
+    } else {
+      doBeenden();
+    }
+  };
+
+  const doBeenden = () => {
+    closeFeldkampagne(id);
+    router.replace("/mapping");
+  };
+
   const confirmDelete = () => {
     if (!deleteTarget) return;
     deleteAufnahme(deleteTarget.id);
@@ -105,16 +122,7 @@ export default function SessionDetailScreen() {
                   {formatDate(item.erstellt_am)} · {item.horizontCount} Horizont{item.horizontCount !== 1 ? "e" : ""}
                 </Text>
               </View>
-              <View
-                style={[
-                  localStyles.badge,
-                  { backgroundColor: item.status === "abgeschlossen" ? colors.primary : "#e0a020" },
-                ]}
-              >
-                <Text style={localStyles.badgeText}>
-                  {item.status === "abgeschlossen" ? "abgeschlossen" : "offen"}
-                </Text>
-              </View>
+              <StatusBadge status={item.status} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -144,7 +152,7 @@ export default function SessionDetailScreen() {
 
       <TouchableOpacity
         style={[styles.button, localStyles.bottomBtn]}
-        onPress={() => router.push("/mapping")}
+        onPress={handleBeenden}
       >
         <Text style={styles.maintext}>Kampagne beenden</Text>
       </TouchableOpacity>
@@ -160,6 +168,32 @@ export default function SessionDetailScreen() {
           <Text style={styles.actionButtonText}>Kampagne exportieren (ZIP)</Text>
         )}
       </TouchableOpacity>
+
+      {/* ── Offene Aufnahmen Warnung ── */}
+      <Modal visible={showOffeneWarnung} transparent animationType="fade" onRequestClose={() => setShowOffeneWarnung(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Offene Aufnahmen</Text>
+            <Text style={styles.modalText}>
+              {aufnahmen.filter((a) => a.status !== "abgeschlossen").length} Aufnahme{aufnahmen.filter((a) => a.status !== "abgeschlossen").length !== 1 ? "n sind" : " ist"} noch offen. Kampagne trotzdem beenden?
+            </Text>
+            <View style={localStyles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#e0a020" }]}
+                onPress={() => { setShowOffeneWarnung(false); doBeenden(); }}
+              >
+                <Text style={styles.modalButtonText}>Trotzdem beenden</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#888" }]}
+                onPress={() => setShowOffeneWarnung(false)}
+              >
+                <Text style={styles.modalButtonText}>Abbrechen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Delete Aufnahme confirmation modal ── */}
       <Modal visible={deleteTarget !== null} transparent animationType="fade" onRequestClose={() => setDeleteTarget(null)}>
@@ -214,17 +248,6 @@ const localStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 12,
-  },
-  badge: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
   },
   exportBtn: {
     width: 52,

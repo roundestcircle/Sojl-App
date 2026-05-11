@@ -6,10 +6,10 @@ type Props = {
   onConfirm?: (value: string) => void;
 };
 
-export default function LagerungsartTool({ onConfirm }: Props) {
+export default function GefuegestabilitaetTool({ onConfirm }: Props) {
   return (
     <View style={localStyles.container}>
-      <Text style={localStyles.placeholder}>Lagerungsart-Bestimmung</Text>
+      <Text style={localStyles.placeholder}>Gefügestabilität-Bestimmung</Text>
       <Text style={localStyles.sub}>Inhalt folgt</Text>
       {onConfirm && (
         <TouchableOpacity style={[styles.actionButton, localStyles.btn]} onPress={() => onConfirm('test')}>

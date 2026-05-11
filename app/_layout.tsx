@@ -24,8 +24,6 @@ export default function RootLayout() {
       <Stack.Screen name="soilcolor" options={{ title: 'Bodenfarbe' }} />
       <Stack.Screen name="mapping" options={{ headerShown: false }} />
       <Stack.Screen name="tools" options={{ headerShown: false }} />
-      <Stack.Screen name="soiltexture" options={{ title: 'Bodenart' }} />
-      <Stack.Screen name="soilshare" options={{ title: 'Anteil' }} />
     </Stack>
   );
 }

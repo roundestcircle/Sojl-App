@@ -51,6 +51,11 @@ export function initDatabase() {
     // Column already exists — safe to ignore
   }
 
+  // Migration: add status to feldkampagnen
+  try {
+    db.execSync(`ALTER TABLE feldkampagnen ADD COLUMN status TEXT NOT NULL DEFAULT 'offen'`);
+  } catch {}
+
   // Migration: add horizontname to existing horizonte table if absent
   try {
     db.execSync(`ALTER TABLE horizonte ADD COLUMN horizontname TEXT`);

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, StyleSheet, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
 import * as Location from 'expo-location';
 import { styles } from '@/styles/styles';
@@ -7,6 +8,7 @@ import { colors } from '@/styles/colors';
 import { latLonToUTM, utmToLatLon } from '@/utils/utmConversion';
 import type { Aufnahme, AufnahmeDetails } from '@/utils/MappingQueries';
 import DropdownField from '@/components/DropdownField';
+import BodenTypTool from '@/components/BodenTypTool';
 
 // ─── Dropdown options (placeholders where noted) ──────────────────────────────
 
@@ -92,6 +94,7 @@ export default function AufnahmeForm({ initialData, onSave }: Props) {
   const [mode, setMode] = useState<'utm' | 'degrees'>('utm');
   const modeRef = useRef<'utm' | 'degrees'>('utm');
   const [locating, setLocating] = useState(false);
+  const [bodentypModal, setBodentypModal] = useState(false);
 
   const { control, setValue, watch, getValues } = useForm<FormData>({
     defaultValues: {
@@ -226,17 +229,11 @@ export default function AufnahmeForm({ initialData, onSave }: Props) {
   };
 
   return (
+    <>
     <View style={styles.section}>
 
       {/* ── Standortdaten ── */}
       <Text style={styles.sectionTitle}>Standortdaten</Text>
-
-      <TouchableOpacity style={styles.actionButton} onPress={handleGetLocation} disabled={locating}>
-        {locating
-          ? <ActivityIndicator color="#fff" size="small" />
-          : <Text style={styles.actionButtonText}>GPS automatisch bestimmen</Text>
-        }
-      </TouchableOpacity>
 
       {mode === 'utm' ? (
         <View style={styles.formRow}>
@@ -287,6 +284,13 @@ export default function AufnahmeForm({ initialData, onSave }: Props) {
         </Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.actionButton} onPress={handleGetLocation} disabled={locating}>
+        {locating
+          ? <ActivityIndicator color="#fff" size="small" />
+          : <Text style={styles.actionButtonText}>GPS automatisch bestimmen</Text>
+        }
+      </TouchableOpacity>
+
       {/* ── Profil ── */}
       <Text style={[styles.sectionTitle, localStyles.sectionGap]}>Profil</Text>
 
@@ -306,6 +310,9 @@ export default function AufnahmeForm({ initialData, onSave }: Props) {
           )} />
         </View>
       </View>
+      <TouchableOpacity style={styles.actionButton} onPress={() => setBodentypModal(true)}>
+        <Text style={styles.actionButtonText}>Bodentyp bestimmen</Text>
+      </TouchableOpacity>
 
       <View style={styles.formRow}>
         <View style={styles.halfField}>
@@ -418,6 +425,23 @@ export default function AufnahmeForm({ initialData, onSave }: Props) {
       )} />
 
     </View>
+
+      <Modal visible={bodentypModal} animationType="slide" onRequestClose={() => setBodentypModal(false)}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+          <View style={localStyles.modalHeader}>
+            <TouchableOpacity onPress={() => setBodentypModal(false)}>
+              <Text style={localStyles.modalClose}>✕ Schließen</Text>
+            </TouchableOpacity>
+          </View>
+          <BodenTypTool onConfirm={(v) => {
+              const [typPart, name] = v.split(' – ');
+              setValue('bodtyp_abk', typPart.replace(/^Typ\s+/, ''));
+              setValue('bodentyp', name ?? v);
+              setBodentypModal(false);
+            }} />
+        </SafeAreaView>
+      </Modal>
+    </>
   );
 }
 
@@ -441,5 +465,18 @@ const localStyles = StyleSheet.create({
   multiline: {
     minHeight: 80,
     textAlignVertical: 'top',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#ccc',
+  },
+  modalClose: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

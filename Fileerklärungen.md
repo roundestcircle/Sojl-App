@@ -41,7 +41,7 @@ Globales `StyleSheet`-Objekt mit wiederverwendbaren Stilen:
 Wurzel-Stack-Navigator der gesamten App. Ruft `initDatabase()` beim Start auf. Legt dunkles Grün als globale Header-Farbe fest. Zeigt auf allen Screens (außer Home) ein Haus-Icon (`Ionicons "home"`) als `headerRight`, das per `router.replace('/')` zur Startseite navigiert. Das `mapping`-Segment erhält `headerShown: false`, damit der innere Stack seinen eigenen Header zeigt.
 
 ### `app/index.tsx`
-Startbildschirm. Enthält Navigations-Buttons zu den Hauptfunktionen: Kartierung (`/mapping`), Bodenart (`/soiltexture`), Bodenfarbe (`/soilcolor`), Anteil (`/soilshare`) und Über die App (`/about`).
+Startbildschirm. Enthält Navigations-Buttons zu den Hauptfunktionen: Kartierung (`/mapping`), Bodenart (`/tools/bodenart`), Bodenfarbe (`/soilcolor`), Anteil (`/tools/anteil`) und Über die App (`/about`). Fußzeile zeigt App-Icon und Versionsnummer (dynamisch aus `app.json` via `expo-constants`).
 
 ### `app/+not-found.tsx`
 404-Fallback-Screen mit Link zurück zur Startseite. Wird von Expo Router automatisch angezeigt, wenn keine Route übereinstimmt.
@@ -52,12 +52,6 @@ Statischer Infoscreen über das Bachelorprojekt. Zeigt GitHub-Link und Kontakt-E
 ### `app/soilcolor.tsx`
 Dünner Wrapper, der `PictureTaker` in einem Fullscreen-Container rendert. Kein eigener Zustand.
 
-### `app/soiltexture.tsx`
-Dünner Wrapper für `TexTree`. Kein eigener Zustand.
-
-### `app/soilshare.tsx`
-Wrapper für `SoilShareScroll`. Setzt den Navigations-Titel via `useLayoutEffect` auf "Anteil".
-
 ---
 
 ## Kartierungs-Screens (`app/mapping/`)
@@ -66,10 +60,10 @@ Wrapper für `SoilShareScroll`. Setzt den Navigations-Titel via `useLayoutEffect
 Innerer Stack-Navigator für alle Kartierungs-Routen. Registriert: `index`, `kampagne/[kampagneId]/index`, `[aufnahmeId]/index`, `[aufnahmeId]/standort`, `[aufnahmeId]/horizon/[nr]`. Zeigt eigene Header mit Haus-Icon (`headerRight`) auf allen Screens. Der Root-Navigator setzt `headerShown: false` für das `mapping`-Segment.
 
 ### `app/mapping/index.tsx`
-Feldkampagnen-Listenscreen. Zeigt alle vorhandenen Kampagnen in einer `FlatList`; langer Druck öffnet ein styled Modal zur Bestätigung des Löschvorgangs (rot/grau gestapelte Buttons). "Neue Kampagne"-Button öffnet ein `Modal` mit `TextInput` für den Namen – keyboard-sicher über `KeyboardAvoidingView`. Nach dem Erstellen wird zu `kampagne/[id]` navigiert. Zeigt beim ersten Aufruf ein `InstructionModal` mit Erklärung des Kartierungsworkflows.
+Feldkampagnen-Listenscreen. Zeigt alle vorhandenen Kampagnen in einer `FlatList` mit Status-Badge (`offen`/`abgeschlossen`) je Zeile via `StatusBadge`; langer Druck öffnet ein styled Modal zur Bestätigung des Löschvorgangs (rot/grau gestapelte Buttons). "Neue Kampagne"-Button öffnet ein `Modal` mit `TextInput` für den Namen – keyboard-sicher über `KeyboardAvoidingView`. Nach dem Erstellen wird zu `kampagne/[id]` navigiert. Zeigt beim ersten Aufruf ein `InstructionModal` mit Erklärung des Kartierungsworkflows.
 
 ### `app/mapping/kampagne/[kampagneId]/index.tsx`
-Kampagnen-Detailscreen. Setzt den Header-Titel dynamisch auf den Kampagnennamen via `useLayoutEffect`. Listet alle Aufnahmen mit kampagnen-lokalem Nummer (`Aufnahme {nummer}`), Horizontanzahl, Status-Badge (offen/abgeschlossen) und ZIP-Export-Button je Zeile. Langer Druck öffnet ein Lösch-Modal mit Warnung über die Anzahl betroffener Horizonte. Unten: "Neue Aufnahme", "Kampagne beenden", "Kampagne exportieren (ZIP)".
+Kampagnen-Detailscreen. Setzt den Header-Titel dynamisch auf den Kampagnennamen via `useLayoutEffect`. Listet alle Aufnahmen mit kampagnen-lokalem Nummer (`Aufnahme {nummer}`), Horizontanzahl, Status-Badge (`StatusBadge`, offen/abgeschlossen) und ZIP-Export-Button je Zeile. Langer Druck öffnet ein Lösch-Modal. "Kampagne beenden" prüft, ob noch offene Aufnahmen vorhanden sind; falls ja, erscheint ein Warn-Modal mit "Trotzdem beenden"-Option, andernfalls wird die Kampagne direkt per `closeFeldkampagne()` abgeschlossen und zu `/mapping` navigiert. Unten: "Neue Aufnahme", "Kampagne beenden", "Kampagne exportieren (ZIP)".
 
 ### `app/mapping/[aufnahmeId]/index.tsx`
 Zentraler Aufnahme-Screen. Setzt den Header-Titel dynamisch auf `Aufnahme {nummer}`. Enthält:
@@ -85,7 +79,74 @@ Einzelner Horizont-Formularscreen. Setzt den Header-Titel auf `Horizont {nummer}
 
 ---
 
+## Kartierungsunterstützungs-Screens (`app/tools/`)
+
+### `app/tools/_layout.tsx`
+Innerer Stack-Navigator für alle Kartierungsunterstützungs-Tools. Registriert alle Tool-Screens mit deutschen Titeln. Zeigt Haus-Icon als `headerRight`.
+
+### `app/tools/index.tsx`
+Übersichtsscreen der verfügbaren Kartierungstools. Links zu: Bodenart bestimmen, Bodentyp bestimmen, Anteil schätzen, Humusgehalt bestimmen, Carbonatgehalt bestimmen, Pflanzenreste bestimmen, Feinwurzeln bestimmen, Gefügestabilität bestimmen, Gefüge bestimmen.
+
+### `app/tools/bodenart.tsx`
+Dünner Wrapper für `TexTree`. Kein eigener Zustand.
+
+### `app/tools/bodentyp.tsx`
+Dünner Wrapper für `BodenTypTool`. Kein eigener Zustand.
+
+### `app/tools/anteil.tsx`
+Wrapper für `SoilShareScroll` mit `paddingHorizontal: 20`.
+
+### `app/tools/humusgehalt.tsx`
+Wrapper für `HumusgehaltTool`.
+
+### `app/tools/carbonat.tsx`
+Wrapper für `CarbonatTool`.
+
+### `app/tools/pflanzenreste.tsx`
+Wrapper für `PflanzenresteTool`.
+
+### `app/tools/feinwurzeln.tsx`
+Wrapper für `FeinwurzelnTool`.
+
+### `app/tools/gefuegestabilitaet.tsx`
+Wrapper für `GefuegestabilitaetTool`.
+
+### `app/tools/gefuege.tsx`
+Wrapper für `GefuegeTool`.
+
+---
+
 ## Komponenten (`components/`)
+
+### `components/DecisionTree.tsx`
+Generische, wiederverwendbare Entscheidungsbaum-Komponente. Enthält die gesamte Navigationslogik (History-Stack, Zurück, Neu starten). Props: `tree` (DecisionTreeData), `onConfirm` (optional), `instructionText`, `storageKey`. Zeigt an Ergebnis-Knoten: grüne Ergebniskarte, "Wert übernehmen"- und "Neu Starten"-Button. Zeigt optionalen `hint`-Text (kleiner, grau) unterhalb der Frage. Rendert `InstructionModal` beim ersten Aufruf und `ResetInstructionButton` am unteren Rand.
+
+### `components/TexTree.tsx`
+Dünner Wrapper um `DecisionTree` mit `SoilTexTree`-Daten. Akzeptiert optionalen `onConfirm`-Prop.
+
+### `components/BodenTypTool.tsx`
+Dünner Wrapper um `DecisionTree` mit `BodenTypTree`-Daten für die Bodentyp-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop.
+
+### `components/GefuegeTool.tsx`
+Dünner Wrapper um `DecisionTree` mit `GefuegeFormTree`-Daten für die Gefüge-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop.
+
+### `components/GefuegestabilitaetTool.tsx`
+Platzhalter-Tool für die Gefügestabilitäts-Bestimmung. Zeigt "Inhalt folgt"-Hinweis. Akzeptiert optionalen `onConfirm`-Prop.
+
+### `components/CarbonatTool.tsx`
+Dünner Wrapper um `DecisionTree` mit `KarbonatGehaltTree`-Daten für die Carbonatgehalt-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop.
+
+### `components/FeinwurzelnTool.tsx`
+Dünner Wrapper um `DecisionTree` mit `FeinwurzelIntensityTree`-Daten für die Feinwurzel-Intensitätsbestimmung. Akzeptiert optionalen `onConfirm`-Prop.
+
+### `components/HumusgehaltTool.tsx`
+Platzhalter-Tool für die Humusgehalt-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop.
+
+### `components/PflanzenresteTool.tsx`
+Platzhalter-Tool für die Pflanzenreste-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop.
+
+### `components/StatusBadge.tsx`
+Wiederverwendbare Status-Badge-Komponente. Nimmt `status: "offen" | "abgeschlossen"` und rendert eine farbige Pill (amber für offen, primary-Grün für abgeschlossen). Wird in der Kampagnenliste und der Aufnahmeliste verwendet.
 
 ### `components/HorizonButton.tsx`
 Klickbarer Button für einen einzelnen Horizont. Zeilenlayout (weiß, volle Breite, borderWidth 3) mit rechtsbündigem Status-Badge:
@@ -96,25 +157,23 @@ Klickbarer Button für einen einzelnen Horizont. Zeilenlayout (weiß, volle Brei
 Zeigt `H{nummer} – {horizontname}` (oder nur `H{nummer}` wenn kein Name).
 
 ### `components/HorizonForm.tsx`
-React-Hook-Form-Formular für einen einzelnen Horizont. Auto-speichert auf jede Feldänderung via `watch`-Subscription. Felder in Sektionen:
+React-Hook-Form-Formular für einen einzelnen Horizont. Auto-speichert auf jede Feldänderung via `watch`-Subscription. Alle Felder mit Tool-Button verwenden `Controller` (reaktiver `value`-Prop), damit Werte aus Tool-Modals sofort im Feld erscheinen. Felder in Sektionen:
 - **Horizontname**, **Tiefe Von/Bis** (cm)
 - **Bodenfarbe (Munsell)**: Texteingabe + "Farbe bestimmen"-Button → PictureTaker-Modal.
-- **Bodenart / Textur**: Texteingabe + "Bodenart bestimmen"-Button → TexTree-Modal.
-- **Anteil**: Texteingabe + "Anteil schätzen"-Button → SoilShareScroll-Modal.
+- **Bodenart / Textur**: Texteingabe + "bestimmen"-Button → TexTree-Modal.
+- **Skelettanteil**: Texteingabe + "bestimmen"-Button → SoilShareScroll-Modal.
+- **Bodeneigenschaften**: pH (CaCl₂), Mächtigkeit (dm), Humusgehalt, Carbonatgehalt (+CarbonatTool), Pflanzenreste, Feinwurzeln (+FeinwurzelnTool), Gefügestabilität, Gefüge (+GefuegeTool), Bodenfarbe, Skelettanteil.
 - **Notizen**: Mehrzeiliges Textfeld.
-- **Bodeneigenschaften**: pH (CaCl₂), Mächtigkeit (dm), Humusgehalt, Carbonatgehalt, Pflanzenreste, Feinwurzeln, Trennbarkeit, Lagerungsart.
 
-Jedes Tool-Modal hat einen "Schließen"-Header-Button und wird in `SafeAreaView` mit `padding: 20` eingebettet.
+Jedes Tool-Modal hat einen "Schließen"-Header-Button und wird in `SafeAreaView` eingebettet.
 
 ### `components/AufnahmeForm.tsx`
 React-Hook-Form-Formular für alle Standortdaten einer Aufnahme. Auto-speichert auf jede Änderung via `watch`-Subscription. Felder in Sektionen:
-- **Standortdaten**: GPS automatisch bestimmen; UTM (Easting, Northing, Zone) oder Dezimalgrad (Breite, Länge) – umschaltbar. Speichert beide Formate gleichzeitig in die DB. Verwendet `modeRef` gegen stale-closure-Probleme.
-- **Profil**: Bodentyp + Abk., Humusform + Abk., Ausgangsgestein, Gründigkeit (cm), Höhe (m ü. NN).
+- **Standortdaten**: GPS automatisch bestimmen (Button unterhalb der Koordinatenfelder); UTM (Easting, Northing, Zone) oder Dezimalgrad (Breite, Länge) – umschaltbar. Speichert beide Formate gleichzeitig in die DB. Verwendet `modeRef` gegen stale-closure-Probleme.
+- **Profil**: Bodentyp + Abk. (mit "Bodentyp bestimmen"-Button → BodenTypTool-Modal), Humusform + Abk., Ausgangsgestein, Gründigkeit (cm), Höhe (m ü. NN).
 - **Standorteigenschaften**: Reliefposition, Exposition, Nutzung, Vegetation – alle vier als `DropdownField`.
 - **Klimadaten**: Witterung (Dropdown), Mittl. Niederschlag (mm), Mittl. Temperatur (°C).
 - **Notizen**: Mehrzeiliges Textfeld.
-
-Dropdown-Optionen: Reliefpos `[K, O, M, U, H, T, E]`, Expos `[N, NO, O, SO, S, SW, W, NW]`, Witterung/Nutzung/Vegetation als Platzhalter bis Kartieranleitung vorliegt.
 
 ### `components/DropdownField.tsx`
 Wiederverwendbares Dropdown-Eingabefeld. Zeigt den aktuellen Wert als Button (im `styles.input`-Look); bei Antippen öffnet sich ein zentriertes Modal mit einer `FlatList` der Optionen. Ausgewählte Option wird hervorgehoben; erneutes Antippen derselben Option hebt die Auswahl auf.
@@ -132,38 +191,36 @@ Verwaltet Kamera-Berechtigung, Lade-Zustand und `InstructionModal`.
 ### `components/SoilShareScroll.tsx`
 Visueller Anteil-Schätzer. Akzeptiert optionalen `onConfirm`-Prop. Rendert ein Skia-Canvas mit bis zu 1000 schwarzen Quadraten (deterministisch per Seed 42, Fisher-Yates-Shuffle). Eine unsichtbare `ScrollView` (5× Bildschirmhöhe) steuert den Prozentsatz (0–100 %). "Wert übernehmen"-Button am unteren Rand übergibt den Prozentwert. Zeigt `InstructionModal` beim ersten Aufruf.
 
-### `components/TexTree.tsx`
-Interaktiver Entscheidungsbaum zur Bodenart-Bestimmung. Akzeptiert optionalen `onConfirm`-Prop. Navigiert durch `SoilTexTree` per Buttons, History-Stack für Zurück-Navigation. Am Ergebnis-Knoten: grüne Ergebniskarte, separater "Wert übernehmen"-Button (übergibt nur das Kürzel, z. B. "Sl"), "Neu Starten"-Button. Zeigt `InstructionModal` beim ersten Aufruf.
-
-### `components/ColorPickerField.tsx`
-Leere Datei (Platzhalter).
-
-### `components/TexTreeField.tsx`
-Leere Datei (Platzhalter).
-
-### `components/SoilShareField.tsx`
-Leere Datei (Platzhalter).
-
 ---
 
 ## Hilfsfunktionen (`utils/`)
 
 ### `utils/db.ts`
 Öffnet die SQLite-Datenbank (`bodenaufnahme.db`). `initDatabase()` erstellt drei Tabellen:
-- `feldkampagnen` (id, name, erstellt_am)
+- `feldkampagnen` (id, name, erstellt_am, status)
 - `aufnahmen` (id, feldkampagne_id, erstellt_am, gps_lat, gps_lon, notizen, status)
 - `horizonte` (id, aufnahme_id, nummer, farbe_munsell, farbe_rgb, bodenart, anteil, notizen, status)
 
 Enthält ALTER-TABLE-Migrationen (try/catch, sicher bei Wiederholung) für:
 - `horizonte`: `horizontname`, `tiefe_oben`, `tiefe_unten`, `ph_cacl2`, `humus`, `carbonat`, `pflanzenreste`, `feinwurzeln`, `trennbarkeit`, `lagerungsart`, `maechtigk_dm`
 - `aufnahmen`: `feldkampagne_id`, `utm_easting`, `utm_northing`, `utm_zone`, `nummer`, `bodentyp`, `bodtyp_abk`, `humusform`, `humsfrm_abk`, `m_ue_nn`, `witterung`, `mittl_n`, `mittl_temp`, `nutzung`, `vegetation`, `reliefpos`, `expos`, `ausgangsgestein`, `grundigkeit`
+- `feldkampagnen`: `status`
+
+### `utils/DecisionTreeTypes.ts`
+Gemeinsame TypeScript-Typen für alle Entscheidungsbäume:
+- `TreeOption` – `{ text, next }`
+- `InnerNode` – `{ id, question, hint?, options[] }` (`hint` optional, wird als kleinerer grauer Text unterhalb der Frage angezeigt)
+- `ResultNode` – `{ id, question, result: { title, description } }`
+- `TreeNode` – Union aus `InnerNode | ResultNode`
+- `DecisionTreeData` – `InnerNode & { nodes: Record<string, TreeNode> }` (Wurzelknoten mit vollständiger Knotenmap)
 
 ### `utils/FeldkampagneQueries.ts`
-CRUD für die `feldkampagnen`-Tabelle:
+CRUD für die `feldkampagnen`-Tabelle. Typ `Feldkampagne` enthält: `id`, `name`, `erstellt_am`, `status` (`"offen" | "abgeschlossen"`). Funktionen:
 - `createFeldkampagne(name)` → neue ID
 - `getAllFeldkampagnen()` → alle, neueste zuerst
 - `getFeldkampagne(id)` → Einzeldatensatz
 - `getAufnahmenForFeldkampagne(sessionId)` → alle zugehörigen Aufnahmen
+- `closeFeldkampagne(id)` → setzt Status auf `'abgeschlossen'`
 - `deleteFeldkampagne(id)` → löscht per CASCADE auch alle Aufnahmen und Horizonte
 
 ### `utils/MappingQueries.ts`
@@ -197,9 +254,6 @@ Bidirektionale WGS84 ↔ UTM-Konvertierung (Transversale Mercator-Projektion, WG
 - `latLonToUTM(lat, lon)` → `{ easting, northing, zone, hemisphere, label }` (label z. B. "32N")
 - `utmToLatLon(easting, northing, zone, hemisphere)` → `{ lat, lon }`
 
-### `utils/SoilTexTree.ts`
-Statische Datenstruktur des Bodenart-Entscheidungsbaums. Enthält Fragen und Antwort­optionen (mit `next`-Verweisen auf Folgeknoten) sowie Ergebnisknoten mit `title` und `description`. Wird von `TexTree` traversiert.
-
 ### `utils/soilColorExtractor.ts`
 Koordiniert die Bildanalyse für die Bodenfarbe. Lädt das Bild mit Skia, liest Pixeldaten, berechnet per `extractColorFromRegion` Durchschnittsfarben für Graukarten- und Bodenprobenbereich, leitet Korrekturfaktoren ab (Ziel: RGB 128 für 18 %-Graukarte), wendet diese an und ruft `rgbToMunsell` für die Munsell-Notation auf.
 
@@ -211,3 +265,24 @@ Großes statisches Datenarray mit dem RIT Munsell Renotation Dataset: jeweils RG
 
 ### `utils/MappingMaths.ts`
 Leere Datei (Platzhalter für zukünftige Kartierungs-Berechnungsfunktionen).
+
+---
+
+## Entscheidungsbaum-Daten (`utils/trees/`)
+
+Alle Dateien exportieren eine typisierte `DecisionTreeData`-Konstante und importieren die Typen aus `../DecisionTreeTypes`.
+
+### `utils/trees/SoilTexTree.ts`
+Entscheidungsbaum zur Bodenart-Bestimmung (Fingerprobe). Navigiert durch Ausroll-, Haftungs- und Oberflächenmerkmale zu den Bodenarten der deutschen Bodensystematik (Ss, Su, Sl, Uls, Lt, Tu2, Tt etc.).
+
+### `utils/trees/BodenTypTree.ts`
+Entscheidungsbaum zur Bodentyp-Bestimmung nach KA5. Zweistufig: erst Klassen-Ebene (organisch/mineralisch, Wassereinfluss, Unterbodenhorizonte), dann Feinbestimmung der Typen je Klasse (z. B. Gley, Pseudogley, Braunerde, Parabraunerde, Podsol). Alle Knoten enthalten `hint`-Texte mit diagnostischen Kriterien.
+
+### `utils/trees/GefuegeTree.ts`
+Entscheidungsbaum zur Gefüge-Bestimmung. Unterscheidet Einzelkorn-, Kohärent-, Kittgefüge und aggregierte Formen (Krümel, Schwamm, Feinkoagulat, Subpolyeder, Polyeder, Prisma, Säule, Platte) anhand von Aggregatform, Oberflächenbeschaffenheit und Orientierung.
+
+### `utils/trees/CarbonateTree.ts`
+Entscheidungsbaum zur Carbonatgehalt-Bestimmung (Salzsäureprobe). Sieben Stufen von `c0` (karbonatfrei) bis `c6` (extrem karbonatreich ≥ 50 Gew.%) anhand der Stärke der HCl-Reaktion.
+
+### `utils/trees/WurzelTree.ts`
+Entscheidungsbaum zur Feinwurzel-Intensitätsbestimmung. Sieben Stufen von `Wf0` (keine Wurzeln) bis `Wf6` (extrem stark / Wurzelfilz) anhand der Anzahl sichtbarer Feinwurzeln pro dm².

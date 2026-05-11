@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Text, View, Image } from 'react-native';
+import Constants from 'expo-constants';
 import { styles } from '../styles/styles';
 
 export default function Index() {
@@ -26,9 +27,8 @@ export default function Index() {
         </Text>
       </Link>
       <View style={styles.footnote}>
-        <Text>
-          Version 0.1, 15.1.2026
-        </Text>
+        <Image source={require('../assets/images/icon.png')} style={{ width: 48, height: 48, borderRadius: 10 }} />
+        <Text style={{ fontSize: 9 }}>Version {Constants.expoConfig?.version ?? ''}</Text>
       </View>
     </View>
   );

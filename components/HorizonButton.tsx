@@ -1,5 +1,6 @@
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 import { colors } from "@/styles/colors";
+import { styles } from "@/styles/styles";
 import type { Horizont } from "@/utils/HorizonQueries";
 
 type Props = {
@@ -26,9 +27,10 @@ export default function HorizontButton({ horizont, onPress, onLongPress }: Props
       <Text style={localStyles.name}>
         H{horizont.nummer}{horizont.horizontname ? ` – ${horizont.horizontname}` : ""}
       </Text>
-      <View style={[localStyles.badge, { backgroundColor: badgeBg }]}>
-        <Text style={localStyles.badgeText}>{label}</Text>
+      <View style={[styles.badge, { backgroundColor: badgeBg }]}>
+        <Text style={styles.badgeText}>{label}</Text>
       </View>
+      <Text style={styles.chevron}>›</Text>
     </TouchableOpacity>
   );
 }
@@ -57,16 +59,5 @@ const localStyles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#333",
-  },
-  badge: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
   },
 });

@@ -129,21 +129,22 @@ export default function SessionDetailScreen() {
   };
 
   return (
-    <View style={styles.containerfull}>
+    <View style={{ flex: 1 }}>
 
       <FlatList
         data={aufnahmen}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.list}
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.list, { paddingHorizontal: 15 }]}
         ListEmptyComponent={
           <Text style={styles.emptyText}>
             Noch keine Aufnahmen in dieser Kampagne.
           </Text>
         }
         renderItem={({ item, index }) => (
-          <View style={localStyles.row}>
+          <View style={styles.listRow}>
             <TouchableOpacity
-              style={localStyles.rowMain}
+              style={styles.listRowMain}
               onPress={() => router.push(`/mapping/${item.id}`)}
               onLongPress={() => setDeleteTarget(item)}
             >
@@ -156,51 +157,52 @@ export default function SessionDetailScreen() {
                 </Text>
               </View>
               <StatusBadge status={item.status} />
+              <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={localStyles.exportBtn}
+              style={styles.exportBtn}
               onPress={() => handleExport(item)}
               disabled={exportingId === item.id}
             >
               {exportingId === item.id ? (
                 <ActivityIndicator color={colors.primary} size="small" />
               ) : (
-                <Text style={localStyles.exportText}>ZIP</Text>
+                <Text style={styles.exportText}>ZIP</Text>
               )}
             </TouchableOpacity>
           </View>
         )}
       />
 
-      <TouchableOpacity
-        style={[styles.button, localStyles.bottomBtn]}
-        onPress={() => {
-          const aufnahmeId = createAufnahme(0, id);
-          router.push(`/mapping/${aufnahmeId}`);
-        }}
-      >
-        <Text style={styles.maintext}>+ Neue Aufnahme</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.button, localStyles.bottomBtn]}
-        onPress={handleBeenden}
-      >
-        <Text style={styles.maintext}>Kampagne beenden</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.actionButton, localStyles.bottomBtn]}
-        onPress={handleExportCampaign}
-        disabled={exportingCampaign || aufnahmen.length === 0}
-      >
-        {exportingCampaign ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <Text style={styles.actionButtonText}>Kampagne exportieren (ZIP)</Text>
-        )}
-      </TouchableOpacity>
+      <View style={styles.bottomBar}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            const aufnahmeId = createAufnahme(0, id);
+            router.push(`/mapping/${aufnahmeId}`);
+          }}
+        >
+          <Text style={styles.maintext}>+ Neue Aufnahme</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleBeenden}
+        >
+          <Text style={styles.maintext}>Kampagne beenden</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={handleExportCampaign}
+          disabled={exportingCampaign || aufnahmen.length === 0}
+        >
+          {exportingCampaign ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.actionButtonText}>Kampagne exportieren (ZIP)</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* ── Offene Aufnahmen Warnung ── */}
       <Modal visible={showOffeneWarnung} transparent animationType="fade" onRequestClose={() => setShowOffeneWarnung(false)}>
@@ -210,7 +212,7 @@ export default function SessionDetailScreen() {
             <Text style={styles.modalText}>
               {aufnahmen.filter((a) => a.status !== "abgeschlossen").length} Aufnahme{aufnahmen.filter((a) => a.status !== "abgeschlossen").length !== 1 ? "n sind" : " ist"} noch offen. Kampagne trotzdem beenden?
             </Text>
-            <View style={localStyles.modalButtons}>
+            <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#e0a020" }]}
                 onPress={() => { setShowOffeneWarnung(false); doBeenden(); }}
@@ -238,7 +240,7 @@ export default function SessionDetailScreen() {
                 ? `Diese Aufnahme enthält ${deleteTarget.horizontCount} Horizont${deleteTarget.horizontCount !== 1 ? "e" : ""}, die ebenfalls gelöscht werden. Trotzdem löschen?`
                 : "Aufnahme löschen?"}
             </Text>
-            <View style={localStyles.modalButtons}>
+            <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#c0392b" }]}
                 onPress={confirmDelete}
@@ -266,41 +268,4 @@ function formatDate(iso: string): string {
 }
 
 const localStyles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: colors.primary,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    overflow: "hidden",
-  },
-  rowMain: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  exportBtn: {
-    width: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    borderLeftWidth: 2,
-    borderLeftColor: colors.primary + "44",
-    alignSelf: "stretch",
-  },
-  exportText: {
-    color: colors.primary,
-    fontWeight: "700",
-    fontSize: 13,
-  },
-  bottomBtn: {
-    marginTop: 8,
-  },
-  modalButtons: {
-    gap: 10,
-    marginTop: 8,
-  },
 });

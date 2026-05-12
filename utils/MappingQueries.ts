@@ -28,6 +28,26 @@ export type Aufnahme = {
   expos: string | null;
   ausgangsgestein: string | null;
   grundigkeit: number | null;
+  effektiver_wurzelraum: number | null;
+  // Erweiterte fields
+  hangneigung: string | null;
+  reliefformtyp: string | null;
+  mikrorelief: string | null;
+  nat_bodenabtrag: string | null;
+  kuenstl_bodenabtrag: string | null;
+  anthropogene_veraend: string | null;
+  bodenoberflaeche: string | null;
+  versiegelungsart: string | null;
+  regenwuermer: string | null;
+  // Profilkennzeichnung fields
+  substratsyst_einheit: string | null;
+  hydrogeniet_moortyp: string | null;
+  durchwurzelbarer_bodenraum: string | null;
+  wasserstand_gof: string | null;
+  grundnaessestufe: string | null;
+  besond_wasserverh: string | null;
+  stau_haftnaessestufe: string | null;
+  erosionsgrad: string | null;
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -75,7 +95,13 @@ export type AufnahmeDetails = Pick<Aufnahme,
   | "gps_lat" | "gps_lon" | "utm_easting" | "utm_northing" | "utm_zone" | "notizen"
   | "bodentyp" | "bodtyp_abk" | "humusform" | "humsfrm_abk" | "m_ue_nn"
   | "witterung" | "mittl_n" | "mittl_temp" | "nutzung" | "vegetation"
-  | "reliefpos" | "expos" | "ausgangsgestein" | "grundigkeit"
+  | "reliefpos" | "expos" | "ausgangsgestein" | "grundigkeit" | "effektiver_wurzelraum"
+  | "hangneigung" | "reliefformtyp" | "mikrorelief" | "nat_bodenabtrag"
+  | "kuenstl_bodenabtrag" | "anthropogene_veraend"
+  | "bodenoberflaeche" | "versiegelungsart" | "regenwuermer"
+  | "substratsyst_einheit" | "hydrogeniet_moortyp" | "durchwurzelbarer_bodenraum"
+  | "wasserstand_gof" | "grundnaessestufe" | "besond_wasserverh"
+  | "stau_haftnaessestufe" | "erosionsgrad"
 >;
 
 /** Saves all form details for an Aufnahme. */
@@ -86,7 +112,15 @@ export function saveAufnahmeDetails(id: number, data: AufnahmeDetails) {
        notizen = ?, bodentyp = ?, bodtyp_abk = ?, humusform = ?, humsfrm_abk = ?,
        m_ue_nn = ?, witterung = ?, mittl_n = ?, mittl_temp = ?,
        nutzung = ?, vegetation = ?, reliefpos = ?, expos = ?,
-       ausgangsgestein = ?, grundigkeit = ?
+       ausgangsgestein = ?, grundigkeit = ?, effektiver_wurzelraum = ?,
+       hangneigung = ?, reliefformtyp = ?, mikrorelief = ?,
+       nat_bodenabtrag = ?, kuenstl_bodenabtrag = ?,
+       anthropogene_veraend = ?, bodenoberflaeche = ?,
+       versiegelungsart = ?, regenwuermer = ?,
+       substratsyst_einheit = ?, hydrogeniet_moortyp = ?,
+       durchwurzelbarer_bodenraum = ?, wasserstand_gof = ?,
+       grundnaessestufe = ?, besond_wasserverh = ?,
+       stau_haftnaessestufe = ?, erosionsgrad = ?
      WHERE id = ?`,
     data.gps_lat ?? null,
     data.gps_lon ?? null,
@@ -108,6 +142,24 @@ export function saveAufnahmeDetails(id: number, data: AufnahmeDetails) {
     data.expos ?? null,
     data.ausgangsgestein ?? null,
     data.grundigkeit ?? null,
+    data.effektiver_wurzelraum ?? null,
+    data.hangneigung ?? null,
+    data.reliefformtyp ?? null,
+    data.mikrorelief ?? null,
+    data.nat_bodenabtrag ?? null,
+    data.kuenstl_bodenabtrag ?? null,
+    data.anthropogene_veraend ?? null,
+    data.bodenoberflaeche ?? null,
+    data.versiegelungsart ?? null,
+    data.regenwuermer ?? null,
+    data.substratsyst_einheit ?? null,
+    data.hydrogeniet_moortyp ?? null,
+    data.durchwurzelbarer_bodenraum ?? null,
+    data.wasserstand_gof ?? null,
+    data.grundnaessestufe ?? null,
+    data.besond_wasserverh ?? null,
+    data.stau_haftnaessestufe ?? null,
+    data.erosionsgrad ?? null,
     id,
   );
 }

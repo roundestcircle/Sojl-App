@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Modal,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { styles } from "@/styles/styles";
@@ -16,6 +18,7 @@ import {
   type Aufnahme,
 } from "@/utils/MappingQueries";
 import { addHorizont, deleteHorizont, getHorizonteForAufnahme, type Horizont } from "@/utils/HorizonQueries";
+import { exportAufnahmeAsZip } from "@/utils/csvExport";
 import HorizontButton from "@/components/HorizonButton";
 
 // ─── Standortdaten status ─────────────────────────────────────────────────────
@@ -71,6 +74,8 @@ export default function HorizonOverview() {
   const [aufnahme, setAufnahme] = useState<Aufnahme | null>(null);
   // Whether to show the "incomplete horizons" warning before closing
   const [showUnvollstaendigModal, setShowUnvollstaendigModal] = useState(false);
+  // Drives the spinner on the export button while the ZIP is being generated
+  const [exporting, setExporting] = useState(false);
   // Horizon queued for deletion; non-null triggers the delete confirmation modal
   const [deleteTarget, setDeleteTarget] = useState<Horizont | null>(null);
 
@@ -127,11 +132,24 @@ export default function HorizonOverview() {
     }
   };
 
+  const handleExport = async () => {
+    if (!aufnahme) return;
+    try {
+      setExporting(true);
+      await exportAufnahmeAsZip(aufnahme);
+    } catch (e) {
+      Alert.alert("Export fehlgeschlagen", String(e));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const standortStatus = aufnahme ? deriveStandortStatus(aufnahme) : "leer";
   const badge = standortBadge[standortStatus];
 
   return (
     <>
+      <View style={{ flex: 1 }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={localStyles.content}
@@ -140,14 +158,15 @@ export default function HorizonOverview() {
 
         {/* ── Standortdaten button ── */}
         <TouchableOpacity
-          style={localStyles.standortBtn}
+          style={[styles.listRow, { paddingHorizontal: 16, paddingVertical: 14, gap: 12 }]}
           onPress={() => router.push(`/mapping/${aufnahmeId}/standort` as any)}
           activeOpacity={0.75}
         >
-          <Text style={localStyles.standortName}>Standortdaten</Text>
-          <View style={[localStyles.badge, { backgroundColor: badge.bg }]}>
-            <Text style={localStyles.badgeText}>{badge.label}</Text>
+          <Text style={[styles.rowTitle, { flex: 1 }]}>Standortdaten</Text>
+          <View style={[styles.badge, { backgroundColor: badge.bg }]}>
+            <Text style={styles.badgeText}>{badge.label}</Text>
           </View>
+          <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
 
         {/* ── Horizon list ── */}
@@ -165,12 +184,26 @@ export default function HorizonOverview() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Close button ── */}
-        <TouchableOpacity style={[styles.button, { marginTop: 8 }]} onPress={handleAbschliessen}>
+      </ScrollView>
+
+      {/* ── Bottom buttons ── */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity style={styles.button} onPress={handleAbschliessen}>
           <Text style={styles.maintext}>Abschließen</Text>
         </TouchableOpacity>
-
-      </ScrollView>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={handleExport}
+          disabled={exporting || !aufnahme}
+        >
+          {exporting ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.actionButtonText}>Aufnahme exportieren (ZIP)</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+      </View>
 
       {/* ── Delete Horizont confirmation modal ── */}
       <Modal visible={deleteTarget !== null} transparent animationType="fade" onRequestClose={() => setDeleteTarget(null)}>
@@ -180,7 +213,7 @@ export default function HorizonOverview() {
             <Text style={styles.modalText}>
               H{deleteTarget?.nummer}{deleteTarget?.horizontname ? ` – ${deleteTarget.horizontname}` : ""} löschen?
             </Text>
-            <View style={localStyles.modalButtons}>
+            <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#c0392b" }]}
                 onPress={() => {
@@ -208,7 +241,7 @@ export default function HorizonOverview() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Aufnahme unvollständig</Text>
             <Text style={styles.modalText}>Trotzdem abschließen?</Text>
-            <View style={localStyles.modalButtons}>
+            <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalButton}
                 onPress={() => { setShowUnvollstaendigModal(false); doClose(); }}
@@ -231,44 +264,13 @@ export default function HorizonOverview() {
 
 const localStyles = StyleSheet.create({
   content: {
-    padding: 16,
-    gap: 8,
+    paddingHorizontal: 15,
+    paddingTop: 16,
     paddingBottom: 32,
-  },
-  standortBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: colors.primary,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  standortName: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
-  },
-  badge: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
+    gap: 8,
   },
   horizonList: {
     gap: 12,
     paddingVertical: 8,
-  },
-  modalButtons: {
-    gap: 10,
-    marginTop: 8,
   },
 });

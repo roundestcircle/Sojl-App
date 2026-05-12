@@ -48,6 +48,25 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  navButton: {
+    width: '100%',
+    padding: 18,
+    borderRadius: 10,
+    borderWidth: 3,
+    backgroundColor: '#fff',
+    borderColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  navButtonLabel: {
+    flex: 1,
+    fontSize: 18,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+
   actionButton: {
     backgroundColor: colors.primary,
     borderRadius: 8,
@@ -228,6 +247,11 @@ export const styles = StyleSheet.create({
     color: '#222',
   },
 
+  readonlyInput: {
+    backgroundColor: '#f0f0f0',
+    color: '#666',
+  },
+
   section: {
     gap: 8,
     paddingVertical: 12,
@@ -243,5 +267,77 @@ export const styles = StyleSheet.create({
   halfField: {
     flex: 1,
     gap: 4,
+  },
+
+  erweiterteHint: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 4,
+  },
+
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
+
+  listRowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+  },
+
+  chevron: {
+    fontSize: 28,
+    color: colors.primary,
+    marginLeft: 8,
+    includeFontPadding: false,
+  },
+
+  exportBtn: {
+    width: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: 2,
+    borderLeftColor: colors.primary + '44',
+    alignSelf: 'stretch',
+  },
+
+  exportText: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+
+  modalButtons: {
+    gap: 10,
+    marginTop: 8,
+  },
+
+  badge: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+
+  badgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+
+  bottomBar: {
+    paddingHorizontal: 15,
+    paddingTop: 8,
+    paddingBottom: 16,
+    gap: 8,
   },
 });

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '@/styles/styles';
 import { colors } from '@/styles/colors';
 import {
@@ -34,15 +35,20 @@ function initFromMunsell(s?: string): { valueStr: string; chroma: ChromaClass | 
 export default function HumusgehaltTool({ onConfirm, initialFarbeMunsell, initialPH, initialBodenart }: Props) {
   const { valueStr: initValue, chroma: initChroma } = initFromMunsell(initialFarbeMunsell);
 
-  const [chroma,     setChroma]     = useState<ChromaClass | null>(initChroma);
-  const [valueStr,   setValueStr]   = useState(initValue);
-  const [bodenart,   setBodenart]   = useState(initialBodenart ?? '');
-  const [clayStr,    setClayStr]    = useState('');
-  const [phStr,      setPhStr]      = useState(initialPH ?? '');
+  const [chroma,          setChroma]          = useState<ChromaClass | null>(initChroma);
+  const [valueStr,        setValueStr]        = useState(initValue);
+  const [bodenart,        setBodenart]        = useState(initialBodenart ?? '');
+  const [clayStr,         setClayStr]         = useState('');
+  const [phStr,           setPhStr]           = useState(initialPH ?? '');
+  const [bodenartError,   setBodenartError]   = useState(false);
 
   function estimateClayFromBodenart() {
     const clay = bodenartToClay(bodenart);
-    if (clay !== null) setClayStr(String(clay));
+    if (clay !== null) {
+      setClayStr(String(clay));
+    } else {
+      setBodenartError(true);
+    }
   }
 
   const result = useMemo(() => {
@@ -58,6 +64,7 @@ export default function HumusgehaltTool({ onConfirm, initialFarbeMunsell, initia
   }, [valueStr, chroma, phStr, clayStr]);
 
   return (
+    <>
     <ScrollView contentContainerStyle={localStyles.container} keyboardShouldPersistTaps="handled">
 
       {/* ── Chroma ── */}
@@ -164,6 +171,28 @@ export default function HumusgehaltTool({ onConfirm, initialFarbeMunsell, initia
       )}
 
     </ScrollView>
+
+    <Modal visible={bodenartError} animationType="fade" transparent onRequestClose={() => setBodenartError(false)}>
+      <View style={localStyles.modalOverlay}>
+        <SafeAreaView style={localStyles.modalCard}>
+          <Text style={localStyles.modalTitle}>Ungültige Bodenart</Text>
+          <Text style={localStyles.modalBody}>
+            "{bodenart}" wurde nicht erkannt. Gültige Bodenarten (mit optionaler Nummer, z.B. Su2):
+          </Text>
+          <Text style={localStyles.modalList}>
+            S, Su, U, Sl, Slu{'\n'}
+            Us, Ut, St{'\n'}
+            Ls, Lu{'\n'}
+            Ts, Lts, Lt{'\n'}
+            Tl, Tu, T
+          </Text>
+          <TouchableOpacity style={[styles.actionButton, { alignSelf: 'stretch', marginTop: 12 }]} onPress={() => setBodenartError(false)}>
+            <Text style={styles.actionButtonText}>OK</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </View>
+    </Modal>
+    </>
   );
 }
 
@@ -244,5 +273,32 @@ const localStyles = StyleSheet.create({
   resultPlaceholder: {
     fontSize: 14,
     color: '#aaa',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    gap: 8,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  modalBody: {
+    fontSize: 14,
+    color: '#333',
+  },
+  modalList: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
+    lineHeight: 22,
   },
 });

@@ -9,6 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { styles } from "@/styles/styles";
@@ -19,7 +21,8 @@ import {
   deleteFeldkampagne,
   type Feldkampagne,
 } from "@/utils/FeldkampagneQueries";
-import { InstructionModal } from "@/components/InstructionModal";
+import { exportKampagneAsZip } from "@/utils/csvExport";
+import { InstructionModal, ResetInstructionButton } from "@/components/InstructionModal";
 import StatusBadge from "@/components/StatusBadge";
 
 /**
@@ -30,6 +33,8 @@ import StatusBadge from "@/components/StatusBadge";
 export default function FeldkampagnenScreen() {
   // Full list of campaigns, reloaded on every focus to reflect changes from child screens
   const [kampagnen, setKampagnen] = useState<Feldkampagne[]>([]);
+  const [modalKey, setModalKey] = useState(0);
+  const [exportingId, setExportingId] = useState<number | null>(null);
   // Controls visibility of the "create campaign" input modal
   const [creating, setCreating] = useState(false);
   // Bound to the name input inside the create modal
@@ -45,6 +50,17 @@ export default function FeldkampagnenScreen() {
    * Creates a new Feldkampagne with the current name, then navigates to its detail screen.
    * No-ops if the name is empty.
    */
+  const handleExport = async (item: Feldkampagne) => {
+    try {
+      setExportingId(item.id);
+      await exportKampagneAsZip(item.id, item.name);
+    } catch (e) {
+      Alert.alert("Export fehlgeschlagen", String(e));
+    } finally {
+      setExportingId(null);
+    }
+  };
+
   const handleCreate = () => {
     const name = newName.trim();
     if (!name) return;
@@ -77,9 +93,10 @@ export default function FeldkampagnenScreen() {
   };
 
   return (
-    <View style={styles.containerfull}>
+    <View style={{ flex: 1 }}>
 
       <InstructionModal
+        key={modalKey}
         storageKey="mappingDontShowAgain"
         instructionText="Erstelle eine neue Kampagne. Innerhalb der Kampagne kannst du mehrere Bodenaufnahmen erstellen und in diesen deine erhobenen Daten eintragen. Die Daten werden automatisch gespeichert. Am Ende kannst du sowohl einzelne Aufnahmen als auch die gesamte Kampagne als ZIP exportieren. Diese Datei enthält zwei CSV-Dateien mit den Aufnahme- und Horizontdaten."
       />
@@ -88,32 +105,50 @@ export default function FeldkampagnenScreen() {
         data={kampagnen}
         keyExtractor={(item) => String(item.id)}
         style={{ flex: 1 }}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingHorizontal: 15 }]}
         ListEmptyComponent={
           <Text style={styles.emptyText}>Noch keine Kampagnen vorhanden.</Text>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={localStyles.row}
-            onPress={() => router.push(`/mapping/kampagne/${item.id}` as any)}
-            onLongPress={() => handleDelete(item)}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>{item.name}</Text>
-              <Text style={styles.rowSub}>{formatDate(item.erstellt_am)}</Text>
-            </View>
-            <StatusBadge status={item.status} />
-            <Text style={localStyles.chevron}>›</Text>
-          </TouchableOpacity>
+          <View style={styles.listRow}>
+            <TouchableOpacity
+              style={styles.listRowMain}
+              onPress={() => router.push(`/mapping/kampagne/${item.id}` as any)}
+              onLongPress={() => handleDelete(item)}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>{item.name}</Text>
+                <Text style={styles.rowSub}>{formatDate(item.erstellt_am)}</Text>
+              </View>
+              <StatusBadge status={item.status} />
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.exportBtn}
+              onPress={() => handleExport(item)}
+              disabled={exportingId === item.id}
+            >
+              {exportingId === item.id
+                ? <ActivityIndicator color={colors.primary} size="small" />
+                : <Text style={styles.exportText}>ZIP</Text>}
+            </TouchableOpacity>
+          </View>
         )}
       />
 
-      <TouchableOpacity
-        style={[styles.button, localStyles.newBtn]}
-        onPress={() => setCreating(true)}
-      >
-        <Text style={styles.maintext}>+ Neue Kampagne</Text>
-      </TouchableOpacity>
+      <View style={styles.bottomBar}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => setCreating(true)}
+        >
+          <Text style={styles.maintext}>+ Neue Kampagne</Text>
+        </TouchableOpacity>
+        <ResetInstructionButton
+          storageKey="mappingDontShowAgain"
+          onReset={() => setModalKey(prev => prev + 1)}
+          style={{ position: 'relative', bottom: undefined, left: undefined, right: undefined }}
+        />
+      </View>
 
       <Modal
         visible={creating}
@@ -164,7 +199,7 @@ export default function FeldkampagnenScreen() {
             <Text style={styles.modalText}>
               „{deleteTarget?.name}" und alle enthaltenen Aufnahmen löschen?
             </Text>
-            <View style={localStyles.modalButtons}>
+            <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#c0392b" }]}
                 onPress={confirmDelete}
@@ -192,24 +227,6 @@ function formatDate(iso: string): string {
 }
 
 const localStyles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#fff",
-  },
-  chevron: {
-    fontSize: 28,
-    color: colors.primary,
-    marginLeft: 8,
-  },
-  newBtn: {
-    marginVertical: 12,
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -232,9 +249,5 @@ const localStyles = StyleSheet.create({
   },
   createBtn: {
     flex: 1,
-  },
-  modalButtons: {
-    gap: 10,
-    marginTop: 8,
   },
 });

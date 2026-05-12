@@ -128,64 +128,35 @@ export default function PictureTaker({ onConfirm }: Props) {
    */
   const renderPicture = (uri: string) => {
     return (
-      <View style={[styles.cameraContainer, { gap: 5 }]}>
-        
-        {/* Display captured photo with overlay guides */}
-        <View style={{ width: '100%', aspectRatio: 3/4 }}>
-          <Image
-            source={{ uri }}
-            style={{ width: '100%', height: '100%' }}
-          />
-          
-          {/* Overlay rectangles showing where grey card and sample should be positioned */}
-          <View style={overlayStyles.largeRectangle} />
-          <View style={overlayStyles.smallRectangle} />
-        </View>
+      <View style={{ flex: 1, paddingBottom: 70 }}>
+        <Image source={{ uri }} style={{ width: '100%', height: '100%', borderRadius: 10 }} />
+        <View style={overlayStyles.largeRectangle} />
+        <View style={overlayStyles.smallRectangle} />
 
-        {/* Display extracted color results once available */}
         {soilColor && (
-          <View style={{backgroundColor: colors.primary, borderRadius: 10, padding: 20, gap: 10, minWidth: '100%', alignItems: 'center'}}>
-            <Text style={[styles.maintext, { color: '#fff' }]}>
-              RGB: R={soilColor.r} G={soilColor.g} B={soilColor.b}
-            </Text>
-            {munsellColor && (
-              <Text style={[styles.maintext, { color: '#fff' }]}>
-                Munsell: {munsellColor}
-              </Text>
-            )}
+          <View style={{ position: 'absolute', top: 40, left: 0, right: 0, backgroundColor: 'rgba(20,86,0,0.85)', borderRadius: 10, padding: 12, gap: 6, alignItems: 'center' }}>
+            <Text style={[styles.maintext, { color: '#fff' }]}>RGB: R={soilColor.r} G={soilColor.g} B={soilColor.b}</Text>
+            {munsellColor && <Text style={[styles.maintext, { color: '#fff' }]}>Munsell: {munsellColor}</Text>}
           </View>
         )}
 
-        {munsellColor && onConfirm && (
-          <TouchableOpacity style={[styles.actionButton, { alignSelf: 'stretch' }]} onPress={() => onConfirm(munsellColor)}>
-            <Text style={styles.actionButtonText}>Wert übernehmen</Text>
+        <View style={{ position: 'absolute', bottom: 70, left: 0, right: 0, gap: 10 }}>
+          {munsellColor && onConfirm && (
+            <TouchableOpacity style={[styles.actionButton, { alignSelf: 'stretch' }]} onPress={() => onConfirm(munsellColor)}>
+              <Text style={styles.actionButtonText}>Wert übernehmen</Text>
+            </TouchableOpacity>
+          )}
+          {!soilColor && (
+            <TouchableOpacity style={styles.button} onPress={() => handleExtractSoilColor(uri)} disabled={isExtractingColor}>
+              {isExtractingColor
+                ? <ActivityIndicator color={styles.maintext.color} size={styles.maintext.fontSize} />
+                : <Text style={styles.maintext}>Farbe bestimmen</Text>}
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.button} onPress={() => { setUri(null); setSoilColor(null); setMunsellColor(null); }}>
+            <Text style={styles.maintext}>Neues Foto aufnehmen</Text>
           </TouchableOpacity>
-        )}
-
-        {/* Extract color button - Only visible if color hasn't been extracted yet */}
-        {!soilColor && (
-          <TouchableOpacity 
-            style={styles.button}
-            onPress={() => handleExtractSoilColor(uri)}
-            disabled={isExtractingColor}>
-            {isExtractingColor ? (
-              <ActivityIndicator color={styles.maintext.color} size={styles.maintext.fontSize} />
-            ) : (
-              <Text style={styles.maintext}>Farbe bestimmen</Text>
-            )}
-          </TouchableOpacity>
-        )}
-
-        {/* Retake photo button - Clears current photo and extracted results */}
-        <TouchableOpacity 
-          style={[styles.button, { position: 'absolute', bottom: 70 }]}
-          onPress={() => {
-            setUri(null);
-            setSoilColor(null);
-            setMunsellColor(null);
-          }}>
-          <Text style={[styles.maintext]}>Neues Foto aufnehmen</Text>
-        </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -196,33 +167,16 @@ export default function PictureTaker({ onConfirm }: Props) {
    */
   const renderCamera = () => {
     return (
-      <View style={[styles.cameraContainer, { gap: 15 }]}>
-        
-        {/* Live camera feed with overlay guides */}
-        <View style={{ width: '100%', aspectRatio: 3/4, overflow: 'hidden' }}>
-          <CameraView
-            style={{ width: '100%', height: '100%' }}
-            ref={ref}
-            mode="picture"
-            facing="back"
-            responsiveOrientationWhenOrientationLocked
-          />
-          
-          {/* Overlay rectangles guide proper positioning */}
-          <View style={overlayStyles.largeRectangle} />
-          <View style={overlayStyles.smallRectangle} />
+      <View style={{ flex: 1, paddingBottom: 70 }}>
+        <CameraView style={{ width: '100%', height: '100%', borderRadius: 10, overflow: 'hidden' }} ref={ref} mode="picture" facing="back" responsiveOrientationWhenOrientationLocked />
+        <View style={overlayStyles.largeRectangle} />
+        <View style={overlayStyles.smallRectangle} />
+
+        <View style={{ position: 'absolute', bottom: 70, left: 0, right: 0 }}>
+          <TouchableOpacity style={styles.button} onPress={takePicture}>
+            <Text style={styles.maintext}>Foto aufnehmen</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Instruction text for proper positioning */}
-        <Text style={[styles.maintext]}>
-          Bitte platzieren sie die Bodenprobe im kleinen, die GreyCard im großen Rechteck.
-        </Text>
-        
-        {/* Capture photo button */}
-        <TouchableOpacity style={[styles.button, { position: 'absolute', bottom: 70 }]} onPress={takePicture}>
-          <Text style={styles.maintext}>Foto aufnehmen</Text>
-        </TouchableOpacity>
-
       </View>
     );
   };

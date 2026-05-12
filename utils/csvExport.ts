@@ -32,6 +32,23 @@ type AufnahmeCSVRow = {
   mittl_n: string;
   mittl_temp: string;
   notizen: string;
+  hangneigung: string;
+  reliefformtyp: string;
+  mikrorelief: string;
+  nat_bodenabtrag: string;
+  kuenstl_bodenabtrag: string;
+  anthropogene_veraend: string;
+  bodenoberflaeche: string;
+  versiegelungsart: string;
+  regenwuermer: string;
+  substratsyst_einheit: string;
+  hydrogeniet_moortyp: string;
+  durchwurzelbarer_bodenraum: string;
+  wasserstand_gof: string;
+  grundnaessestufe: string;
+  besond_wasserverh: string;
+  stau_haftnaessestufe: string;
+  erosionsgrad: string;
 };
 
 type HorizontCSVRow = {
@@ -53,9 +70,41 @@ type HorizontCSVRow = {
   carbonat: string;
   lagerungsdichte: string;
   feinwurzeln: string;
-  lagerungsart: string;
+  gefuege: string;
   notizen: string;
   status: string;
+  bodenfeuchte: string;
+  konsistenz: string;
+  oxidationsmerkmale: string;
+  reduktionsmerkmale: string;
+  pedogene_merkmale: string;
+  lagerungsart_erw: string;
+  lagerungsform: string;
+  verfestigungsdichte: string;
+  hohlraeume: string;
+  zersetzungsstufe: string;
+  wurzelverteilung: string;
+  pilzmycel: string;
+  grobbodenanbindung: string;
+  geog_org_kohlenstoff: string;
+  geogenese: string;
+  periglaziaere_lagen: string;
+  stratigraphie: string;
+  grobkomponenten: string;
+  feinkomponenten: string;
+  beimengungen: string;
+  bes_strukturen: string;
+  geruch: string;
+  substratart: string;
+  probennummern: string;
+  gpv_pct: string;
+  gpv_lm2: string;
+  lk_pct: string;
+  lk_lm2: string;
+  fk_pct: string;
+  fk_lm2: string;
+  nfk_pct: string;
+  nfk_lm2: string;
 };
 
 // ─── Shared internals ─────────────────────────────────────────────────────────
@@ -84,7 +133,24 @@ function buildRows(aufnahmen: Aufnahme[]): { aufnahmenRows: AufnahmeCSVRow[]; ho
     witterung:       a.witterung ?? "",
     mittl_n:         a.mittl_n != null ? String(a.mittl_n) : "",
     mittl_temp:      a.mittl_temp != null ? String(a.mittl_temp) : "",
-    notizen:         a.notizen ?? "",
+    notizen:              a.notizen ?? "",
+    hangneigung:          a.hangneigung ?? "",
+    reliefformtyp:        a.reliefformtyp ?? "",
+    mikrorelief:          a.mikrorelief ?? "",
+    nat_bodenabtrag:      a.nat_bodenabtrag ?? "",
+    kuenstl_bodenabtrag:  a.kuenstl_bodenabtrag ?? "",
+    anthropogene_veraend: a.anthropogene_veraend ?? "",
+    bodenoberflaeche:     a.bodenoberflaeche ?? "",
+    versiegelungsart:     a.versiegelungsart ?? "",
+    regenwuermer:         a.regenwuermer ?? "",
+    substratsyst_einheit:       a.substratsyst_einheit ?? "",
+    hydrogeniet_moortyp:        a.hydrogeniet_moortyp ?? "",
+    durchwurzelbarer_bodenraum: a.durchwurzelbarer_bodenraum ?? "",
+    wasserstand_gof:            a.wasserstand_gof ?? "",
+    grundnaessestufe:           a.grundnaessestufe ?? "",
+    besond_wasserverh:          a.besond_wasserverh ?? "",
+    stau_haftnaessestufe:       a.stau_haftnaessestufe ?? "",
+    erosionsgrad:               a.erosionsgrad ?? "",
   }));
 
   const horizonteRows: HorizontCSVRow[] = [];
@@ -110,9 +176,41 @@ function buildRows(aufnahmen: Aufnahme[]): { aufnahmenRows: AufnahmeCSVRow[]; ho
         carbonat:      h.carbonat ?? "",
         lagerungsdichte: h.lagerungsdichte ?? "",
         feinwurzeln:   h.feinwurzeln ?? "",
-        lagerungsart:  h.lagerungsart ?? "",
-        notizen:       h.notizen ?? "",
-        status:        h.status,
+        gefuege:             h.gefuege ?? "",
+        notizen:             h.notizen ?? "",
+        status:              h.status,
+        bodenfeuchte:        h.bodenfeuchte ?? "",
+        konsistenz:          h.konsistenz ?? "",
+        oxidationsmerkmale:  h.oxidationsmerkmale ?? "",
+        reduktionsmerkmale:  h.reduktionsmerkmale ?? "",
+        pedogene_merkmale:   h.pedogene_merkmale ?? "",
+        lagerungsart_erw:    h.lagerungsart_erw ?? "",
+        lagerungsform:       h.lagerungsform ?? "",
+        verfestigungsdichte: h.verfestigungsdichte ?? "",
+        hohlraeume:          h.hohlraeume ?? "",
+        zersetzungsstufe:    h.zersetzungsstufe ?? "",
+        wurzelverteilung:    h.wurzelverteilung ?? "",
+        pilzmycel:           h.pilzmycel ?? "",
+        grobbodenanbindung:  h.grobbodenanbindung ?? "",
+        geog_org_kohlenstoff: h.geog_org_kohlenstoff ?? "",
+        geogenese:           h.geogenese ?? "",
+        periglaziaere_lagen: h.periglaziaere_lagen ?? "",
+        stratigraphie:       h.stratigraphie ?? "",
+        grobkomponenten:     h.grobkomponenten ?? "",
+        feinkomponenten:     h.feinkomponenten ?? "",
+        beimengungen:        h.beimengungen ?? "",
+        bes_strukturen:      h.bes_strukturen ?? "",
+        geruch:              h.geruch ?? "",
+        substratart:         h.substratart ?? "",
+        probennummern:       h.probennummern ?? "",
+        gpv_pct:             h.gpv_pct ?? "",
+        gpv_lm2:             h.gpv_lm2 ?? "",
+        lk_pct:              h.lk_pct ?? "",
+        lk_lm2:              h.lk_lm2 ?? "",
+        fk_pct:              h.fk_pct ?? "",
+        fk_lm2:              h.fk_lm2 ?? "",
+        nfk_pct:             h.nfk_pct ?? "",
+        nfk_lm2:             h.nfk_lm2 ?? "",
       });
     }
   }

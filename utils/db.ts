@@ -18,115 +18,107 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS feldkampagnen (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       name        TEXT    NOT NULL,
-      erstellt_am TEXT    NOT NULL DEFAULT (datetime('now'))
+      erstellt_am TEXT    NOT NULL DEFAULT (datetime('now')),
+      status      TEXT    NOT NULL DEFAULT 'offen'
     );
 
     CREATE TABLE IF NOT EXISTS aufnahmen (
       id                INTEGER PRIMARY KEY AUTOINCREMENT,
       feldkampagne_id   INTEGER REFERENCES feldkampagnen(id) ON DELETE CASCADE,
+      nummer            INTEGER,
       erstellt_am       TEXT    NOT NULL DEFAULT (datetime('now')),
+      status            TEXT    NOT NULL DEFAULT 'offen',
       gps_lat           REAL,
       gps_lon           REAL,
+      utm_easting       REAL,
+      utm_northing      REAL,
+      utm_zone          TEXT,
+      m_ue_nn           REAL,
       notizen           TEXT,
-      status            TEXT    NOT NULL DEFAULT 'offen'
+      bodentyp          TEXT,
+      bodtyp_abk        TEXT,
+      humusform         TEXT,
+      humsfrm_abk       TEXT,
+      ausgangsgestein   TEXT,
+      grundigkeit       REAL,
+      witterung         TEXT,
+      mittl_n           REAL,
+      mittl_temp        REAL,
+      nutzung           TEXT,
+      vegetation        TEXT,
+      reliefpos         TEXT,
+      expos             TEXT,
+      hangneigung       TEXT,
+      reliefformtyp     TEXT,
+      mikrorelief       TEXT,
+      nat_bodenabtrag   TEXT,
+      kuenstl_bodenabtrag TEXT,
+      anthropogene_veraend TEXT,
+      bodenoberflaeche  TEXT,
+      versiegelungsart  TEXT,
+      regenwuermer      TEXT,
+      substratsyst_einheit       TEXT,
+      hydrogeniet_moortyp        TEXT,
+      durchwurzelbarer_bodenraum TEXT,
+      wasserstand_gof            TEXT,
+      grundnaessestufe           TEXT,
+      besond_wasserverh          TEXT,
+      stau_haftnaessestufe       TEXT,
+      erosionsgrad               TEXT
     );
 
     CREATE TABLE IF NOT EXISTS horizonte (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       aufnahme_id   INTEGER NOT NULL REFERENCES aufnahmen(id) ON DELETE CASCADE,
       nummer        INTEGER NOT NULL,
+      status        TEXT    NOT NULL DEFAULT 'leer',
+      horizontname  TEXT,
+      tiefe_oben    TEXT,
+      tiefe_unten   TEXT,
+      maechtigk_dm  TEXT,
       farbe_munsell TEXT,
       farbe_rgb     TEXT,
       bodenart      TEXT,
       anteil        TEXT,
+      ph_cacl2      REAL,
+      humus         TEXT,
+      humus_pct     TEXT,
+      carbonat      TEXT,
+      lagerungsdichte TEXT,
+      feinwurzeln   TEXT,
+      gefuege       TEXT,
       notizen       TEXT,
-      status        TEXT NOT NULL DEFAULT 'leer'
+      bodenfeuchte         TEXT,
+      konsistenz           TEXT,
+      oxidationsmerkmale   TEXT,
+      reduktionsmerkmale   TEXT,
+      pedogene_merkmale    TEXT,
+      lagerungsart_erw     TEXT,
+      lagerungsform        TEXT,
+      verfestigungsdichte  TEXT,
+      hohlraeume           TEXT,
+      zersetzungsstufe     TEXT,
+      wurzelverteilung     TEXT,
+      pilzmycel            TEXT,
+      grobbodenanbindung   TEXT,
+      geog_org_kohlenstoff TEXT,
+      geogenese            TEXT,
+      periglaziaere_lagen  TEXT,
+      stratigraphie        TEXT,
+      grobkomponenten      TEXT,
+      feinkomponenten      TEXT,
+      beimengungen         TEXT,
+      bes_strukturen       TEXT,
+      geruch               TEXT,
+      substratart          TEXT,
+      probennummern        TEXT
     );
   `);
 
-  // Migration: add feldkampagne_id to existing aufnahmen table if absent
-  try {
-    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN feldkampagne_id INTEGER`);
-  } catch {
-    // Column already exists — safe to ignore
+  for (const col of ['gpv_pct', 'gpv_lm2', 'lk_pct', 'lk_lm2', 'fk_pct', 'fk_lm2', 'nfk_pct', 'nfk_lm2']) {
+    try { db.execSync(`ALTER TABLE horizonte ADD COLUMN ${col} TEXT`); } catch (_) {}
   }
-
-  // Migration: add status to feldkampagnen
-  try {
-    db.execSync(`ALTER TABLE feldkampagnen ADD COLUMN status TEXT NOT NULL DEFAULT 'offen'`);
-  } catch {}
-
-  // Migration: add horizontname to existing horizonte table if absent
-  try {
-    db.execSync(`ALTER TABLE horizonte ADD COLUMN horizontname TEXT`);
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Migration: add tiefe_oben / tiefe_unten to existing horizonte table if absent
-  try {
-    db.execSync(`ALTER TABLE horizonte ADD COLUMN tiefe_oben TEXT`);
-  } catch {
-    // Column already exists — safe to ignore
-  }
-  try {
-    db.execSync(`ALTER TABLE horizonte ADD COLUMN tiefe_unten TEXT`);
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Migration: add UTM columns to aufnahmen if absent
-  try {
-    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN utm_easting REAL`);
-  } catch {}
-  try {
-    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN utm_northing REAL`);
-  } catch {}
-  try {
-    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN utm_zone TEXT`);
-  } catch {}
-
-  // Migration: add campaign-scoped sequence number to aufnahmen
-  try {
-    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN nummer INTEGER`);
-  } catch {}
-
-  // Migration: add profile/site fields to aufnahmen
-  for (const col of [
-    'ADD COLUMN bodentyp TEXT',
-    'ADD COLUMN bodtyp_abk TEXT',
-    'ADD COLUMN humusform TEXT',
-    'ADD COLUMN humsfrm_abk TEXT',
-    'ADD COLUMN m_ue_nn REAL',
-    'ADD COLUMN witterung TEXT',
-    'ADD COLUMN mittl_n REAL',
-    'ADD COLUMN mittl_temp REAL',
-    'ADD COLUMN nutzung TEXT',
-    'ADD COLUMN vegetation TEXT',
-    'ADD COLUMN reliefpos TEXT',
-    'ADD COLUMN expos TEXT',
-    'ADD COLUMN ausgangsgestein TEXT',
-    'ADD COLUMN grundigkeit REAL',
-  ]) {
-    try { db.execSync(`ALTER TABLE aufnahmen ${col}`); } catch {}
-  }
-
-  // Migration: rename pflanzenreste → lagerungsdichte (runs before ADD COLUMN so new installs skip gracefully)
-  try { db.execSync(`ALTER TABLE horizonte RENAME COLUMN pflanzenreste TO lagerungsdichte`); } catch {}
-
-  // Migration: add detailed horizon fields
-  for (const col of [
-    'ADD COLUMN ph_cacl2 REAL',
-    'ADD COLUMN humus TEXT',
-    'ADD COLUMN humus_pct TEXT',
-    'ADD COLUMN carbonat TEXT',
-    'ADD COLUMN lagerungsdichte TEXT',
-    'ADD COLUMN feinwurzeln TEXT',
-    'ADD COLUMN lagerungsart TEXT',
-    'ADD COLUMN maechtigk_dm TEXT',
-  ]) {
-    try { db.execSync(`ALTER TABLE horizonte ${col}`); } catch {}
-  }
+  try { db.execSync(`ALTER TABLE aufnahmen ADD COLUMN effektiver_wurzelraum REAL`); } catch (_) {}
 }
 
 export default db;

@@ -1,44 +1,64 @@
-import { Text, ScrollView } from 'react-native';
+import { Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
 import { styles } from '@/styles/styles';
 
-
-/**
- * Tools overview screen.
- * Lists all available soil determination tools as navigation links,
- * plus reference tools under a separate section.
- */
 export default function ToolsIndex() {
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 15, paddingVertical: 10, alignItems: 'center', gap: 15 }}>
-      <Link href="/tools/horizonte" style={styles.button}>
-        <Text style={styles.maintext}>Horizontlexikon</Text>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 15, paddingVertical: 10, alignItems: 'stretch', gap: 15 }}>
+      <Link href="/tools/horizonte" asChild>
+        <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.navButtonLabel}>Horizontlexikon</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
       </Link>
-      <Link href="/tools/bodenart" style={styles.button}>
-        <Text style={styles.maintext}>Bodenart bestimmen</Text>
+      <Link href="/tools/bodenart" asChild>
+        <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.navButtonLabel}>Bodenart bestimmen</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
       </Link>
-      <Link href="/tools/bodentyp" style={styles.button}>
-        <Text style={styles.maintext}>Bodentyp bestimmen</Text>
+      <Link href="/tools/bodentyp" asChild>
+        <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.navButtonLabel}>Bodentyp bestimmen</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
       </Link>
-      <Link href="/tools/anteil" style={styles.button}>
-        <Text style={styles.maintext}>Anteil schätzen</Text>
+      <Link href="/tools/anteil" asChild>
+        <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.navButtonLabel}>Anteil schätzen</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
       </Link>
-      <Link href="/tools/humusgehalt" style={styles.button}>
-        <Text style={styles.maintext}>Humusgehalt bestimmen</Text>
+      <Link href="/tools/humusgehalt" asChild>
+        <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.navButtonLabel}>Humusgehalt bestimmen</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
       </Link>
-      <Link href="/tools/carbonat" style={styles.button}>
-        <Text style={styles.maintext}>Carbonatgehalt bestimmen</Text>
+      <Link href="/tools/carbonat" asChild>
+        <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.navButtonLabel}>Carbonatgehalt bestimmen</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
       </Link>
-      <Link href="/tools/lagerungsdichte" style={styles.button}>
-        <Text style={styles.maintext}>Lagerungsdichte bestimmen</Text>
+      <Link href="/tools/lagerungsdichte" asChild>
+        <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.navButtonLabel}>Lagerungsdichte bestimmen</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
       </Link>
-      <Link href="/tools/feinwurzeln" style={styles.button}>
-        <Text style={styles.maintext}>Feinwurzeln bestimmen</Text>
+      <Link href="/tools/feinwurzeln" asChild>
+        <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.navButtonLabel}>Feinwurzeln bestimmen</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
       </Link>
-      <Link href="/tools/gefuege" style={styles.button}>
-        <Text style={styles.maintext}>Gefüge bestimmen</Text>
+      <Link href="/tools/gefuege" asChild>
+        <TouchableOpacity style={styles.navButton}>
+          <Text style={styles.navButtonLabel}>Gefüge bestimmen</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
       </Link>
-
     </ScrollView>
   );
 }

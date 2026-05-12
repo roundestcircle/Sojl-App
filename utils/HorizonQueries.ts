@@ -8,7 +8,7 @@ export type Horizont = {
   nummer: number;
   horizontname: string | null;
   farbe_munsell: string | null;
-  farbe_rgb: string | null;  // stored as JSON string: {"r":0,"g":0,"b":0}
+  farbe_rgb: string | null;
   bodenart: string | null;
   anteil: string | null;
   notizen: string | null;
@@ -21,8 +21,41 @@ export type Horizont = {
   carbonat: string | null;
   lagerungsdichte: string | null;
   feinwurzeln: string | null;
-  lagerungsart: string | null;
+  gefuege: string | null;
   maechtigk_dm: string | null;
+  // Erweiterte fields
+  bodenfeuchte: string | null;
+  konsistenz: string | null;
+  oxidationsmerkmale: string | null;
+  reduktionsmerkmale: string | null;
+  pedogene_merkmale: string | null;
+  lagerungsart_erw: string | null;
+  lagerungsform: string | null;
+  verfestigungsdichte: string | null;
+  hohlraeume: string | null;
+  zersetzungsstufe: string | null;
+  wurzelverteilung: string | null;
+  pilzmycel: string | null;
+  grobbodenanbindung: string | null;
+  geog_org_kohlenstoff: string | null;
+  geogenese: string | null;
+  periglaziaere_lagen: string | null;
+  stratigraphie: string | null;
+  grobkomponenten: string | null;
+  feinkomponenten: string | null;
+  beimengungen: string | null;
+  bes_strukturen: string | null;
+  geruch: string | null;
+  substratart: string | null;
+  probennummern: string | null;
+  gpv_pct: string | null;
+  gpv_lm2: string | null;
+  lk_pct: string | null;
+  lk_lm2: string | null;
+  fk_pct: string | null;
+  fk_lm2: string | null;
+  nfk_pct: string | null;
+  nfk_lm2: string | null;
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -65,9 +98,7 @@ export function getHorizont(aufnahmeId: number, nummer: number): Horizont | null
 
 /**
  * Saves form data for a Horizont and updates its status.
- * Status is derived automatically:
- *   - both farbe_munsell and bodenart filled → 'vollstaendig'
- *   - anything else filled → 'angefangen'
+ * Status: vollstaendig if farbe_munsell + bodenart both filled, else angefangen.
  */
 export function saveHorizont(
   aufnahmeId: number,
@@ -76,7 +107,15 @@ export function saveHorizont(
     | "horizontname" | "farbe_munsell" | "farbe_rgb" | "bodenart" | "anteil"
     | "notizen" | "tiefe_oben" | "tiefe_unten"
     | "ph_cacl2" | "humus" | "humus_pct" | "carbonat" | "lagerungsdichte"
-    | "feinwurzeln" | "lagerungsart" | "maechtigk_dm"
+    | "feinwurzeln" | "gefuege" | "maechtigk_dm"
+    | "bodenfeuchte" | "konsistenz" | "oxidationsmerkmale" | "reduktionsmerkmale"
+    | "pedogene_merkmale" | "lagerungsart_erw" | "lagerungsform" | "verfestigungsdichte"
+    | "hohlraeume" | "zersetzungsstufe" | "wurzelverteilung" | "pilzmycel"
+    | "grobbodenanbindung" | "geog_org_kohlenstoff" | "geogenese" | "periglaziaere_lagen"
+    | "stratigraphie" | "grobkomponenten" | "feinkomponenten" | "beimengungen"
+    | "bes_strukturen" | "geruch" | "substratart" | "probennummern"
+    | "gpv_pct" | "gpv_lm2" | "lk_pct" | "lk_lm2"
+    | "fk_pct"  | "fk_lm2"  | "nfk_pct" | "nfk_lm2"
   >>,
 ) {
   const isFull = data.farbe_munsell && data.bodenart;
@@ -84,23 +123,55 @@ export function saveHorizont(
 
   db.runSync(
     `UPDATE horizonte
-     SET horizontname  = ?,
-         farbe_munsell = ?,
-         farbe_rgb     = ?,
-         bodenart      = ?,
-         anteil        = ?,
-         notizen       = ?,
-         tiefe_oben    = ?,
-         tiefe_unten   = ?,
-         ph_cacl2      = ?,
-         humus         = ?,
-         humus_pct     = ?,
-         carbonat      = ?,
-         lagerungsdichte = ?,
-         feinwurzeln   = ?,
-         lagerungsart  = ?,
-         maechtigk_dm  = ?,
-         status        = ?
+     SET horizontname       = ?,
+         farbe_munsell      = ?,
+         farbe_rgb          = ?,
+         bodenart           = ?,
+         anteil             = ?,
+         notizen            = ?,
+         tiefe_oben         = ?,
+         tiefe_unten        = ?,
+         ph_cacl2           = ?,
+         humus              = ?,
+         humus_pct          = ?,
+         carbonat           = ?,
+         lagerungsdichte    = ?,
+         feinwurzeln        = ?,
+         gefuege            = ?,
+         maechtigk_dm       = ?,
+         bodenfeuchte       = ?,
+         konsistenz         = ?,
+         oxidationsmerkmale = ?,
+         reduktionsmerkmale = ?,
+         pedogene_merkmale  = ?,
+         lagerungsart_erw   = ?,
+         lagerungsform      = ?,
+         verfestigungsdichte = ?,
+         hohlraeume         = ?,
+         zersetzungsstufe   = ?,
+         wurzelverteilung   = ?,
+         pilzmycel          = ?,
+         grobbodenanbindung = ?,
+         geog_org_kohlenstoff = ?,
+         geogenese          = ?,
+         periglaziaere_lagen = ?,
+         stratigraphie      = ?,
+         grobkomponenten    = ?,
+         feinkomponenten    = ?,
+         beimengungen       = ?,
+         bes_strukturen     = ?,
+         geruch             = ?,
+         substratart        = ?,
+         probennummern      = ?,
+         gpv_pct            = ?,
+         gpv_lm2            = ?,
+         lk_pct             = ?,
+         lk_lm2             = ?,
+         fk_pct             = ?,
+         fk_lm2             = ?,
+         nfk_pct            = ?,
+         nfk_lm2            = ?,
+         status             = ?
      WHERE aufnahme_id = ? AND nummer = ?`,
     data.horizontname ?? null,
     data.farbe_munsell ?? null,
@@ -116,8 +187,40 @@ export function saveHorizont(
     data.carbonat ?? null,
     data.lagerungsdichte ?? null,
     data.feinwurzeln ?? null,
-    data.lagerungsart ?? null,
+    data.gefuege ?? null,
     data.maechtigk_dm ?? null,
+    data.bodenfeuchte ?? null,
+    data.konsistenz ?? null,
+    data.oxidationsmerkmale ?? null,
+    data.reduktionsmerkmale ?? null,
+    data.pedogene_merkmale ?? null,
+    data.lagerungsart_erw ?? null,
+    data.lagerungsform ?? null,
+    data.verfestigungsdichte ?? null,
+    data.hohlraeume ?? null,
+    data.zersetzungsstufe ?? null,
+    data.wurzelverteilung ?? null,
+    data.pilzmycel ?? null,
+    data.grobbodenanbindung ?? null,
+    data.geog_org_kohlenstoff ?? null,
+    data.geogenese ?? null,
+    data.periglaziaere_lagen ?? null,
+    data.stratigraphie ?? null,
+    data.grobkomponenten ?? null,
+    data.feinkomponenten ?? null,
+    data.beimengungen ?? null,
+    data.bes_strukturen ?? null,
+    data.geruch ?? null,
+    data.substratart ?? null,
+    data.probennummern ?? null,
+    data.gpv_pct  ?? null,
+    data.gpv_lm2  ?? null,
+    data.lk_pct   ?? null,
+    data.lk_lm2   ?? null,
+    data.fk_pct   ?? null,
+    data.fk_lm2   ?? null,
+    data.nfk_pct  ?? null,
+    data.nfk_lm2  ?? null,
     status,
     aufnahmeId,
     nummer,

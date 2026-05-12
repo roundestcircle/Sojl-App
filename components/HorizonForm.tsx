@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, StyleSheet } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, StyleSheet, Keyboard, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useForm, FormProvider, Controller } from "react-hook-form";
+import { useForm, FormProvider, Controller, useFieldArray } from "react-hook-form";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import type { Horizont } from "@/utils/HorizonQueries";
@@ -14,6 +14,8 @@ import CarbonatTool from "@/components/CarbonatTool";
 import LagerungsdichteTool from "@/components/LagerungsdichteTool";
 import FeinwurzelnTool from "@/components/FeinwurzelnTool";
 import GefuegeTool from "@/components/GefuegeTool";
+import CollapsibleSection from "@/components/CollapsibleSection";
+import { calcMaechtigkeitDm, calcPoreCapacities, rateGPV, rateLK } from "@/utils/MappingMaths";
 
 // ─── Form shape ────────────────────────────────────────────────────────────────
 
@@ -31,8 +33,41 @@ export type HorizontFormData = {
   carbonat: string;
   lagerungsdichte: string;
   feinwurzeln: string;
-  lagerungsart: string;
+  gefuege: string;
   maechtigk_dm: string;
+  gpv_pct: string;
+  gpv_lm2: string;
+  lk_pct: string;
+  lk_lm2: string;
+  fk_pct: string;
+  fk_lm2: string;
+  nfk_pct: string;
+  nfk_lm2: string;
+  // Erweiterte fields
+  bodenfeuchte: string;
+  konsistenz: string;
+  oxidationsmerkmale: string;
+  reduktionsmerkmale: string;
+  pedogene_merkmale: string;
+  lagerungsart_erw: string;
+  lagerungsform: string;
+  verfestigungsdichte: string;
+  hohlraeume: string;
+  zersetzungsstufe: string;
+  wurzelverteilung: string;
+  pilzmycel: string;
+  grobbodenanbindung: string;
+  geog_org_kohlenstoff: string;
+  geogenese: string;
+  periglaziaere_lagen: string;
+  stratigraphie: string;
+  grobkomponenten: string;
+  feinkomponenten: string;
+  beimengungen: string;
+  bes_strukturen: string;
+  geruch: string;
+  substratart: string;
+  probennummern: { value: string }[];
 };
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
@@ -42,7 +77,7 @@ type Props = {
   onSave: (data: HorizontFormData) => void;
 };
 
-type ActiveModal = 'farbe' | 'bodenart' | 'anteil' | 'humus' | 'carbonat' | 'lagerungsdichte' | 'feinwurzeln' | 'lagerungsart' | 'lexikon' | null;
+type ActiveModal = 'farbe' | 'bodenart' | 'anteil' | 'humus' | 'carbonat' | 'lagerungsdichte' | 'feinwurzeln' | 'gefuege' | 'lexikon' | null;
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
@@ -70,35 +105,130 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
       carbonat:      initialData?.carbonat ?? "",
       lagerungsdichte: initialData?.lagerungsdichte ?? "",
       feinwurzeln:   initialData?.feinwurzeln ?? "",
-      lagerungsart:  initialData?.lagerungsart ?? "",
+      gefuege:       initialData?.gefuege ?? "",
       maechtigk_dm:  initialData?.maechtigk_dm ?? "",
+      gpv_pct:       initialData?.gpv_pct ?? "",
+      gpv_lm2:       initialData?.gpv_lm2 ?? "",
+      lk_pct:        initialData?.lk_pct ?? "",
+      lk_lm2:        initialData?.lk_lm2 ?? "",
+      fk_pct:        initialData?.fk_pct ?? "",
+      fk_lm2:        initialData?.fk_lm2 ?? "",
+      nfk_pct:       initialData?.nfk_pct ?? "",
+      nfk_lm2:       initialData?.nfk_lm2 ?? "",
+      bodenfeuchte:        initialData?.bodenfeuchte ?? "",
+      konsistenz:          initialData?.konsistenz ?? "",
+      oxidationsmerkmale:  initialData?.oxidationsmerkmale ?? "",
+      reduktionsmerkmale:  initialData?.reduktionsmerkmale ?? "",
+      pedogene_merkmale:   initialData?.pedogene_merkmale ?? "",
+      lagerungsart_erw:    initialData?.lagerungsart_erw ?? "",
+      lagerungsform:       initialData?.lagerungsform ?? "",
+      verfestigungsdichte: initialData?.verfestigungsdichte ?? "",
+      hohlraeume:          initialData?.hohlraeume ?? "",
+      zersetzungsstufe:    initialData?.zersetzungsstufe ?? "",
+      wurzelverteilung:    initialData?.wurzelverteilung ?? "",
+      pilzmycel:           initialData?.pilzmycel ?? "",
+      grobbodenanbindung:  initialData?.grobbodenanbindung ?? "",
+      geog_org_kohlenstoff: initialData?.geog_org_kohlenstoff ?? "",
+      geogenese:           initialData?.geogenese ?? "",
+      periglaziaere_lagen: initialData?.periglaziaere_lagen ?? "",
+      stratigraphie:       initialData?.stratigraphie ?? "",
+      grobkomponenten:     initialData?.grobkomponenten ?? "",
+      feinkomponenten:     initialData?.feinkomponenten ?? "",
+      beimengungen:        initialData?.beimengungen ?? "",
+      bes_strukturen:      initialData?.bes_strukturen ?? "",
+      geruch:              initialData?.geruch ?? "",
+      substratart:         initialData?.substratart ?? "",
+      probennummern: (() => {
+        try { return (JSON.parse(initialData?.probennummern ?? '[]') as string[]).map(v => ({ value: v })); }
+        catch { return []; }
+      })(),
     },
   });
 
   const { setValue, control, watch } = methods;
+  const { fields: probenFields, append: appendProbe, remove: removeProbe } = useFieldArray({ control, name: 'probennummern' });
+  const scrollViewRef = useRef<ScrollView>(null);
+  const notizenFocused = useRef(false);
+  const currentScrollY = useRef(0);
+  const contentH = useRef(0);
+  const layoutH = useRef(0);
+  const scrollAnim = useRef(new Animated.Value(0)).current;
+
+  const slowScrollToEnd = () => {
+    const target = Math.max(0, contentH.current - layoutH.current);
+    scrollAnim.setValue(currentScrollY.current);
+    const listener = scrollAnim.addListener(({ value }) => {
+      scrollViewRef.current?.scrollTo({ y: value, animated: false });
+    });
+    Animated.timing(scrollAnim, {
+      toValue: target,
+      duration: 600,
+      useNativeDriver: false,
+    }).start(() => scrollAnim.removeListener(listener));
+  };
+
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      if (notizenFocused.current) setTimeout(slowScrollToEnd, 100);
+    });
+    return () => sub.remove();
+  }, []);
   // Which tool modal is currently open; null means all modals are closed
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const [autoExpanded, setAutoExpanded] = useState(false);
+  const [erweiterteExpanded, setErweiterteExpanded] = useState(false);
+  const isFirstWatch = useRef(true);
 
   // Autosave: subscribe to every form change and call onSave with the full data snapshot
   useEffect(() => {
-    const { unsubscribe } = watch((data) => onSave(data as HorizontFormData));
+    const { unsubscribe } = watch((data) => {
+      if (isFirstWatch.current) { isFirstWatch.current = false; return; }
+      onSave(data as HorizontFormData);
+    });
     return unsubscribe;
   }, [onSave]);
 
-  const watchedFarbe    = watch('farbe_munsell');
-  const watchedPH       = watch('ph_cacl2');
-  const watchedBodenart = watch('bodenart');
+  const watchedFarbe          = watch('farbe_munsell');
+  const watchedPH             = watch('ph_cacl2');
+  const watchedBodenart       = watch('bodenart');
+  const watchedTiefeOben      = watch('tiefe_oben');
+  const watchedTiefeUnten     = watch('tiefe_unten');
+  const watchedLagerungsdichte = watch('lagerungsdichte');
+  const watchedHumusPct       = watch('humus_pct');
+  const watchedAnteil         = watch('anteil');
+  const watchedGpvPct         = watch('gpv_pct');
+  const watchedLkPct          = watch('lk_pct');
+
+  useEffect(() => {
+    setValue('maechtigk_dm', calcMaechtigkeitDm(watchedTiefeOben, watchedTiefeUnten));
+  }, [watchedTiefeOben, watchedTiefeUnten]);
+
+  useEffect(() => {
+    const maechtigkDm = calcMaechtigkeitDm(watchedTiefeOben, watchedTiefeUnten);
+    const result = calcPoreCapacities(watchedBodenart, watchedLagerungsdichte, watchedHumusPct, watchedAnteil, maechtigkDm);
+    const poreFields = ['gpv_pct', 'gpv_lm2', 'lk_pct', 'lk_lm2', 'fk_pct', 'fk_lm2', 'nfk_pct', 'nfk_lm2'] as const;
+    if (result) {
+      poreFields.forEach(f => setValue(f, result[f]));
+    } else {
+      poreFields.forEach(f => setValue(f, ''));
+    }
+  }, [watchedBodenart, watchedLagerungsdichte, watchedHumusPct, watchedAnteil, watchedTiefeOben, watchedTiefeUnten]);
 
   return (
     <>
       <FormProvider {...methods}>
         <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={localStyles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={16}
+          onScroll={(e) => { currentScrollY.current = e.nativeEvent.contentOffset.y; }}
+          onContentSizeChange={(_, h) => { contentH.current = h; }}
+          onLayout={(e) => { layoutH.current = e.nativeEvent.layout.height; }}
         >
 
           {/* ── Horizontname ── */}
-          <Section title="Horizontname">
+          <Section title="Horizontname (58)">
             <View style={localStyles.fieldWithTool}>
               <TextInput
                 style={[styles.input, { flex: 1 }]}
@@ -113,23 +243,8 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
             </View>
           </Section>
 
-          {/* ── Bodenfarbe ── */}
-          <Section title="Bodenfarbe">
-            <View style={localStyles.fieldWithTool}>
-              <Controller control={control} name="farbe_munsell"
-                render={({ field: { onChange, value } }) => (
-                  <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 10YR 4/3"
-                    placeholderTextColor={colors.primary + "66"} onChangeText={onChange} value={value} />
-                )}
-              />
-              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('farbe')}>
-                <Text style={styles.actionButtonText}>bestimmen</Text>
-              </TouchableOpacity>
-            </View>
-          </Section>
-
           {/* ── Tiefe ── */}
-          <Section title="Tiefe (cm)">
+          <Section title="Tiefe (cm) (26)">
             <View style={styles.formRow}>
               <View style={styles.halfField}>
                 <Text style={styles.fieldLabel}>Von</Text>
@@ -157,7 +272,7 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
           </Section>
 
           {/* ── Bodenart ── */}
-          <Section title="Bodenart / Textur">
+          <Section title="Bodenart / Textur (44)">
             <View style={localStyles.fieldWithTool}>
               <Controller
                 control={control}
@@ -173,7 +288,7 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
                 )}
               />
               <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('bodenart')}>
-                <Text style={styles.actionButtonText}>bestimmen</Text>
+                <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
               </TouchableOpacity>
             </View>
           </Section>
@@ -181,33 +296,46 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
           {/* ── Bodeneigenschaften ── */}
           <Section title="Bodeneigenschaften">
 
-            {/* pH + Mächtigkeit: no tools, keep paired layout */}
-            <View style={styles.formRow}>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>pH (CaCl₂)</Text>
-                <TextInput
-                  style={styles.input}
-                  keyboardType="decimal-pad"
-                  placeholder="z.B. 5.5"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={(v) => setValue("ph_cacl2", v)}
-                  defaultValue={initialData?.ph_cacl2 != null ? String(initialData.ph_cacl2) : ""}
+            <Text style={styles.fieldLabel}>Skelettanteil (45)</Text>
+            <View style={localStyles.fieldWithTool}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 4 }}>
+                <Controller control={control} name="anteil"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 35" keyboardType="number-pad"
+                      placeholderTextColor={colors.primary + "66"} onChangeText={onChange} value={value} />
+                  )}
                 />
+                <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 18 }}>%</Text>
               </View>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Mächtigkeit (dm)</Text>
-                <TextInput
-                  style={styles.input}
-                  keyboardType="decimal-pad"
-                  placeholder="z.B. 1.5"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={(v) => setValue("maechtigk_dm", v)}
-                  defaultValue={initialData?.maechtigk_dm ?? ""}
-                />
-              </View>
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('anteil')}>
+                <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
+              </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Humusgehalt</Text>
+            <Text style={styles.fieldLabel}>pH (CaCl₂)</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="decimal-pad"
+              placeholder="z.B. 5.5"
+              placeholderTextColor={colors.primary + "66"}
+              onChangeText={(v) => setValue("ph_cacl2", v)}
+              defaultValue={initialData?.ph_cacl2 != null ? String(initialData.ph_cacl2) : ""}
+            />
+
+            <Text style={styles.fieldLabel}>Bodenfarbe (28)</Text>
+            <View style={localStyles.fieldWithTool}>
+              <Controller control={control} name="farbe_munsell"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 10YR 4/3"
+                    placeholderTextColor={colors.primary + "66"} onChangeText={onChange} value={value} />
+                )}
+              />
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('farbe')}>
+                <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.fieldLabel}>Humusgehalt (29)</Text>
             <View style={localStyles.fieldWithTool}>
               <Controller control={control} name="humus" render={({ field: { onChange, value } }) => (
                 <TextInput style={[styles.input, { width: 60 }]} placeholder="h2"
@@ -224,11 +352,11 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
                 <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 18 }}>%</Text>
               </View>
               <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('humus')}>
-                <Text style={styles.actionButtonText}>bestimmen</Text>
+                <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Carbonatgehalt</Text>
+            <Text style={styles.fieldLabel}>Carbonatgehalt (48)</Text>
             <View style={localStyles.fieldWithTool}>
               <Controller control={control} name="carbonat" render={({ field: { onChange, value } }) => (
                 <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. C0"
@@ -236,11 +364,11 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
                   onChangeText={onChange} value={value} />
               )} />
               <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('carbonat')}>
-                <Text style={styles.actionButtonText}>bestimmen</Text>
+                <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Lagerungsdichte</Text>
+            <Text style={styles.fieldLabel}>Lagerungsdichte (42)</Text>
             <View style={localStyles.fieldWithTool}>
               <Controller control={control} name="lagerungsdichte" render={({ field: { onChange, value } }) => (
                 <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 4"
@@ -248,11 +376,11 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
                   onChangeText={onChange} value={value} />
               )} />
               <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('lagerungsdichte')}>
-                <Text style={styles.actionButtonText}>bestimmen</Text>
+                <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Feinwurzeln</Text>
+            <Text style={styles.fieldLabel}>Feinwurzeln (41a)</Text>
             <View style={localStyles.fieldWithTool}>
               <Controller control={control} name="feinwurzeln" render={({ field: { onChange, value } }) => (
                 <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. w2"
@@ -260,42 +388,27 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
                   onChangeText={onChange} value={value} />
               )} />
               <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('feinwurzeln')}>
-                <Text style={styles.actionButtonText}>bestimmen</Text>
+                <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Gefüge</Text>
+            <Text style={styles.fieldLabel}>Gefüge (35)</Text>
             <View style={localStyles.fieldWithTool}>
-              <Controller control={control} name="lagerungsart" render={({ field: { onChange, value } }) => (
-                <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. Ld2"
+              <Controller control={control} name="gefuege" render={({ field: { onChange, value } }) => (
+                <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. Ei, Sub"
                   placeholderTextColor={colors.primary + "66"}
                   onChangeText={onChange} value={value} />
               )} />
-              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('lagerungsart')}>
-                <Text style={styles.actionButtonText}>bestimmen</Text>
+              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('gefuege')}>
+                <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Skelettanteil</Text>
-            <View style={localStyles.fieldWithTool}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 4 }}>
-                <Controller control={control} name="anteil"
-                  render={({ field: { onChange, value } }) => (
-                    <TextInput style={[styles.input, { flex: 1 }]} placeholder="z.B. 35" keyboardType="number-pad"
-                      placeholderTextColor={colors.primary + "66"} onChangeText={onChange} value={value} />
-                  )}
-                />
-                <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 18 }}>%</Text>
-              </View>
-              <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn]} onPress={() => setActiveModal('anteil')}>
-                <Text style={styles.actionButtonText}>bestimmen</Text>
-              </TouchableOpacity>
-            </View>
 
           </Section>
 
           {/* ── Notizen ── */}
-          <Section title="Notizen">
+          <Section title="Notizen (57)">
             <TextInput
               style={[styles.input, localStyles.multiline]}
               placeholder="Freitext..."
@@ -304,8 +417,140 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
               numberOfLines={4}
               onChangeText={(v) => setValue("notizen", v)}
               defaultValue={initialData?.notizen ?? ""}
+              onFocus={() => { notizenFocused.current = true; }}
+              onBlur={() => { notizenFocused.current = false; }}
             />
           </Section>
+
+          {/* ── Erweiterte Bodenaufnahme ── */}
+          <CollapsibleSection
+            title="Erweiterte Bodenaufnahme"
+            expanded={erweiterteExpanded}
+            onToggle={() => setErweiterteExpanded(v => !v)}
+          >
+            <Text style={styles.erweiterteHint}>Hierfür stehen noch keine Bestimmungshilfen zur Verfügung. Bitte nutzt die KA6 für die korrekte Formatierung der Werte.</Text>
+
+            {([
+              ['bodenfeuchte', 'Bodenfeuchte (32)'],
+              ['konsistenz', 'Konsistenz (33)'],
+              ['oxidationsmerkmale', 'Oxidationsmerkmale (30)'],
+              ['reduktionsmerkmale', 'Reduktionsmerkmale (31)'],
+              ['pedogene_merkmale', 'Weitere pedogene Merkmale (34)'],
+              ['lagerungsart_erw', 'Lagerungsart (36)'],
+              ['lagerungsform', 'Lagerungsform (37)'],
+              ['verfestigungsdichte', 'Verfestigungsdichte (38)'],
+              ['hohlraeume', 'Hohlräume / Sekundärporen (39)'],
+              ['zersetzungsstufe', 'Zersetzungsstufe / Humifizierungsgrad (40)'],
+              ['wurzelverteilung', 'Wurzelverteilung (41b)'],
+              ['pilzmycel', 'Pilzmycel (41c)'],
+              ['grobbodenanbindung', 'Grobbodenanbindung (47)'],
+              ['geog_org_kohlenstoff', 'Geogener Organischer Kohlenstoff (49)'],
+            ] as [keyof HorizontFormData, string][]).map(([name, label]) => (
+              <View key={name}>
+                <Text style={styles.fieldLabel}>{label}</Text>
+                <Controller control={control} name={name as any}
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput style={styles.input} placeholderTextColor={colors.primary + '66'}
+                      onChangeText={onChange} value={value as string} />
+                  )} />
+              </View>
+            ))}
+
+            <Text style={[styles.fieldLabel, { marginTop: 8, fontWeight: '700' }]}>Substratkennzeichnung</Text>
+            {([
+              ['geogenese', 'Geogenese (43)'],
+              ['periglaziaere_lagen', 'Periglaziäre Lagen (51)'],
+              ['stratigraphie', 'Stratigraphie (55)'],
+              ['grobkomponenten', 'Grobkomponenten (52a)'],
+              ['feinkomponenten', 'Feinkomponenten (52b)'],
+              ['beimengungen', 'Beimengungen (53)'],
+              ['bes_strukturen', 'Besondere Strukturen (54)'],
+            ] as [keyof HorizontFormData, string][]).map(([name, label]) => (
+              <View key={name}>
+                <Text style={styles.fieldLabel}>{label}</Text>
+                <Controller control={control} name={name as any}
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput style={styles.input} placeholderTextColor={colors.primary + '66'}
+                      onChangeText={onChange} value={value as string} />
+                  )} />
+              </View>
+            ))}
+
+            {([
+              ['geruch', 'Geruch (56)'],
+              ['substratart', 'Substratart'],
+            ] as [keyof HorizontFormData, string][]).map(([name, label]) => (
+              <View key={name}>
+                <Text style={styles.fieldLabel}>{label}</Text>
+                <Controller control={control} name={name as any}
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput style={styles.input} placeholderTextColor={colors.primary + '66'}
+                      onChangeText={onChange} value={value as string} />
+                  )} />
+              </View>
+            ))}
+
+            <Text style={styles.fieldLabel}>Probennummern (59)</Text>
+            {probenFields.map((field, index) => (
+              <View key={field.id} style={localStyles.fieldWithTool}>
+                <Controller control={control} name={`probennummern.${index}.value`}
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput style={[styles.input, { flex: 1 }]} placeholder={`Probe ${index + 1}`}
+                      placeholderTextColor={colors.primary + '66'} onChangeText={onChange} value={value} />
+                  )} />
+                <TouchableOpacity style={[styles.actionButton, localStyles.toolBtn, { backgroundColor: '#c00' }]}
+                  onPress={() => removeProbe(index)}>
+                  <Text style={styles.actionButtonText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity style={styles.actionButton} onPress={() => appendProbe({ value: '' })}>
+              <Text style={styles.actionButtonText}>+ Weitere Probe hinzufügen</Text>
+            </TouchableOpacity>
+          </CollapsibleSection>
+
+          {/* ── Automatisch berechnete Werte ── */}
+          <CollapsibleSection
+            title="Automatisch berechnete Werte"
+            expanded={autoExpanded}
+            onToggle={() => setAutoExpanded(v => !v)}
+          >
+            <Text style={styles.fieldLabel}>Mächtigkeit (dm)</Text>
+            <Controller control={control} name="maechtigk_dm"
+              render={({ field: { value } }) => (
+                <TextInput
+                  style={[styles.input, styles.readonlyInput]}
+                  placeholder="Wird automatisch berechnet"
+                  placeholderTextColor={colors.primary + "66"}
+                  value={value}
+                  editable={false}
+                />
+              )}
+            />
+
+            <PoreReadout
+              title="Gesamte Porenkapazität (GPV)"
+              pctField="gpv_pct" lm2Field="gpv_lm2"
+              rating={watchedGpvPct ? rateGPV(parseFloat(watchedGpvPct)) : ''}
+              control={control}
+            />
+            <PoreReadout
+              title="Luftkapazität (LK)"
+              pctField="lk_pct" lm2Field="lk_lm2"
+              rating={watchedLkPct ? rateLK(parseFloat(watchedLkPct)) : ''}
+              control={control}
+            />
+            <PoreReadout
+              title="Feldkapazität (FK)"
+              pctField="fk_pct" lm2Field="fk_lm2"
+              control={control}
+            />
+            <PoreReadout
+              title="Nutzbare Feldkapazität (nFK)"
+              pctField="nfk_pct" lm2Field="nfk_lm2"
+              control={control}
+            />
+          </CollapsibleSection>
 
         </ScrollView>
       </FormProvider>
@@ -376,10 +621,10 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
       </Modal>
 
       {/* ── Gefüge modal ── */}
-      <Modal visible={activeModal === 'lagerungsart'} animationType="slide" onRequestClose={() => setActiveModal(null)}>
+      <Modal visible={activeModal === 'gefuege'} animationType="slide" onRequestClose={() => setActiveModal(null)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
           <ModalHeader onClose={() => setActiveModal(null)} />
-          <GefuegeTool onConfirm={(v) => { setValue('lagerungsart', v); setActiveModal(null); }} />
+          <GefuegeTool onConfirm={(v) => { setValue('gefuege', v); setActiveModal(null); }} />
         </SafeAreaView>
       </Modal>
 
@@ -419,6 +664,54 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+/** Read-only display row for one pore property (Vol%, l/m², and optional verbal rating). */
+function PoreReadout({
+  title, pctField, lm2Field, rating, control,
+}: {
+  title: string;
+  pctField: keyof HorizontFormData;
+  lm2Field: keyof HorizontFormData;
+  rating?: string;
+  control: any;
+}) {
+  const placeholder = 'Wird berechnet…';
+  const ph = colors.primary + '66';
+  return (
+    <View style={localStyles.poreBlock}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.formRow}>
+        <View style={styles.halfField}>
+          <Text style={styles.fieldLabel}>Vol%</Text>
+          <Controller control={control} name={pctField}
+            render={({ field: { value } }) => (
+              <TextInput style={[styles.input, styles.readonlyInput]}
+                placeholder={placeholder} placeholderTextColor={ph}
+                value={value as string} editable={false} />
+            )} />
+        </View>
+        <View style={styles.halfField}>
+          <Text style={styles.fieldLabel}>l/m²</Text>
+          <Controller control={control} name={lm2Field}
+            render={({ field: { value } }) => (
+              <TextInput style={[styles.input, styles.readonlyInput]}
+                placeholder={placeholder} placeholderTextColor={ph}
+                value={value as string} editable={false} />
+            )} />
+        </View>
+      </View>
+      {rating !== undefined && (
+        <>
+          <Text style={styles.fieldLabel}>Bewertung</Text>
+          <TextInput style={[styles.input, styles.readonlyInput]}
+            placeholder={placeholder} placeholderTextColor={ph}
+            value={rating} editable={false} />
+        </>
+      )}
+    </View>
+  );
+}
+
+
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
 const localStyles = StyleSheet.create({
@@ -433,7 +726,8 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
   },
   toolBtn: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   multiline: {
     minHeight: 100,
@@ -451,5 +745,11 @@ const localStyles = StyleSheet.create({
     color: colors.primary,
     fontSize: 16,
     fontWeight: "600",
+  },
+  poreBlock: {
+    gap: 6,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#ddd',
   },
 });

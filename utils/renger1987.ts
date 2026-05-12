@@ -31,27 +31,27 @@ type HumusTable = number[][][];
 const HIGH: HumusTable = [
   // Value 1
   [
-    [NaN, NaN, NaN, NaN], // pH 3
-    [NaN, NaN, NaN, NaN], // pH 5
-    [NaN, NaN, NaN, NaN], // pH 7
+    [8, 13.5, 17, 18], // pH 3
+    [4, 7.5, 11.7, 15], // pH 5
+    [1.8, 3.5, 5.2, 8.5], // pH 7
   ],
   // Value 3
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [3.1, 5.5, 9.2, 13.2],
+    [1.5, 3, 4.8, 7.5],
+    [0.75, 1.4, 2.2, 3.4],
   ],
   // Value 5
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [1.1, 2.4, 3.8, 5.4],
+    [0.62, 1.15, 1.85, 2.8],
+    [0.05, 0.35, 0.9, 1.4],
   ],
   // Value 7
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [0.8, 0.85, 0.9, 2.2],
+    [0.35, 0.4, 0.5, 1.1],
+    [0, 0.05, 0.1, 0.5],
   ],
 ];
 
@@ -59,27 +59,27 @@ const HIGH: HumusTable = [
 const MID: HumusTable = [
   // Value 1
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [9.7, 16, 17, 17.8],
+    [4.5, 8.7, 13.6, 16.5],
+    [2.3, 4.1, 6.7, 10],
   ],
   // Value 3
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [3.8, 7.5, 11.5, 15.5],
+    [2, 3.7, 5.8, 8.5],
+    [0.95, 1.8, 2.8, 4],
   ],
   // Value 5
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [1.5, 2.9, 4.8, 7],
+    [0.7, 1.5, 2.5, 3.8],
+    [0, 0.65, 1.3, 1.8],
   ],
   // Value 7
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [0.8, 0.85, 1.8, 2.9],
+    [0.35, 0.4, 0.8, 1.4],
+    [0, 0.05, 0.3, 0.67],
   ],
 ];
 
@@ -87,27 +87,27 @@ const MID: HumusTable = [
 const LOW: HumusTable = [
   // Value 1
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [12, 16.5, 18.5, 19],
+    [6, 11.5, 15, 17],
+    [1.9, 5, 8, 14],
   ],
   // Value 3
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [4.5, 9.2, 13.6, 16.5],
+    [2.4, 4.8, 7.2, 11],
+    [1.2, 2.2, 3.3, 5],
   ],
   // Value 5
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [2, 3.9, 5.8, 8.5],
+    [0.8, 1.9, 3.2, 4.5],
+    [0.35, 0.92, 1.5, 2.2],
   ],
   // Value 7
   [
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
-    [NaN, NaN, NaN, NaN],
+    [0.8, 0.85, 2.5, 3.5],
+    [0.35, 0.4, 1.2, 1.9],
+    [0, 0.05, 0.5, 0.85],
   ],
 ];
 

@@ -9,29 +9,46 @@ export default function AboutScreen() {
   return (
     <View style={[styles.container, { justifyContent: "flex-start" }]}>
       <Text style={styles.text}>
-        This App is Part of Bachelors Thesis about digitizing Soil Mapping and
-        creating opportunities in Soil Citizen Science.
+        Diese App ist ein Freizeitprojekt von mir. Sie dient der Bodenaufnahme
+        im Feld nach der deutschen KA6. Mich hat aber das nasse Papier, die viel
+        zu teure Farbtafel und die nervige Excelübetragung der Bodenaufnahmen in
+        der Praxis genervt. Diese Problem will ich mit einer App lösen.
       </Text>
       <Text style={styles.text}>
-        Find out more at{" "}
+        Ich studiere irgendwas mit Boden im Bachelor, bin aber kein Experte und
+        bestimmt kein Programmierer. Die App ist noch ein Prototyp und kann noch
+        Fehler enthalten, die ich übersehen habe. Vielleicht hilft sie euch
+        trotzdem schon in der Praxis. Sie ist kostenlos und Open Source, und
+        soll das auch bleiben.
+      </Text>
+      <Text style={styles.text}>
+        Schaut euch gerne den Quellcode{" "}
         <Text
           style={styles.link}
           onPress={() =>
-            Linking.openURL("https://github.com/roundestcircle/OpenSoil")
+            Linking.openURL("https://github.com/roundestcircle/Sojl-App")
           }
         >
-          https://github.com/roundestcircle/OpenSoil
+          auf Github
         </Text>{" "}
-        or write me an email at{" "}
+        an oder schreibt mir eine{" "}
+        <Text
+          style={styles.link}
+          onPress={() => Linking.openURL("mailto:sojlbodenkunde@gmail.com")}
+        >
+          Mail.
+        </Text>{" "}
+        Bald soll es{" "}
         <Text
           style={styles.link}
           onPress={() =>
-            Linking.openURL("mailto:jakob.friehmelt@student.uni-halle.de")
+            Linking.openURL("https://www.youtube.com/@SojlBodenkunde")
           }
         >
-          jakob.friehmelt@student.uni-halle.de
+          hier auf Youtube
         </Text>{" "}
-        Feel free to send me any suggestions, mistakes you found or advice.
+        auch ein paar Tutorials geben. Schickt mir gerne alle Vorschläge die ihr
+        habt, Fehler die euch aufgefallen sind oder sonstiges Feedback.
       </Text>
     </View>
   );

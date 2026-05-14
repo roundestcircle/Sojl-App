@@ -1,5 +1,5 @@
-import DecisionTree from '@/components/DecisionTree';
-import { BodenTypTree } from '@/utils/trees/BodenTypTree';
+import DecisionTree from "@/components/DecisionTree";
+import { BodenTypTree } from "@/utils/trees/BodenTypTree";
 
 type Props = { onConfirm?: (result: string) => void };
 

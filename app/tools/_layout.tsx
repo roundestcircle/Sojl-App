@@ -1,7 +1,7 @@
-import { Stack, router } from 'expo-router';
-import { TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/styles/colors';
+import { Stack, router } from "expo-router";
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors } from "@/styles/colors";
 
 /**
  * Stack layout for the /tools section.
@@ -9,26 +9,37 @@ import { colors } from '@/styles/colors';
  */
 export default function ToolsLayout() {
   return (
-    <Stack screenOptions={{
-      headerStyle: { backgroundColor: colors.primary },
-      headerTintColor: '#fff',
-      headerTitleStyle: { fontWeight: 'bold', fontSize: 25 },
-      headerRight: () => (
-        <TouchableOpacity onPress={() => router.replace('/')} style={{ marginRight: 4 }}>
-          <Ionicons name="home" size={24} color="#fff" />
-        </TouchableOpacity>
-      ),
-    }}>
-      <Stack.Screen name="index" options={{ title: 'Kartierungsunterstützung' }} />
-      <Stack.Screen name="bodenart" options={{ title: 'Bodenart' }} />
-      <Stack.Screen name="anteil" options={{ title: 'Anteil' }} />
-      <Stack.Screen name="humusgehalt" options={{ title: 'Humusgehalt' }} />
-      <Stack.Screen name="carbonat" options={{ title: 'Carbonatgehalt' }} />
-      <Stack.Screen name="lagerungsdichte" options={{ title: 'Lagerungsdichte' }} />
-      <Stack.Screen name="feinwurzeln" options={{ title: 'Feinwurzeln' }} />
-      <Stack.Screen name="gefuege" options={{ title: 'Gefüge' }} />
-      <Stack.Screen name="bodentyp" options={{ title: 'Bodentyp' }} />
-      <Stack.Screen name="horizonte" options={{ title: 'Horizontsymbole' }} />
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.primary },
+        headerTintColor: "#fff",
+        headerTitleStyle: { fontWeight: "bold", fontSize: 25 },
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => router.replace("/")}
+            style={{ marginRight: 4 }}
+          >
+            <Ionicons name="home" size={24} color="#fff" />
+          </TouchableOpacity>
+        ),
+      }}
+    >
+      <Stack.Screen
+        name="index"
+        options={{ title: "Kartierungsunterstützung" }}
+      />
+      <Stack.Screen name="bodenart" options={{ title: "Bodenart" }} />
+      <Stack.Screen name="anteil" options={{ title: "Anteil" }} />
+      <Stack.Screen name="humusgehalt" options={{ title: "Humusgehalt" }} />
+      <Stack.Screen name="carbonat" options={{ title: "Carbonatgehalt" }} />
+      <Stack.Screen
+        name="lagerungsdichte"
+        options={{ title: "Lagerungsdichte" }}
+      />
+      <Stack.Screen name="feinwurzeln" options={{ title: "Feinwurzeln" }} />
+      <Stack.Screen name="gefuege" options={{ title: "Gefüge" }} />
+      <Stack.Screen name="bodentyp" options={{ title: "Bodentyp" }} />
+      <Stack.Screen name="horizonte" options={{ title: "Horizontsymbole" }} />
     </Stack>
   );
 }

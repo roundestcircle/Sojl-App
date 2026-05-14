@@ -1,11 +1,18 @@
-import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Dimensions, StyleSheet } from 'react-native';
-import { Canvas, Rect } from '@shopify/react-native-skia';
-import { styles } from '../styles/styles';
-import { InstructionModal, ResetInstructionButton } from './InstructionModal';
+import { useState, useMemo } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+  StyleSheet,
+} from "react-native";
+import { Canvas, Rect } from "@shopify/react-native-skia";
+import { styles } from "../styles/styles";
+import { InstructionModal, ResetInstructionButton } from "./InstructionModal";
 
 // Get screen dimensions for responsive layout
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
 // Maximum number of squares to render (limits grid size)
 const TOTAL = 1000;
@@ -29,7 +36,7 @@ type Props = { onConfirm?: (percent: string) => void };
 export default function SoilShareScroll({ onConfirm }: Props) {
   // Track the percentage of visible squares (0-100%)
   const [percent, setPercent] = useState(0);
-  
+
   // Key to force remount of InstructionModal after reset
   // Used to trigger modal re-display when user clicks reset button
   const [modalKey, setModalKey] = useState(0);
@@ -41,22 +48,22 @@ export default function SoilShareScroll({ onConfirm }: Props) {
    */
   const squares = useMemo(() => {
     const rand = seededRandom(42); // Fixed seed for reproducible layout
-    
+
     // Calculate responsive cell size
     // Uses 80% of the smaller screen dimension divided into 15 cells
     const targetGridWidth = Math.min(SCREEN_W, SCREEN_H) * 0.8;
     const cellSize = Math.floor(targetGridWidth / 15);
-    
+
     // Calculate grid dimensions based on screen size and cell size
     const cols = Math.ceil(SCREEN_W / cellSize);
     const rows = Math.ceil(SCREEN_H / cellSize);
-    
+
     // Limit total squares to TOTAL constant while filling the available grid
     const squaresToCreate = Math.min(TOTAL, cols * rows);
-    
+
     // Squares are 80% of cell size for visual spacing
     const squareSize = cellSize;
-    
+
     // Create initial square positions in a grid pattern
     const squareArray = Array.from({ length: squaresToCreate }).map((_, i) => {
       const col = i % cols; // Column index (left to right)
@@ -70,7 +77,7 @@ export default function SoilShareScroll({ onConfirm }: Props) {
         size: squareSize,
       };
     });
-    
+
     // Shuffle the squares array using Fisher-Yates algorithm
     // This randomizes which squares become visible as user scrolls
     for (let i = squareArray.length - 1; i > 0; i--) {
@@ -86,7 +93,7 @@ export default function SoilShareScroll({ onConfirm }: Props) {
   // Handler to reset the instruction modal display
   const handleReset = () => {
     // Force InstructionModal to remount by changing its key
-    setModalKey(prev => prev + 1);
+    setModalKey((prev) => prev + 1);
   };
 
   return (
@@ -131,7 +138,8 @@ export default function SoilShareScroll({ onConfirm }: Props) {
         showsVerticalScrollIndicator={false}
         onScroll={(e) => {
           // Extract scroll metrics from event
-          const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+          const { contentOffset, contentSize, layoutMeasurement } =
+            e.nativeEvent;
           // Calculate maximum scrollable distance
           const maxScroll = contentSize.height - layoutMeasurement.height;
           // Calculate current scroll percentage (0-100)
@@ -144,9 +152,14 @@ export default function SoilShareScroll({ onConfirm }: Props) {
 
       {/* Confirm button – only shown when opened from the form, rendered after ScrollView so it receives touches */}
       {onConfirm && (
-        <View style={{ position: 'absolute', bottom: 80, left: 0, right: 0 }}>
-          <TouchableOpacity style={[styles.actionButton, { alignSelf: 'stretch' }]} onPress={() => onConfirm(String(percent))}>
-            <Text style={styles.actionButtonText}>Wert übernehmen ({percent}%)</Text>
+        <View style={{ position: "absolute", bottom: 80, left: 0, right: 0 }}>
+          <TouchableOpacity
+            style={[styles.actionButton, { alignSelf: "stretch" }]}
+            onPress={() => onConfirm(String(percent))}
+          >
+            <Text style={styles.actionButtonText}>
+              Wert übernehmen ({percent}%)
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -155,7 +168,14 @@ export default function SoilShareScroll({ onConfirm }: Props) {
       <ResetInstructionButton
         storageKey="soilShareDontShowAgain"
         onReset={handleReset}
-        style={{ alignSelf: 'stretch', width: 'auto', marginTop: 20, bottom: 15, left: 0, right: 0 }}
+        style={{
+          alignSelf: "stretch",
+          width: "auto",
+          marginTop: 20,
+          bottom: 15,
+          left: 0,
+          right: 0,
+        }}
       />
     </View>
   );

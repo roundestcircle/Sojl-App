@@ -9,7 +9,12 @@ import {
   Modal,
   StyleSheet,
 } from "react-native";
-import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
+import {
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+} from "expo-router";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import {
@@ -20,7 +25,11 @@ import {
 import StatusBadge from "@/components/StatusBadge";
 import { getHorizonteForAufnahme } from "@/utils/HorizonQueries";
 import { exportAufnahmeAsZip, exportKampagneAsZip } from "@/utils/csvExport";
-import { createAufnahme, deleteAufnahme, type Aufnahme } from "@/utils/MappingQueries";
+import {
+  createAufnahme,
+  deleteAufnahme,
+  type Aufnahme,
+} from "@/utils/MappingQueries";
 
 // Extends Aufnahme with a derived horizon count used in the list subtitle
 type AufnahmeRow = Aufnahme & { horizontCount: number };
@@ -130,7 +139,6 @@ export default function SessionDetailScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-
       <FlatList
         data={aufnahmen}
         keyExtractor={(item) => String(item.id)}
@@ -153,7 +161,8 @@ export default function SessionDetailScreen() {
                   Aufnahme {item.nummer ?? item.id}
                 </Text>
                 <Text style={styles.rowSub}>
-                  {formatDate(item.erstellt_am)} · {item.horizontCount} Horizont{item.horizontCount !== 1 ? "e" : ""}
+                  {formatDate(item.erstellt_am)} · {item.horizontCount} Horizont
+                  {item.horizontCount !== 1 ? "e" : ""}
                 </Text>
               </View>
               <StatusBadge status={item.status} />
@@ -185,10 +194,7 @@ export default function SessionDetailScreen() {
         >
           <Text style={styles.maintext}>+ Neue Aufnahme</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleBeenden}
-        >
+        <TouchableOpacity style={styles.button} onPress={handleBeenden}>
           <Text style={styles.maintext}>Kampagne beenden</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -199,23 +205,39 @@ export default function SessionDetailScreen() {
           {exportingCampaign ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.actionButtonText}>Kampagne exportieren (ZIP)</Text>
+            <Text style={styles.actionButtonText}>
+              Kampagne exportieren (ZIP)
+            </Text>
           )}
         </TouchableOpacity>
       </View>
 
       {/* ── Offene Aufnahmen Warnung ── */}
-      <Modal visible={showOffeneWarnung} transparent animationType="fade" onRequestClose={() => setShowOffeneWarnung(false)}>
+      <Modal
+        visible={showOffeneWarnung}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowOffeneWarnung(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Offene Aufnahmen</Text>
             <Text style={styles.modalText}>
-              {aufnahmen.filter((a) => a.status !== "abgeschlossen").length} Aufnahme{aufnahmen.filter((a) => a.status !== "abgeschlossen").length !== 1 ? "n sind" : " ist"} noch offen. Kampagne trotzdem beenden?
+              {aufnahmen.filter((a) => a.status !== "abgeschlossen").length}{" "}
+              Aufnahme
+              {aufnahmen.filter((a) => a.status !== "abgeschlossen").length !==
+              1
+                ? "n sind"
+                : " ist"}{" "}
+              noch offen. Kampagne trotzdem beenden?
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#e0a020" }]}
-                onPress={() => { setShowOffeneWarnung(false); doBeenden(); }}
+                onPress={() => {
+                  setShowOffeneWarnung(false);
+                  doBeenden();
+                }}
               >
                 <Text style={styles.modalButtonText}>Trotzdem beenden</Text>
               </TouchableOpacity>
@@ -231,7 +253,12 @@ export default function SessionDetailScreen() {
       </Modal>
 
       {/* ── Delete Aufnahme confirmation modal ── */}
-      <Modal visible={deleteTarget !== null} transparent animationType="fade" onRequestClose={() => setDeleteTarget(null)}>
+      <Modal
+        visible={deleteTarget !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteTarget(null)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Aufnahme löschen</Text>
@@ -257,7 +284,6 @@ export default function SessionDetailScreen() {
           </View>
         </View>
       </Modal>
-
     </View>
   );
 }
@@ -267,5 +293,4 @@ function formatDate(iso: string): string {
   return iso.replace("T", " ").slice(0, 16);
 }
 
-const localStyles = StyleSheet.create({
-});
+const localStyles = StyleSheet.create({});

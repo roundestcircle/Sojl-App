@@ -1,6 +1,6 @@
-import { View } from 'react-native';
-import PictureTaker from '../components/PictureTaker';
-import { styles } from '../styles/styles';
+import { View } from "react-native";
+import PictureTaker from "../components/PictureTaker";
+import { styles } from "../styles/styles";
 
 /**
  * Standalone soil color screen.
@@ -8,9 +8,9 @@ import { styles } from '../styles/styles';
  * accessible directly from the home screen.
  */
 export default function SoilColorScreen() {
-return (
-  <View style={styles.containerfull}>
-    <PictureTaker />
-  </View>
-);
+  return (
+    <View style={styles.containerfull}>
+      <PictureTaker />
+    </View>
+  );
 }

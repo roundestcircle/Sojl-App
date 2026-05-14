@@ -1,5 +1,5 @@
-import { View } from 'react-native';
-import CarbonatTool from '@/components/CarbonatTool';
+import { View } from "react-native";
+import CarbonatTool from "@/components/CarbonatTool";
 
 /** Standalone screen wrapper for the carbonate content (Carbonatgehalt) determination tool. */
 export default function CarbonatScreen() {

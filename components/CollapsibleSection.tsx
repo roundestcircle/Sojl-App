@@ -1,6 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { styles } from '@/styles/styles';
-import { colors } from '@/styles/colors';
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { styles } from "@/styles/styles";
+import { colors } from "@/styles/colors";
 
 type Props = {
   title: string;
@@ -9,12 +9,21 @@ type Props = {
   children?: React.ReactNode;
 };
 
-export default function CollapsibleSection({ title, expanded, onToggle, children }: Props) {
+export default function CollapsibleSection({
+  title,
+  expanded,
+  onToggle,
+  children,
+}: Props) {
   return (
     <View style={styles.section}>
-      <TouchableOpacity style={localStyles.header} onPress={onToggle} activeOpacity={0.7}>
+      <TouchableOpacity
+        style={localStyles.header}
+        onPress={onToggle}
+        activeOpacity={0.7}
+      >
         <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={localStyles.chevron}>{expanded ? '▲' : '▼'}</Text>
+        <Text style={localStyles.chevron}>{expanded ? "▲" : "▼"}</Text>
       </TouchableOpacity>
       {expanded && <View style={localStyles.content}>{children}</View>}
     </View>
@@ -23,9 +32,9 @@ export default function CollapsibleSection({ title, expanded, onToggle, children
 
 const localStyles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   chevron: {
     fontSize: 12,

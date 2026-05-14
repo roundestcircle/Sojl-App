@@ -1,5 +1,5 @@
-import { Skia } from '@shopify/react-native-skia';
-import { rgbToMunsell } from './munsellLookup';
+import { Skia } from "@shopify/react-native-skia";
+import { rgbToMunsell } from "./munsellLookup";
 
 /**
  * Rectangle coordinates for image regions
@@ -33,14 +33,14 @@ interface MunsellColor {
 const getRectangleCoords = (
   imageWidth: number,
   imageHeight: number,
-  type: 'greyCard' | 'soilSample'
+  type: "greyCard" | "soilSample",
 ): RectangleCoords => {
-  if (type === 'greyCard') {
+  if (type === "greyCard") {
     // large rectangle (center) for grey card
     return {
       top: Math.floor(imageHeight * 0.25),
-      left: Math.floor(imageWidth * 0.20),
-      width: Math.floor(imageWidth * 0.60),
+      left: Math.floor(imageWidth * 0.2),
+      width: Math.floor(imageWidth * 0.6),
       height: Math.floor(imageHeight * 0.35),
     };
   } else {
@@ -49,7 +49,7 @@ const getRectangleCoords = (
       top: Math.floor(imageHeight * 0.65),
       left: Math.floor(imageWidth * 0.42),
       width: Math.floor(imageWidth * 0.16),
-      height: Math.floor(imageHeight * 0.10),
+      height: Math.floor(imageHeight * 0.1),
     };
   }
 };
@@ -71,7 +71,10 @@ const calculateCorrectionFactors = (greyCardColor: RGBColor): RGBColor => {
 /**
  * Apply color correction to extracted RGB values
  */
-const applyCorrectionToColor = (color: RGBColor, factors: RGBColor): RGBColor => {
+const applyCorrectionToColor = (
+  color: RGBColor,
+  factors: RGBColor,
+): RGBColor => {
   return {
     r: Math.min(255, Math.round(color.r * factors.r)),
     g: Math.min(255, Math.round(color.g * factors.g)),
@@ -86,14 +89,16 @@ const extractColorFromRegion = async (
   pixels: Uint8Array | Float32Array,
   rect: RectangleCoords,
   imageWidth: number,
-  imageHeight: number
+  imageHeight: number,
 ): Promise<RGBColor> => {
   try {
     if (!pixels) {
-      throw new Error('Pixels data is null or undefined');
+      throw new Error("Pixels data is null or undefined");
     }
 
-    let rSum = 0, gSum = 0, bSum = 0;
+    let rSum = 0,
+      gSum = 0,
+      bSum = 0;
     let pixelCount = 0;
 
     // Ensure rect is within bounds
@@ -126,7 +131,7 @@ const extractColorFromRegion = async (
       b: Math.round(bSum / pixelCount),
     };
   } catch (error) {
-    console.error('Error extracting color from region:', error);
+    console.error("Error extracting color from region:", error);
     throw error;
   }
 };
@@ -135,49 +140,65 @@ const extractColorFromRegion = async (
  * Main function: Color correct image and extract soil sample color
  */
 export const extractSoilColor = async (
-  imageUri: string
-): Promise<{ correctedColor: RGBColor; correctedColorMunsell: MunsellColor; greyCardColor: RGBColor; correctionFactors: RGBColor }> => {
+  imageUri: string,
+): Promise<{
+  correctedColor: RGBColor;
+  correctedColorMunsell: MunsellColor;
+  greyCardColor: RGBColor;
+  correctionFactors: RGBColor;
+}> => {
   try {
     // Load and decode image once
     const data = await Skia.Data.fromURI(imageUri);
     const image = Skia.Image.MakeImageFromEncoded(data);
-    
+
     if (!image) {
-      throw new Error('Failed to decode image');
+      throw new Error("Failed to decode image");
     }
-    
+
     const pixels = image.readPixels();
-    
+
     if (!pixels) {
-      throw new Error('Failed to read image pixels');
+      throw new Error("Failed to read image pixels");
     }
-    
+
     const actualWidth = image.width();
     const actualHeight = image.height();
 
     // Get grey card region color
-    const greyCardRect = getRectangleCoords(actualWidth, actualHeight, 'greyCard');
+    const greyCardRect = getRectangleCoords(
+      actualWidth,
+      actualHeight,
+      "greyCard",
+    );
     const greyCardColor = await extractColorFromRegion(
       pixels,
       greyCardRect,
       actualWidth,
-      actualHeight
+      actualHeight,
     );
 
     // Calculate correction factors
     const correctionFactors = calculateCorrectionFactors(greyCardColor);
 
     // Get soil sample region color
-    const soilSampleRect = getRectangleCoords(actualWidth, actualHeight, 'soilSample');
+    const soilSampleRect = getRectangleCoords(
+      actualWidth,
+      actualHeight,
+      "soilSample",
+    );
     const correctedColor = await extractColorFromRegion(
       pixels,
       soilSampleRect,
       actualWidth,
-      actualHeight
+      actualHeight,
     );
 
     // Apply manual correction to the extracted color
-    const correctedRGB = applyCorrectionToColor(correctedColor, correctionFactors);
+    const correctedRGB = applyCorrectionToColor(
+      correctedColor,
+      correctionFactors,
+    );
     const correctedMunsell = rgbToMunsell(correctedRGB);
 
     return {
@@ -187,7 +208,7 @@ export const extractSoilColor = async (
       correctionFactors,
     };
   } catch (error) {
-    console.error('Error extracting soil color:', error);
+    console.error("Error extracting soil color:", error);
     throw error;
   }
 };

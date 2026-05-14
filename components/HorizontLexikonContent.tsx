@@ -1,28 +1,32 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, TextInput, SectionList, StyleSheet } from 'react-native';
-import { styles as globalStyles } from '@/styles/styles';
-import { colors } from '@/styles/colors';
-import { HORIZON_SECTIONS, type HorizonSection, type HorizonEntry } from '@/utils/horizonData';
+import { useState, useMemo, useEffect, useRef } from "react";
+import { View, Text, TextInput, SectionList, StyleSheet } from "react-native";
+import { styles as globalStyles } from "@/styles/styles";
+import { colors } from "@/styles/colors";
+import {
+  HORIZON_SECTIONS,
+  type HorizonSection,
+  type HorizonEntry,
+} from "@/utils/horizonData";
 
 /**
  * Reusable search + SectionList dictionary for all horizon symbols.
  * Manages its own query state; safe to embed in a Modal or a full screen.
  */
 export default function HorizontLexikonContent() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const listRef = useRef<SectionList<HorizonEntry>>(null);
 
   const filtered: HorizonSection[] = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return HORIZON_SECTIONS;
-    return HORIZON_SECTIONS
-      .map(section => ({
-        ...section,
-        data: section.data.filter(
-          e => e.symbol.toLowerCase().includes(q) || e.description.toLowerCase().includes(q)
-        ),
-      }))
-      .filter(section => section.data.length > 0);
+    return HORIZON_SECTIONS.map((section) => ({
+      ...section,
+      data: section.data.filter(
+        (e) =>
+          e.symbol.toLowerCase().includes(q) ||
+          e.description.toLowerCase().includes(q),
+      ),
+    })).filter((section) => section.data.length > 0);
   }, [query]);
 
   useEffect(() => {
@@ -50,7 +54,7 @@ export default function HorizontLexikonContent() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: "#fff" }}>
       {/* ── Search bar ── */}
       <View style={localStyles.searchContainer}>
         <TextInput
@@ -78,7 +82,11 @@ export default function HorizontLexikonContent() {
         ListEmptyComponent={
           <View style={{ paddingHorizontal: 20, paddingTop: 40, gap: 8 }}>
             <Text style={globalStyles.emptyText}>Keine Einträge gefunden.</Text>
-            <Text style={globalStyles.emptyText}>Das bedeutet nicht dass dein gesuchter Horizont nicht existiert. Dies ist nur eine kleine Horizontauswahl. Schau mal in der KA6 nach.</Text>
+            <Text style={globalStyles.emptyText}>
+              Das bedeutet nicht dass dein gesuchter Horizont nicht existiert.
+              Dies ist nur eine kleine Horizontauswahl. Schau mal in der KA6
+              nach.
+            </Text>
           </View>
         }
       />
@@ -91,35 +99,35 @@ const localStyles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ddd',
-    backgroundColor: '#fff',
+    borderBottomColor: "#ddd",
+    backgroundColor: "#fff",
   },
   sectionHeader: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ddd',
+    borderBottomColor: "#ddd",
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     paddingHorizontal: 15,
     paddingVertical: 10,
     gap: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   symbol: {
     minWidth: 60,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.primary,
   },
   description: {
     flex: 1,
     fontSize: 14,
-    color: '#333',
+    color: "#333",
     lineHeight: 20,
   },
 });

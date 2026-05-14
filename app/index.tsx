@@ -1,7 +1,7 @@
-import { Link } from 'expo-router';
-import { Text, View, Image, TouchableOpacity } from 'react-native';
-import Constants from 'expo-constants';
-import { styles } from '../styles/styles';
+import { Link } from "expo-router";
+import { Text, View, Image, TouchableOpacity } from "react-native";
+import Constants from "expo-constants";
+import { styles } from "../styles/styles";
 
 export default function Index() {
   return (
@@ -20,7 +20,9 @@ export default function Index() {
       </Link>
       <Link href={"/tools" as any} asChild>
         <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Weitere Kartierungsunterstützung</Text>
+          <Text style={styles.navButtonLabel}>
+            Weitere Kartierungsunterstützung
+          </Text>
           <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
       </Link>
@@ -31,8 +33,13 @@ export default function Index() {
         </TouchableOpacity>
       </Link>
       <View style={styles.footnote}>
-        <Image source={require('../assets/images/icon.png')} style={{ width: 48, height: 48, borderRadius: 10 }} />
-        <Text style={{ fontSize: 9 }}>Version {Constants.expoConfig?.version ?? ''}</Text>
+        <Image
+          source={require("../assets/images/icon.png")}
+          style={{ width: 48, height: 48, borderRadius: 10 }}
+        />
+        <Text style={{ fontSize: 9 }}>
+          Version {Constants.expoConfig?.version ?? ""}
+        </Text>
       </View>
     </View>
   );

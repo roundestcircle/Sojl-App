@@ -22,7 +22,10 @@ import {
   type Feldkampagne,
 } from "@/utils/FeldkampagneQueries";
 import { exportKampagneAsZip } from "@/utils/csvExport";
-import { InstructionModal, ResetInstructionButton } from "@/components/InstructionModal";
+import {
+  InstructionModal,
+  ResetInstructionButton,
+} from "@/components/InstructionModal";
 import StatusBadge from "@/components/StatusBadge";
 
 /**
@@ -94,7 +97,6 @@ export default function FeldkampagnenScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-
       <InstructionModal
         key={modalKey}
         storageKey="mappingDontShowAgain"
@@ -118,7 +120,9 @@ export default function FeldkampagnenScreen() {
             >
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{item.name}</Text>
-                <Text style={styles.rowSub}>{formatDate(item.erstellt_am)}</Text>
+                <Text style={styles.rowSub}>
+                  {formatDate(item.erstellt_am)}
+                </Text>
               </View>
               <StatusBadge status={item.status} />
               <Text style={styles.chevron}>›</Text>
@@ -128,9 +132,11 @@ export default function FeldkampagnenScreen() {
               onPress={() => handleExport(item)}
               disabled={exportingId === item.id}
             >
-              {exportingId === item.id
-                ? <ActivityIndicator color={colors.primary} size="small" />
-                : <Text style={styles.exportText}>ZIP</Text>}
+              {exportingId === item.id ? (
+                <ActivityIndicator color={colors.primary} size="small" />
+              ) : (
+                <Text style={styles.exportText}>ZIP</Text>
+              )}
             </TouchableOpacity>
           </View>
         )}
@@ -145,8 +151,13 @@ export default function FeldkampagnenScreen() {
         </TouchableOpacity>
         <ResetInstructionButton
           storageKey="mappingDontShowAgain"
-          onReset={() => setModalKey(prev => prev + 1)}
-          style={{ position: 'relative', bottom: undefined, left: undefined, right: undefined }}
+          onReset={() => setModalKey((prev) => prev + 1)}
+          style={{
+            position: "relative",
+            bottom: undefined,
+            left: undefined,
+            right: undefined,
+          }}
         />
       </View>
 
@@ -160,7 +171,9 @@ export default function FeldkampagnenScreen() {
           style={localStyles.modalOverlay}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <View style={[styles.modalContent, { width: '100%', maxWidth: 9999 }]}>
+          <View
+            style={[styles.modalContent, { width: "100%", maxWidth: 9999 }]}
+          >
             <Text style={styles.modalTitle}>Neue Kampagne</Text>
             <TextInput
               style={localStyles.nameInput}
@@ -192,7 +205,12 @@ export default function FeldkampagnenScreen() {
       </Modal>
 
       {/* ── Delete campaign modal ── */}
-      <Modal visible={deleteTarget !== null} transparent animationType="fade" onRequestClose={() => setDeleteTarget(null)}>
+      <Modal
+        visible={deleteTarget !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteTarget(null)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Kampagne löschen</Text>
@@ -216,7 +234,6 @@ export default function FeldkampagnenScreen() {
           </View>
         </View>
       </Modal>
-
     </View>
   );
 }

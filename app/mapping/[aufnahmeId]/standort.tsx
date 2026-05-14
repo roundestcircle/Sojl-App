@@ -1,13 +1,25 @@
 import { useCallback, useState, useRef, useEffect } from "react";
-import { ScrollView, ActivityIndicator, View, KeyboardAvoidingView, Platform, Animated, Keyboard } from "react-native";
+import {
+  ScrollView,
+  ActivityIndicator,
+  View,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  Keyboard,
+} from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
-import { getAufnahme, saveAufnahmeDetails, type AufnahmeDetails } from "@/utils/MappingQueries";
+import {
+  getAufnahme,
+  saveAufnahmeDetails,
+  type AufnahmeDetails,
+  Aufnahme,
+} from "@/utils/MappingQueries";
 import { getHorizonteForAufnahme, type Horizont } from "@/utils/HorizonQueries";
 import { calcGrundigkeitCm } from "@/utils/MappingMaths";
 import AufnahmeForm from "@/components/AufnahmeForm";
-import type { Aufnahme } from "@/utils/MappingQueries";
 
 /**
  * Standortdaten screen.
@@ -20,7 +32,7 @@ export default function StandortScreen() {
 
   // The Aufnahme record loaded from the database, used to seed form defaults
   const [aufnahme, setAufnahme] = useState<Aufnahme | null>(null);
-  const [calcGrundigkeit, setCalcGrundigkeit] = useState('');
+  const [calcGrundigkeit, setCalcGrundigkeit] = useState("");
   const [horizonte, setHorizonte] = useState<Horizont[]>([]);
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -44,7 +56,7 @@ export default function StandortScreen() {
   };
 
   useEffect(() => {
-    const sub = Keyboard.addListener('keyboardDidShow', () => {
+    const sub = Keyboard.addListener("keyboardDidShow", () => {
       if (notizenFocused.current) setTimeout(slowScrollToEnd, 100);
     });
     return () => sub.remove();
@@ -56,7 +68,9 @@ export default function StandortScreen() {
       setAufnahme(getAufnahme(aufnahmeId));
       const h = getHorizonteForAufnahme(aufnahmeId);
       setHorizonte(h);
-      setCalcGrundigkeit(calcGrundigkeitCm(h.map(hz => hz.maechtigk_dm ?? '')));
+      setCalcGrundigkeit(
+        calcGrundigkeitCm(h.map((hz) => hz.maechtigk_dm ?? "")),
+      );
     }, [aufnahmeId]),
   );
 
@@ -64,9 +78,12 @@ export default function StandortScreen() {
    * Persists partial form data on every watch callback from AufnahmeForm.
    * Called on every keystroke/change, so no explicit save button is needed.
    */
-  const handleSave = useCallback((data: AufnahmeDetails) => {
-    saveAufnahmeDetails(aufnahmeId, data);
-  }, [aufnahmeId]);
+  const handleSave = useCallback(
+    (data: AufnahmeDetails) => {
+      saveAufnahmeDetails(aufnahmeId, data);
+    },
+    [aufnahmeId],
+  );
 
   if (!aufnahme) {
     return (
@@ -77,24 +94,37 @@ export default function StandortScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <ScrollView
         ref={scrollViewRef}
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
         scrollEventThrottle={16}
-        onScroll={(e) => { currentScrollY.current = e.nativeEvent.contentOffset.y; }}
-        onContentSizeChange={(_, h) => { contentH.current = h; }}
-        onLayout={(e) => { layoutH.current = e.nativeEvent.layout.height; }}
+        onScroll={(e) => {
+          currentScrollY.current = e.nativeEvent.contentOffset.y;
+        }}
+        onContentSizeChange={(_, h) => {
+          contentH.current = h;
+        }}
+        onLayout={(e) => {
+          layoutH.current = e.nativeEvent.layout.height;
+        }}
       >
         <AufnahmeForm
           initialData={aufnahme}
           onSave={handleSave}
           calcGrundigkeit={calcGrundigkeit}
           horizonte={horizonte}
-          onNotizenFocus={() => { notizenFocused.current = true; }}
-          onNotizenBlur={() => { notizenFocused.current = false; }}
+          onNotizenFocus={() => {
+            notizenFocused.current = true;
+          }}
+          onNotizenBlur={() => {
+            notizenFocused.current = false;
+          }}
         />
       </ScrollView>
     </KeyboardAvoidingView>

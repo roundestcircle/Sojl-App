@@ -1,5 +1,5 @@
-import DecisionTree from '@/components/DecisionTree';
-import { FeinwurzelIntensityTree } from '@/utils/trees/WurzelTree';
+import DecisionTree from "@/components/DecisionTree";
+import { FeinwurzelIntensityTree } from "@/utils/trees/WurzelTree";
 
 type Props = { onConfirm?: (result: string) => void };
 

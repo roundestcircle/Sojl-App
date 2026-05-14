@@ -9,7 +9,12 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
+import {
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+} from "expo-router";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import {
@@ -17,7 +22,12 @@ import {
   getAufnahme,
   type Aufnahme,
 } from "@/utils/MappingQueries";
-import { addHorizont, deleteHorizont, getHorizonteForAufnahme, type Horizont } from "@/utils/HorizonQueries";
+import {
+  addHorizont,
+  deleteHorizont,
+  getHorizonteForAufnahme,
+  type Horizont,
+} from "@/utils/HorizonQueries";
 import { exportAufnahmeAsZip } from "@/utils/csvExport";
 import HorizontButton from "@/components/HorizonButton";
 
@@ -35,23 +45,35 @@ function deriveStandortStatus(a: Aufnahme): StandortStatus {
   const hasGps = a.gps_lat != null || a.utm_easting != null;
   const allFilled =
     hasGps &&
-    a.bodentyp != null && a.bodtyp_abk != null &&
-    a.humusform != null && a.humsfrm_abk != null &&
-    a.ausgangsgestein != null && a.grundigkeit != null &&
-    a.m_ue_nn != null && a.reliefpos != null && a.expos != null &&
-    a.nutzung != null && a.vegetation != null &&
-    a.witterung != null && a.mittl_n != null && a.mittl_temp != null;
+    a.bodentyp != null &&
+    a.bodtyp_abk != null &&
+    a.humusform != null &&
+    a.humsfrm_abk != null &&
+    a.ausgangsgestein != null &&
+    a.grundigkeit != null &&
+    a.m_ue_nn != null &&
+    a.reliefpos != null &&
+    a.expos != null &&
+    a.nutzung != null &&
+    a.vegetation != null &&
+    a.witterung != null &&
+    a.mittl_n != null &&
+    a.mittl_temp != null;
   const anyFilled =
-    hasGps || a.bodentyp != null || a.humusform != null ||
-    a.reliefpos != null || a.nutzung != null || a.witterung != null;
+    hasGps ||
+    a.bodentyp != null ||
+    a.humusform != null ||
+    a.reliefpos != null ||
+    a.nutzung != null ||
+    a.witterung != null;
   if (allFilled) return "abgeschlossen";
   if (anyFilled) return "begonnen";
   return "leer";
 }
 
 const standortBadge: Record<StandortStatus, { label: string; bg: string }> = {
-  leer:          { label: "leer",          bg: "#6c757d" },
-  begonnen:      { label: "begonnen",      bg: "#e0a020" },
+  leer: { label: "leer", bg: "#6c757d" },
+  begonnen: { label: "begonnen", bg: "#e0a020" },
   abgeschlossen: { label: "abgeschlossen", bg: colors.primary },
 };
 
@@ -64,7 +86,9 @@ const standortBadge: Record<StandortStatus, { label: string; bg: string }> = {
  * The "Abschließen" button warns when incomplete horizons exist.
  */
 export default function HorizonOverview() {
-  const { aufnahmeId: aufnahmeIdParam } = useLocalSearchParams<{ aufnahmeId: string }>();
+  const { aufnahmeId: aufnahmeIdParam } = useLocalSearchParams<{
+    aufnahmeId: string;
+  }>();
   const aufnahmeId = parseInt(aufnahmeIdParam, 10);
   const navigation = useNavigation();
 
@@ -90,7 +114,9 @@ export default function HorizonOverview() {
   // Update the navigation bar title once the Aufnahme is loaded
   useLayoutEffect(() => {
     if (aufnahme) {
-      navigation.setOptions({ title: `Aufnahme ${aufnahme.nummer ?? aufnahme.id}` });
+      navigation.setOptions({
+        title: `Aufnahme ${aufnahme.nummer ?? aufnahme.id}`,
+      });
     }
   }, [navigation, aufnahme]);
 
@@ -150,68 +176,85 @@ export default function HorizonOverview() {
   return (
     <>
       <View style={{ flex: 1 }}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={localStyles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-
-        {/* ── Standortdaten button ── */}
-        <TouchableOpacity
-          style={[styles.listRow, { paddingHorizontal: 16, paddingVertical: 14, gap: 12 }]}
-          onPress={() => router.push(`/mapping/${aufnahmeId}/standort` as any)}
-          activeOpacity={0.75}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={localStyles.content}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={[styles.rowTitle, { flex: 1 }]}>Standortdaten</Text>
-          <View style={[styles.badge, { backgroundColor: badge.bg }]}>
-            <Text style={styles.badgeText}>{badge.label}</Text>
-          </View>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
+          {/* ── Standortdaten button ── */}
+          <TouchableOpacity
+            style={[
+              styles.listRow,
+              { paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
+            ]}
+            onPress={() =>
+              router.push(`/mapping/${aufnahmeId}/standort` as any)
+            }
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.rowTitle, { flex: 1 }]}>Standortdaten</Text>
+            <View style={[styles.badge, { backgroundColor: badge.bg }]}>
+              <Text style={styles.badgeText}>{badge.label}</Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
 
-        {/* ── Horizon list ── */}
-        <View style={localStyles.horizonList}>
-          {horizonte.map((horizont) => (
-            <HorizontButton
-              key={horizont.id}
-              horizont={horizont}
-              onPress={() => handleHorizontPress(horizont)}
-              onLongPress={() => setDeleteTarget(horizont)}
-            />
-          ))}
-          <TouchableOpacity style={styles.actionButton} onPress={handleAddHorizont}>
-            <Text style={styles.actionButtonText}>+ Horizont hinzufügen</Text>
+          {/* ── Horizon list ── */}
+          <View style={localStyles.horizonList}>
+            {horizonte.map((horizont) => (
+              <HorizontButton
+                key={horizont.id}
+                horizont={horizont}
+                onPress={() => handleHorizontPress(horizont)}
+                onLongPress={() => setDeleteTarget(horizont)}
+              />
+            ))}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleAddHorizont}
+            >
+              <Text style={styles.actionButtonText}>+ Horizont hinzufügen</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        {/* ── Bottom buttons ── */}
+        <View style={styles.bottomBar}>
+          <TouchableOpacity style={styles.button} onPress={handleAbschliessen}>
+            <Text style={styles.maintext}>Abschließen</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleExport}
+            disabled={exporting || !aufnahme}
+          >
+            {exporting ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.actionButtonText}>
+                Aufnahme exportieren (ZIP)
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
-
-      </ScrollView>
-
-      {/* ── Bottom buttons ── */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.button} onPress={handleAbschliessen}>
-          <Text style={styles.maintext}>Abschließen</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={handleExport}
-          disabled={exporting || !aufnahme}
-        >
-          {exporting ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.actionButtonText}>Aufnahme exportieren (ZIP)</Text>
-          )}
-        </TouchableOpacity>
-      </View>
       </View>
 
       {/* ── Delete Horizont confirmation modal ── */}
-      <Modal visible={deleteTarget !== null} transparent animationType="fade" onRequestClose={() => setDeleteTarget(null)}>
+      <Modal
+        visible={deleteTarget !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteTarget(null)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Horizont löschen</Text>
             <Text style={styles.modalText}>
-              H{deleteTarget?.nummer}{deleteTarget?.horizontname ? ` – ${deleteTarget.horizontname}` : ""} löschen?
+              H{deleteTarget?.nummer}
+              {deleteTarget?.horizontname
+                ? ` – ${deleteTarget.horizontname}`
+                : ""}{" "}
+              löschen?
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -244,7 +287,10 @@ export default function HorizonOverview() {
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalButton}
-                onPress={() => { setShowUnvollstaendigModal(false); doClose(); }}
+                onPress={() => {
+                  setShowUnvollstaendigModal(false);
+                  doClose();
+                }}
               >
                 <Text style={styles.modalButtonText}>Trotzdem abschließen</Text>
               </TouchableOpacity>

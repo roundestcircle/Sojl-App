@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import BodenTypTool from '@/components/BodenTypTool';
-import HorizontLexikonContent from '@/components/HorizontLexikonContent';
-import { colors } from '@/styles/colors';
+import { useState } from "react";
+import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import BodenTypTool from "@/components/BodenTypTool";
+import HorizontLexikonContent from "@/components/HorizontLexikonContent";
+import { colors } from "@/styles/colors";
 
 /**
  * Standalone screen wrapper for the BodenTypTool.
@@ -17,7 +17,10 @@ export default function BodentypScreen() {
     <View style={{ flex: 1 }}>
       {/* ── Lexikon shortcut ── */}
       <View style={localStyles.topBar}>
-        <TouchableOpacity style={localStyles.lexikonBtn} onPress={() => setLexikonVisible(true)}>
+        <TouchableOpacity
+          style={localStyles.lexikonBtn}
+          onPress={() => setLexikonVisible(true)}
+        >
           <Text style={localStyles.lexikonBtnText}>Horizontlexikon</Text>
         </TouchableOpacity>
       </View>
@@ -25,8 +28,12 @@ export default function BodentypScreen() {
       <BodenTypTool />
 
       {/* ── Horizontlexikon modal ── */}
-      <Modal visible={lexikonVisible} animationType="slide" onRequestClose={() => setLexikonVisible(false)}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <Modal
+        visible={lexikonVisible}
+        animationType="slide"
+        onRequestClose={() => setLexikonVisible(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
           <View style={localStyles.modalHeader}>
             <TouchableOpacity onPress={() => setLexikonVisible(false)}>
               <Text style={localStyles.modalClose}>✕ Schließen</Text>
@@ -43,9 +50,9 @@ const localStyles = StyleSheet.create({
   topBar: {
     paddingHorizontal: 15,
     paddingVertical: 8,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ddd',
+    borderBottomColor: "#ddd",
   },
   lexikonBtn: {
     borderWidth: 1.5,
@@ -57,19 +64,19 @@ const localStyles = StyleSheet.create({
   lexikonBtnText: {
     color: colors.primary,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ccc',
+    borderBottomColor: "#ccc",
   },
   modalClose: {
     color: colors.primary,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

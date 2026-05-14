@@ -1,5 +1,5 @@
-import DecisionTree from '@/components/DecisionTree';
-import { GefuegeFormTree } from '@/utils/trees/GefuegeTree';
+import DecisionTree from "@/components/DecisionTree";
+import { GefuegeFormTree } from "@/utils/trees/GefuegeTree";
 
 type Props = { onConfirm?: (result: string) => void };
 

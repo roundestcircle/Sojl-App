@@ -2,9 +2,9 @@
 const a = 6378137;
 const f = 1 / 298.257223563;
 const b = a * (1 - f);
-const e2 = (a * a - b * b) / (a * a);   // first eccentricity squared
-const ep2 = (a * a - b * b) / (b * b);  // second eccentricity squared
-const k0 = 0.9996;                       // UTM scale factor
+const e2 = (a * a - b * b) / (a * a); // first eccentricity squared
+const ep2 = (a * a - b * b) / (b * b); // second eccentricity squared
+const k0 = 0.9996; // UTM scale factor
 
 export type UTMCoord = {
   easting: number;
@@ -76,14 +76,10 @@ export function utmToLatLon(
 
   const λ0 = (((zone - 1) * 6 - 180 + 3) * Math.PI) / 180;
 
-  const e1 =
-    (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+  const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
 
   const M = N / k0;
-  const μ =
-    M /
-    (a *
-      (1 - e2 / 4 - (3 * e2 ** 2) / 64 - (5 * e2 ** 3) / 256));
+  const μ = M / (a * (1 - e2 / 4 - (3 * e2 ** 2) / 64 - (5 * e2 ** 3) / 256));
 
   const φ1 =
     μ +
@@ -100,8 +96,7 @@ export function utmToLatLon(
 
   const lat =
     φ1 -
-    (N1 * Math.tan(φ1)) /
-      R1 *
+    ((N1 * Math.tan(φ1)) / R1) *
       (D ** 2 / 2 -
         ((5 + 3 * T1 + 10 * C1 - 4 * C1 ** 2 - 9 * ep2) * D ** 4) / 24 +
         ((61 + 90 * T1 + 298 * C1 + 45 * T1 ** 2 - 252 * ep2 - 3 * C1 ** 2) *
@@ -112,8 +107,7 @@ export function utmToLatLon(
     λ0 +
     (D -
       ((1 + 2 * T1 + C1) * D ** 3) / 6 +
-      ((5 - 2 * C1 + 28 * T1 - 3 * C1 ** 2 + 8 * ep2 + 24 * T1 ** 2) *
-        D ** 5) /
+      ((5 - 2 * C1 + 28 * T1 - 3 * C1 ** 2 + 8 * ep2 + 24 * T1 ** 2) * D ** 5) /
         120) /
       Math.cos(φ1);
 

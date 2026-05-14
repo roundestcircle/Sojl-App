@@ -4,7 +4,7 @@
  * The dataset is stored in munsellData.ts as an array of objects with RGB and Munsell values.
  */
 
-import { MUNSELL_DATA } from './munsellData';
+import { MUNSELL_DATA } from "./munsellData";
 
 interface RGBColor {
   r: number;
@@ -38,9 +38,9 @@ function rgbToLab(rgb: RGBColor): { L: number; a: number; b: number } {
   const zn = z / 1.08883;
 
   // Convert to Lab
-  const fx = xn > 0.008856 ? Math.pow(xn, 1 / 3) : (7.787 * xn + 16 / 116);
-  const fy = yn > 0.008856 ? Math.pow(yn, 1 / 3) : (7.787 * yn + 16 / 116);
-  const fz = zn > 0.008856 ? Math.pow(zn, 1 / 3) : (7.787 * zn + 16 / 116);
+  const fx = xn > 0.008856 ? Math.pow(xn, 1 / 3) : 7.787 * xn + 16 / 116;
+  const fy = yn > 0.008856 ? Math.pow(yn, 1 / 3) : 7.787 * yn + 16 / 116;
+  const fz = zn > 0.008856 ? Math.pow(zn, 1 / 3) : 7.787 * zn + 16 / 116;
 
   const L = 116 * fy - 16;
   const a = 500 * (fx - fy);
@@ -67,9 +67,16 @@ function calculateColorDistance(color1: RGBColor, color2: RGBColor): number {
 /**
  * Find the closest Munsell color for a given RGB color
  */
-export function rgbToMunsell(rgb: RGBColor): { full: string; distance: number } {
+export function rgbToMunsell(rgb: RGBColor): {
+  full: string;
+  distance: number;
+} {
   let closestEntry = MUNSELL_DATA[0];
-  let minDistance = calculateColorDistance(rgb, { r: closestEntry.r, g: closestEntry.g, b: closestEntry.b });
+  let minDistance = calculateColorDistance(rgb, {
+    r: closestEntry.r,
+    g: closestEntry.g,
+    b: closestEntry.b,
+  });
 
   for (const entry of MUNSELL_DATA) {
     const entryRgb = { r: entry.r, g: entry.g, b: entry.b };

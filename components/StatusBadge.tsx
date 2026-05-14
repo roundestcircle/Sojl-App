@@ -11,7 +11,15 @@ type Props = {
  */
 export default function StatusBadge({ status }: Props) {
   return (
-    <View style={[localStyles.badge, { backgroundColor: status === "abgeschlossen" ? colors.primary : "#e0a020" }]}>
+    <View
+      style={[
+        localStyles.badge,
+        {
+          backgroundColor:
+            status === "abgeschlossen" ? colors.primary : "#e0a020",
+        },
+      ]}
+    >
       <Text style={localStyles.text}>
         {status === "abgeschlossen" ? "abgeschlossen" : "offen"}
       </Text>

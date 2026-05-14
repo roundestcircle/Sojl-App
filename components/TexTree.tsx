@@ -1,5 +1,5 @@
-import DecisionTree from '@/components/DecisionTree';
-import { SoilTexTree } from '@/utils/trees/SoilTexTree';
+import DecisionTree from "@/components/DecisionTree";
+import { SoilTexTree } from "@/utils/trees/SoilTexTree";
 
 type Props = { onConfirm?: (result: string) => void };
 

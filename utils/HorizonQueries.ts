@@ -88,12 +88,17 @@ export function getHorizonteForAufnahme(aufnahmeId: number): Horizont[] {
 }
 
 /** Returns a single Horizont by aufnahme_id and nummer. */
-export function getHorizont(aufnahmeId: number, nummer: number): Horizont | null {
-  return db.getFirstSync<Horizont>(
-    `SELECT * FROM horizonte WHERE aufnahme_id = ? AND nummer = ?`,
-    aufnahmeId,
-    nummer,
-  ) ?? null;
+export function getHorizont(
+  aufnahmeId: number,
+  nummer: number,
+): Horizont | null {
+  return (
+    db.getFirstSync<Horizont>(
+      `SELECT * FROM horizonte WHERE aufnahme_id = ? AND nummer = ?`,
+      aufnahmeId,
+      nummer,
+    ) ?? null
+  );
 }
 
 /**
@@ -103,20 +108,59 @@ export function getHorizont(aufnahmeId: number, nummer: number): Horizont | null
 export function saveHorizont(
   aufnahmeId: number,
   nummer: number,
-  data: Partial<Pick<Horizont,
-    | "horizontname" | "farbe_munsell" | "farbe_rgb" | "bodenart" | "anteil"
-    | "notizen" | "tiefe_oben" | "tiefe_unten"
-    | "ph_cacl2" | "humus" | "humus_pct" | "carbonat" | "lagerungsdichte"
-    | "feinwurzeln" | "gefuege" | "maechtigk_dm"
-    | "bodenfeuchte" | "konsistenz" | "oxidationsmerkmale" | "reduktionsmerkmale"
-    | "pedogene_merkmale" | "lagerungsart_erw" | "lagerungsform" | "verfestigungsdichte"
-    | "hohlraeume" | "zersetzungsstufe" | "wurzelverteilung" | "pilzmycel"
-    | "grobbodenanbindung" | "geog_org_kohlenstoff" | "geogenese" | "periglaziaere_lagen"
-    | "stratigraphie" | "grobkomponenten" | "feinkomponenten" | "beimengungen"
-    | "bes_strukturen" | "geruch" | "substratart" | "probennummern"
-    | "gpv_pct" | "gpv_lm2" | "lk_pct" | "lk_lm2"
-    | "fk_pct"  | "fk_lm2"  | "nfk_pct" | "nfk_lm2"
-  >>,
+  data: Partial<
+    Pick<
+      Horizont,
+      | "horizontname"
+      | "farbe_munsell"
+      | "farbe_rgb"
+      | "bodenart"
+      | "anteil"
+      | "notizen"
+      | "tiefe_oben"
+      | "tiefe_unten"
+      | "ph_cacl2"
+      | "humus"
+      | "humus_pct"
+      | "carbonat"
+      | "lagerungsdichte"
+      | "feinwurzeln"
+      | "gefuege"
+      | "maechtigk_dm"
+      | "bodenfeuchte"
+      | "konsistenz"
+      | "oxidationsmerkmale"
+      | "reduktionsmerkmale"
+      | "pedogene_merkmale"
+      | "lagerungsart_erw"
+      | "lagerungsform"
+      | "verfestigungsdichte"
+      | "hohlraeume"
+      | "zersetzungsstufe"
+      | "wurzelverteilung"
+      | "pilzmycel"
+      | "grobbodenanbindung"
+      | "geog_org_kohlenstoff"
+      | "geogenese"
+      | "periglaziaere_lagen"
+      | "stratigraphie"
+      | "grobkomponenten"
+      | "feinkomponenten"
+      | "beimengungen"
+      | "bes_strukturen"
+      | "geruch"
+      | "substratart"
+      | "probennummern"
+      | "gpv_pct"
+      | "gpv_lm2"
+      | "lk_pct"
+      | "lk_lm2"
+      | "fk_pct"
+      | "fk_lm2"
+      | "nfk_pct"
+      | "nfk_lm2"
+    >
+  >,
 ) {
   const isFull = data.farbe_munsell && data.bodenart;
   const status = isFull ? "vollstaendig" : "angefangen";
@@ -213,14 +257,14 @@ export function saveHorizont(
     data.geruch ?? null,
     data.substratart ?? null,
     data.probennummern ?? null,
-    data.gpv_pct  ?? null,
-    data.gpv_lm2  ?? null,
-    data.lk_pct   ?? null,
-    data.lk_lm2   ?? null,
-    data.fk_pct   ?? null,
-    data.fk_lm2   ?? null,
-    data.nfk_pct  ?? null,
-    data.nfk_lm2  ?? null,
+    data.gpv_pct ?? null,
+    data.gpv_lm2 ?? null,
+    data.lk_pct ?? null,
+    data.lk_lm2 ?? null,
+    data.fk_pct ?? null,
+    data.fk_lm2 ?? null,
+    data.nfk_pct ?? null,
+    data.nfk_lm2 ?? null,
     status,
     aufnahmeId,
     nummer,

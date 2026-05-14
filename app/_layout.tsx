@@ -6,7 +6,10 @@ import { initDatabase } from "@/utils/db";
 
 // Home icon rendered in the header right slot on most screens
 const homeButton = () => (
-  <TouchableOpacity onPress={() => router.replace('/')} style={{ marginRight: 4 }}>
+  <TouchableOpacity
+    onPress={() => router.replace("/")}
+    style={{ marginRight: 4 }}
+  >
     <Ionicons name="home" size={24} color="#fff" />
   </TouchableOpacity>
 );
@@ -18,15 +21,20 @@ const homeButton = () => (
 export default function RootLayout() {
   initDatabase();
   return (
-    <Stack screenOptions={{
-      headerStyle: { backgroundColor: colors.primary },
-      headerTintColor: '#fff',
-      headerTitleStyle: { fontWeight: 'bold', fontSize: 25},
-      headerRight: homeButton,
-    }}>
-      <Stack.Screen name="index" options={{ title: 'Home', headerRight: () => null }} />
-      <Stack.Screen name="about" options={{ title: 'About' }} />
-      <Stack.Screen name="soilcolor" options={{ title: 'Bodenfarbe' }} />
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.primary },
+        headerTintColor: "#fff",
+        headerTitleStyle: { fontWeight: "bold", fontSize: 25 },
+        headerRight: homeButton,
+      }}
+    >
+      <Stack.Screen
+        name="index"
+        options={{ title: "Home", headerRight: () => null }}
+      />
+      <Stack.Screen name="about" options={{ title: "About" }} />
+      <Stack.Screen name="soilcolor" options={{ title: "Bodenfarbe" }} />
       <Stack.Screen name="mapping" options={{ headerShown: false }} />
       <Stack.Screen name="tools" options={{ headerShown: false }} />
     </Stack>

@@ -1,5 +1,5 @@
-import DecisionTree from '@/components/DecisionTree';
-import { LagerungsdichteTree } from '@/utils/trees/LagerungsdichteTree';
+import DecisionTree from "@/components/DecisionTree";
+import { LagerungsdichteTree } from "@/utils/trees/LagerungsdichteTree";
 
 type Props = { onConfirm?: (result: string) => void };
 

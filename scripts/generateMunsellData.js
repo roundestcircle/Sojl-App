@@ -8,8 +8,8 @@
  *   node scripts/generateMunsellData.js
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 // --- Color math utilities ---
 
@@ -24,9 +24,9 @@ const BRADFORD_M = [
 ];
 
 const BRADFORD_M_INV = [
-  [0.9870, -0.1471, 0.1600],
+  [0.987, -0.1471, 0.16],
   [0.4323, 0.5184, 0.0493],
-  [-0.0085, 0.0400, 0.9685],
+  [-0.0085, 0.04, 0.9685],
 ];
 
 function matMul3(M, v) {
@@ -143,18 +143,20 @@ function formatMunsell(hue, value, chroma) {
 // --- Main ---
 
 function main() {
-  const inputPath = path.join(__dirname, '..', 'real.dat');
-  const outputPath = path.join(__dirname, '..', 'utils', 'munsellData.ts');
+  const inputPath = path.join(__dirname, "..", "real.dat");
+  const outputPath = path.join(__dirname, "..", "utils", "munsellData.ts");
 
   if (!fs.existsSync(inputPath)) {
-    console.error('Error: real.dat not found in project root.');
-    console.error('Download it from: http://www.rit-mcsl.org/MunsellRenotation/real.dat');
-    console.error('Place it in: ' + path.join(__dirname, '..'));
+    console.error("Error: real.dat not found in project root.");
+    console.error(
+      "Download it from: http://www.rit-mcsl.org/MunsellRenotation/real.dat",
+    );
+    console.error("Place it in: " + path.join(__dirname, ".."));
     process.exit(1);
   }
 
-  const raw = fs.readFileSync(inputPath, 'utf-8');
-  const lines = raw.split('\n');
+  const raw = fs.readFileSync(inputPath, "utf-8");
+  const lines = raw.split("\n");
 
   const entries = [];
   let skippedOutOfGamut = 0;
@@ -162,7 +164,7 @@ function main() {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('H')) continue; // Skip header/empty
+    if (!trimmed || trimmed.startsWith("H")) continue; // Skip header/empty
 
     // Format: hue value chroma x y Y
     // Fields are whitespace-separated, but hue can be like "2.5YR" or "N"
@@ -217,7 +219,7 @@ function main() {
  * Auto-generated from the official RIT Munsell Renotation Dataset (real.dat)
  * Source: http://www.rit-mcsl.org/MunsellRenotation/real.dat
  *
- * Generated on: ${new Date().toISOString().split('T')[0]}
+ * Generated on: ${new Date().toISOString().split("T")[0]}
  * Total entries: ${entries.length}
  * Skipped (out of sRGB gamut): ${skippedOutOfGamut}
  * Skipped (parse errors): ${skippedParsing}
@@ -241,7 +243,7 @@ export const MUNSELL_DATA: MunsellEntry[] = [\n`;
 
   ts += `];\n`;
 
-  fs.writeFileSync(outputPath, ts, 'utf-8');
+  fs.writeFileSync(outputPath, ts, "utf-8");
 
   console.log(`Generated ${outputPath}`);
   console.log(`  Total entries: ${entries.length}`);

@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, Pressable, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { styles } from '../styles/styles';
-import { ViewStyle } from 'react-native';
+import React, { useState, useEffect } from "react";
+import {
+  Modal,
+  View,
+  Text,
+  Pressable,
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { styles } from "../styles/styles";
 
 interface InstructionModalProps {
-  title?: string;           // default "Anleitung"
+  title?: string; // default "Anleitung"
   instructionText: string;
-  storageKey: string;       // AsyncStorage key used to persist "don't show again"
+  storageKey: string; // AsyncStorage key used to persist "don't show again"
   children?: React.ReactNode; // optional extra content inside the modal body
-  onClose?: () => void;     // callback fired when the modal is dismissed
+  onClose?: () => void; // callback fired when the modal is dismissed
 }
 
 /**
@@ -38,7 +44,7 @@ export const InstructionModal: React.FC<InstructionModalProps> = ({
     const checkAndLoad = async () => {
       try {
         const saved = await AsyncStorage.getItem(storageKey);
-        setShowModal(saved !== 'true');
+        setShowModal(saved !== "true");
       } catch (error) {
         console.error(error);
         setShowModal(true); // Default to showing if storage read fails
@@ -54,7 +60,7 @@ export const InstructionModal: React.FC<InstructionModalProps> = ({
   const handleClose = async () => {
     if (dontShowAgain) {
       try {
-        await AsyncStorage.setItem(storageKey, 'true');
+        await AsyncStorage.setItem(storageKey, "true");
       } catch (error) {
         console.error(error);
       }
@@ -64,14 +70,24 @@ export const InstructionModal: React.FC<InstructionModalProps> = ({
   };
 
   return (
-    <Modal visible={showModal} transparent animationType="fade" onRequestClose={handleClose}>
+    <Modal
+      visible={showModal}
+      transparent
+      animationType="fade"
+      onRequestClose={handleClose}
+    >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>{title}</Text>
           <Text style={styles.modalText}>{instructionText}</Text>
           {children}
-          <Pressable style={styles.checkboxContainer} onPress={() => setDontShowAgain(!dontShowAgain)}>
-            <View style={[styles.checkbox, dontShowAgain && styles.checkboxChecked]}>
+          <Pressable
+            style={styles.checkboxContainer}
+            onPress={() => setDontShowAgain(!dontShowAgain)}
+          >
+            <View
+              style={[styles.checkbox, dontShowAgain && styles.checkboxChecked]}
+            >
               {dontShowAgain && <Text style={styles.modalButtonText}>✓</Text>}
             </View>
             <Text style={styles.checkboxLabel}>Nicht mehr anzeigen</Text>
@@ -89,11 +105,11 @@ export const InstructionModal: React.FC<InstructionModalProps> = ({
  * Standalone button that clears the "don't show again" flag from AsyncStorage
  * and calls an optional callback so the parent can remount InstructionModal.
  */
-export const ResetInstructionButton: React.FC< {
-  storageKey: string; 
+export const ResetInstructionButton: React.FC<{
+  storageKey: string;
   onReset?: () => void;
   style?: ViewStyle; // custom style overrides
-} > = ({ storageKey, onReset, style }) => {
+}> = ({ storageKey, onReset, style }) => {
   const handleReset = async () => {
     try {
       await AsyncStorage.removeItem(storageKey);

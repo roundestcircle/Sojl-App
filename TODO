@@ -1,3 +1,8 @@
+init, add claude.md to gitignore
 1. Add dropdown for Humusform and explainer
+1. Make all results have the same formatting and humustoolresult
 1. Add KAK autocalc
 3. Add Basensättigung autocalc
+4. Extract pore volume maths into a helper similar to humus. do the same with kak
+5. Separate out maths, tree and lookup tools in the further tools screen
+6. run code review skill

@@ -30,10 +30,12 @@ export function getAllFeldkampagnen(): Feldkampagne[] {
 
 /** Returns a single Feldkampagne by id. */
 export function getFeldkampagne(id: number): Feldkampagne | null {
-  return db.getFirstSync<Feldkampagne>(
-    `SELECT * FROM feldkampagnen WHERE id = ?`,
-    id,
-  ) ?? null;
+  return (
+    db.getFirstSync<Feldkampagne>(
+      `SELECT * FROM feldkampagnen WHERE id = ?`,
+      id,
+    ) ?? null
+  );
 }
 
 /** Returns all Aufnahmen belonging to a session, newest first. */
@@ -46,7 +48,10 @@ export function getAufnahmenForFeldkampagne(sessionId: number): Aufnahme[] {
 
 /** Sets a Feldkampagne status to 'abgeschlossen'. */
 export function closeFeldkampagne(id: number) {
-  db.runSync(`UPDATE feldkampagnen SET status = 'abgeschlossen' WHERE id = ?`, id);
+  db.runSync(
+    `UPDATE feldkampagnen SET status = 'abgeschlossen' WHERE id = ?`,
+    id,
+  );
 }
 
 /** Deletes a Feldkampagne and all its Aufnahmen + Horizonte (via CASCADE). */

@@ -1,10 +1,17 @@
-import { Text, ScrollView, TouchableOpacity } from 'react-native';
-import { Link } from 'expo-router';
-import { styles } from '@/styles/styles';
+import { Text, ScrollView, TouchableOpacity } from "react-native";
+import { Link } from "expo-router";
+import { styles } from "@/styles/styles";
 
 export default function ToolsIndex() {
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 15, paddingVertical: 10, alignItems: 'stretch', gap: 15 }}>
+    <ScrollView
+      contentContainerStyle={{
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        alignItems: "stretch",
+        gap: 15,
+      }}
+    >
       <Link href="/tools/horizonte" asChild>
         <TouchableOpacity style={styles.navButton}>
           <Text style={styles.navButtonLabel}>Horizontlexikon</Text>

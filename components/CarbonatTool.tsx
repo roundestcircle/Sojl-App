@@ -1,5 +1,5 @@
-import DecisionTree from '@/components/DecisionTree';
-import { KarbonatGehaltTree } from '@/utils/trees/CarbonateTree';
+import DecisionTree from "@/components/DecisionTree";
+import { KarbonatGehaltTree } from "@/utils/trees/CarbonateTree";
 
 type Props = { onConfirm?: (result: string) => void };
 

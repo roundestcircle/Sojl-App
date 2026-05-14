@@ -1,7 +1,15 @@
-import { useState } from 'react';
-import { Text, TouchableOpacity, Modal, FlatList, SectionList, StyleSheet, View } from 'react-native';
-import { styles } from '@/styles/styles';
-import { colors } from '@/styles/colors';
+import { useState } from "react";
+import {
+  Text,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  SectionList,
+  StyleSheet,
+  View,
+} from "react-native";
+import { styles } from "@/styles/styles";
+import { colors } from "@/styles/colors";
 
 export type LabeledOption = { code: string; label: string };
 export type LabeledSection = { title: string; data: LabeledOption[] };
@@ -23,25 +31,38 @@ export default function LabeledDropdownField({
   value,
   options,
   sections,
-  placeholder = 'Auswählen...',
+  placeholder = "Auswählen...",
   onChange,
 }: Props) {
   const [open, setOpen] = useState(false);
 
   const handleSelect = (code: string) => {
-    onChange(code === value ? '' : code);
+    onChange(code === value ? "" : code);
     setOpen(false);
   };
 
   const renderItem = ({ item }: { item: LabeledOption }) => (
     <TouchableOpacity
-      style={[localStyles.option, item.code === value && localStyles.optionSelected]}
+      style={[
+        localStyles.option,
+        item.code === value && localStyles.optionSelected,
+      ]}
       onPress={() => handleSelect(item.code)}
     >
-      <Text style={[localStyles.optionCode, item.code === value && localStyles.optionActive]}>
+      <Text
+        style={[
+          localStyles.optionCode,
+          item.code === value && localStyles.optionActive,
+        ]}
+      >
         {item.code}
       </Text>
-      <Text style={[localStyles.optionLabel, item.code === value && localStyles.optionActive]}>
+      <Text
+        style={[
+          localStyles.optionLabel,
+          item.code === value && localStyles.optionActive,
+        ]}
+      >
         {item.label}
       </Text>
     </TouchableOpacity>
@@ -55,15 +76,32 @@ export default function LabeledDropdownField({
 
   return (
     <>
-      <TouchableOpacity style={[styles.input, localStyles.trigger]} onPress={() => setOpen(true)}>
-        <Text style={value ? localStyles.value : localStyles.placeholder}>{value || placeholder}</Text>
+      <TouchableOpacity
+        style={[styles.input, localStyles.trigger]}
+        onPress={() => setOpen(true)}
+      >
+        <Text style={value ? localStyles.value : localStyles.placeholder}>
+          {value || placeholder}
+        </Text>
         <Text style={localStyles.arrow}>▾</Text>
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={localStyles.overlay} activeOpacity={1} onPress={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+      >
+        <TouchableOpacity
+          style={localStyles.overlay}
+          activeOpacity={1}
+          onPress={() => setOpen(false)}
+        >
           {/* onStartShouldSetResponder stops taps inside the sheet from closing the modal */}
-          <View style={localStyles.sheet} onStartShouldSetResponder={() => true}>
+          <View
+            style={localStyles.sheet}
+            onStartShouldSetResponder={() => true}
+          >
             {sections ? (
               <SectionList
                 sections={sections}
@@ -88,50 +126,50 @@ export default function LabeledDropdownField({
 
 const localStyles = StyleSheet.create({
   trigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  value: { color: '#222', fontSize: 16 },
-  placeholder: { color: colors.primary + '66', fontSize: 16 },
+  value: { color: "#222", fontSize: 16 },
+  placeholder: { color: colors.primary + "66", fontSize: 16 },
   arrow: { color: colors.primary, fontSize: 18 },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
     padding: 32,
   },
   sheet: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
-    overflow: 'hidden',
-    maxHeight: '80%',
+    overflow: "hidden",
+    maxHeight: "80%",
   },
   option: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    borderBottomColor: "#eee",
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 10,
   },
-  optionSelected: { backgroundColor: colors.primary + '18' },
-  optionCode: { fontSize: 14, fontWeight: '700', color: '#222', width: 44 },
-  optionLabel: { fontSize: 14, color: '#555', flex: 1 },
+  optionSelected: { backgroundColor: colors.primary + "18" },
+  optionCode: { fontSize: 14, fontWeight: "700", color: "#222", width: 44 },
+  optionLabel: { fontSize: 14, color: "#555", flex: 1 },
   optionActive: { color: colors.primary },
   sectionHeader: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ddd',
+    borderBottomColor: "#ddd",
   },
   sectionHeaderText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#888',
-    textTransform: 'uppercase',
+    fontWeight: "700",
+    color: "#888",
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
 });

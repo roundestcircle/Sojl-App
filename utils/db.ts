@@ -115,10 +115,23 @@ export function initDatabase() {
     );
   `);
 
-  for (const col of ['gpv_pct', 'gpv_lm2', 'lk_pct', 'lk_lm2', 'fk_pct', 'fk_lm2', 'nfk_pct', 'nfk_lm2']) {
-    try { db.execSync(`ALTER TABLE horizonte ADD COLUMN ${col} TEXT`); } catch (_) {}
+  for (const col of [
+    "gpv_pct",
+    "gpv_lm2",
+    "lk_pct",
+    "lk_lm2",
+    "fk_pct",
+    "fk_lm2",
+    "nfk_pct",
+    "nfk_lm2",
+  ]) {
+    try {
+      db.execSync(`ALTER TABLE horizonte ADD COLUMN ${col} TEXT`);
+    } catch (_) {}
   }
-  try { db.execSync(`ALTER TABLE aufnahmen ADD COLUMN effektiver_wurzelraum REAL`); } catch (_) {}
+  try {
+    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN effektiver_wurzelraum REAL`);
+  } catch (_) {}
 }
 
 export default db;

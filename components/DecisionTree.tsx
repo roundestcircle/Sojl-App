@@ -1,9 +1,16 @@
-import { colors } from '@/styles/colors';
-import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { styles } from '@/styles/styles';
-import { InstructionModal, ResetInstructionButton } from '@/components/InstructionModal';
-import type { DecisionTreeData, ResultNode, TreeNode } from '@/utils/DecisionTreeTypes';
+import { colors } from "@/styles/colors";
+import { useState } from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { styles } from "@/styles/styles";
+import {
+  InstructionModal,
+  ResetInstructionButton,
+} from "@/components/InstructionModal";
+import type {
+  DecisionTreeData,
+  ResultNode,
+  TreeNode,
+} from "@/utils/DecisionTreeTypes";
 
 type Props = {
   tree: DecisionTreeData;
@@ -17,7 +24,12 @@ type Props = {
  * Walks any DecisionTreeData from root to a result node based on user choices,
  * then surfaces the result title via the optional onConfirm callback.
  */
-export default function DecisionTree({ tree, onConfirm, instructionText, storageKey }: Props) {
+export default function DecisionTree({
+  tree,
+  onConfirm,
+  instructionText,
+  storageKey,
+}: Props) {
   // ID of the currently displayed node
   const [currentNode, setCurrentNode] = useState(tree.id);
   // Breadcrumb stack enabling the Back button to reverse navigation
@@ -32,11 +44,11 @@ export default function DecisionTree({ tree, onConfirm, instructionText, storage
    */
   const getNode = (id: string): TreeNode => {
     if (id === tree.id) return tree as TreeNode;
-    return tree.nodes[id] ?? { id, question: '?', options: [] };
+    return tree.nodes[id] ?? { id, question: "?", options: [] };
   };
 
   const node = getNode(currentNode);
-  const isResult = 'result' in node;
+  const isResult = "result" in node;
 
   /**
    * Navigates forward to a child node.
@@ -60,7 +72,7 @@ export default function DecisionTree({ tree, onConfirm, instructionText, storage
   };
 
   return (
-    <View style={{ flex: 1, padding: 20, alignItems: 'center' }}>
+    <View style={{ flex: 1, padding: 20, alignItems: "center" }}>
       <InstructionModal
         key={modalKey}
         title="Anleitung"
@@ -69,22 +81,29 @@ export default function DecisionTree({ tree, onConfirm, instructionText, storage
       />
 
       {/* ── Question text and optional hint ── */}
-      <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 16 }}>
+      <View style={{ alignItems: "center", marginTop: 10, marginBottom: 16 }}>
         <Text style={styles.maintext}>{node.question}</Text>
-        {'hint' in node && node.hint && (
-          <Text style={{ fontSize: 12, color: '#888', marginTop: 6, textAlign: 'center' }}>
+        {"hint" in node && node.hint && (
+          <Text
+            style={{
+              fontSize: 12,
+              color: "#888",
+              marginTop: 6,
+              textAlign: "center",
+            }}
+          >
             {node.hint}
           </Text>
         )}
       </View>
 
       {/* ── Answer option buttons (only shown on inner nodes) ── */}
-      {!isResult && 'options' in node && (
-        <View style={{ gap: 10, alignSelf: 'stretch' }}>
+      {!isResult && "options" in node && (
+        <View style={{ gap: 10, alignSelf: "stretch" }}>
           {node.options.map((option, index) => (
             <TouchableOpacity
               key={index}
-              style={[styles.button, { minWidth: '100%' }]}
+              style={[styles.button, { minWidth: "100%" }]}
               onPress={() => handlePress(option.next)}
             >
               <Text style={styles.maintext}>{option.text}</Text>
@@ -95,9 +114,28 @@ export default function DecisionTree({ tree, onConfirm, instructionText, storage
 
       {/* ── Result display (only shown on leaf nodes) ── */}
       {isResult && (
-        <View style={{ backgroundColor: colors.primary, borderRadius: 10, padding: 20, gap: 10, minWidth: '100%' }}>
-          <Text style={[styles.maintext, { textAlign: 'center', marginBottom: 40, marginTop: 40, color: '#fff' }]}>
-            {(node as ResultNode).result.title}; {(node as ResultNode).result.description}
+        <View
+          style={{
+            backgroundColor: colors.primary,
+            borderRadius: 10,
+            padding: 20,
+            gap: 10,
+            minWidth: "100%",
+          }}
+        >
+          <Text
+            style={[
+              styles.maintext,
+              {
+                textAlign: "center",
+                marginBottom: 40,
+                marginTop: 40,
+                color: "#fff",
+              },
+            ]}
+          >
+            {(node as ResultNode).result.title};{" "}
+            {(node as ResultNode).result.description}
           </Text>
         </View>
       )}
@@ -105,7 +143,7 @@ export default function DecisionTree({ tree, onConfirm, instructionText, storage
       {/* ── Back navigation button ── */}
       {history.length > 0 && (
         <TouchableOpacity
-          style={[styles.button, { position: 'absolute', bottom: 70 }]}
+          style={[styles.button, { position: "absolute", bottom: 70 }]}
           onPress={handleBack}
         >
           <Text style={styles.maintext}>Zurück</Text>
@@ -115,7 +153,7 @@ export default function DecisionTree({ tree, onConfirm, instructionText, storage
       {/* ── Confirm and restart actions (result node only) ── */}
       {isResult && onConfirm && (
         <TouchableOpacity
-          style={[styles.actionButton, { alignSelf: 'stretch', marginTop: 16 }]}
+          style={[styles.actionButton, { alignSelf: "stretch", marginTop: 16 }]}
           onPress={() => onConfirm((node as ResultNode).result.title)}
         >
           <Text style={styles.actionButtonText}>Wert übernehmen</Text>
@@ -125,7 +163,10 @@ export default function DecisionTree({ tree, onConfirm, instructionText, storage
       {isResult && (
         <TouchableOpacity
           style={[styles.button, { marginTop: 16 }]}
-          onPress={() => { setCurrentNode(tree.id); setHistory([]); }}
+          onPress={() => {
+            setCurrentNode(tree.id);
+            setHistory([]);
+          }}
         >
           <Text style={styles.maintext}>Neu Starten</Text>
         </TouchableOpacity>
@@ -133,8 +174,15 @@ export default function DecisionTree({ tree, onConfirm, instructionText, storage
 
       <ResetInstructionButton
         storageKey={storageKey}
-        onReset={() => setModalKey(prev => prev + 1)}
-        style={{ alignSelf: 'stretch', width: 'auto', marginTop: 20, bottom: 15, left: 20, right: 20 }}
+        onReset={() => setModalKey((prev) => prev + 1)}
+        style={{
+          alignSelf: "stretch",
+          width: "auto",
+          marginTop: 20,
+          bottom: 15,
+          left: 20,
+          right: 20,
+        }}
       />
     </View>
   );

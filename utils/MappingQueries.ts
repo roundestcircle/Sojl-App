@@ -85,23 +85,52 @@ export function createAufnahme(
 
 /** Returns a single Aufnahme by id. */
 export function getAufnahme(id: number): Aufnahme | null {
-  return db.getFirstSync<Aufnahme>(
-    `SELECT * FROM aufnahmen WHERE id = ?`,
-    id,
-  ) ?? null;
+  return (
+    db.getFirstSync<Aufnahme>(`SELECT * FROM aufnahmen WHERE id = ?`, id) ??
+    null
+  );
 }
 
-export type AufnahmeDetails = Pick<Aufnahme,
-  | "gps_lat" | "gps_lon" | "utm_easting" | "utm_northing" | "utm_zone" | "notizen"
-  | "bodentyp" | "bodtyp_abk" | "humusform" | "humsfrm_abk" | "m_ue_nn"
-  | "witterung" | "mittl_n" | "mittl_temp" | "nutzung" | "vegetation"
-  | "reliefpos" | "expos" | "ausgangsgestein" | "grundigkeit" | "effektiver_wurzelraum"
-  | "hangneigung" | "reliefformtyp" | "mikrorelief" | "nat_bodenabtrag"
-  | "kuenstl_bodenabtrag" | "anthropogene_veraend"
-  | "bodenoberflaeche" | "versiegelungsart" | "regenwuermer"
-  | "substratsyst_einheit" | "hydrogeniet_moortyp" | "durchwurzelbarer_bodenraum"
-  | "wasserstand_gof" | "grundnaessestufe" | "besond_wasserverh"
-  | "stau_haftnaessestufe" | "erosionsgrad"
+export type AufnahmeDetails = Pick<
+  Aufnahme,
+  | "gps_lat"
+  | "gps_lon"
+  | "utm_easting"
+  | "utm_northing"
+  | "utm_zone"
+  | "notizen"
+  | "bodentyp"
+  | "bodtyp_abk"
+  | "humusform"
+  | "humsfrm_abk"
+  | "m_ue_nn"
+  | "witterung"
+  | "mittl_n"
+  | "mittl_temp"
+  | "nutzung"
+  | "vegetation"
+  | "reliefpos"
+  | "expos"
+  | "ausgangsgestein"
+  | "grundigkeit"
+  | "effektiver_wurzelraum"
+  | "hangneigung"
+  | "reliefformtyp"
+  | "mikrorelief"
+  | "nat_bodenabtrag"
+  | "kuenstl_bodenabtrag"
+  | "anthropogene_veraend"
+  | "bodenoberflaeche"
+  | "versiegelungsart"
+  | "regenwuermer"
+  | "substratsyst_einheit"
+  | "hydrogeniet_moortyp"
+  | "durchwurzelbarer_bodenraum"
+  | "wasserstand_gof"
+  | "grundnaessestufe"
+  | "besond_wasserverh"
+  | "stau_haftnaessestufe"
+  | "erosionsgrad"
 >;
 
 /** Saves all form details for an Aufnahme. */
@@ -179,8 +208,5 @@ export function deleteAufnahme(id: number) {
 
 /** Marks an Aufnahme as offen again to allow re-editing. */
 export function reopenAufnahme(aufnahmeId: number) {
-  db.runSync(
-    `UPDATE aufnahmen SET status = 'offen' WHERE id = ?`,
-    aufnahmeId,
-  );
+  db.runSync(`UPDATE aufnahmen SET status = 'offen' WHERE id = ?`, aufnahmeId);
 }

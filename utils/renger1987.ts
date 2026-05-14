@@ -15,9 +15,9 @@
 // ─── Grid axes ────────────────────────────────────────────────────────────────
 
 // Reduced grids
-export const CLAY_GRID  = [2,  8, 25, 65] as const;
-export const PH_GRID    = [3,  5,  7] as const;
-export const VALUE_GRID = [1,  3,  5,  7] as const;
+export const CLAY_GRID = [2, 8, 25, 65] as const;
+export const PH_GRID = [3, 5, 7] as const;
+export const VALUE_GRID = [1, 3, 5, 7] as const;
 
 // Type: [valueIdx][pHIdx][clayIdx]
 type HumusTable = number[][][];
@@ -111,7 +111,11 @@ const LOW: HumusTable = [
   ],
 ];
 
-const TABLES: Record<'high' | 'mid' | 'low', HumusTable> = { high: HIGH, mid: MID, low: LOW };
+const TABLES: Record<"high" | "mid" | "low", HumusTable> = {
+  high: HIGH,
+  mid: MID,
+  low: LOW,
+};
 
 // ─── Interpolation ────────────────────────────────────────────────────────────
 
@@ -119,26 +123,33 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-function interpolateAxis(grid: readonly number[], value: number): { lo: number; hi: number; t: number } {
+function interpolateAxis(
+  grid: readonly number[],
+  value: number,
+): { lo: number; hi: number; t: number } {
   const clamped = Math.max(grid[0], Math.min(grid[grid.length - 1], value));
   let lo = 0;
   for (let i = 0; i < grid.length - 1; i++) {
-    if (clamped <= grid[i + 1]) { lo = i; break; }
+    if (clamped <= grid[i + 1]) {
+      lo = i;
+      break;
+    }
     lo = i;
   }
   const hi = Math.min(lo + 1, grid.length - 1);
-  const t = grid[lo] === grid[hi] ? 0 : (clamped - grid[lo]) / (grid[hi] - grid[lo]);
+  const t =
+    grid[lo] === grid[hi] ? 0 : (clamped - grid[lo]) / (grid[hi] - grid[lo]);
   return { lo, hi, t };
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export type ChromaClass = 'high' | 'mid' | 'low';
+export type ChromaClass = "high" | "mid" | "low";
 
 export function chromaToClass(chroma: number): ChromaClass {
-  if (chroma > 6) return 'high';
-  if (chroma >= 3.5) return 'mid';
-  return 'low';
+  if (chroma > 6) return "high";
+  if (chroma >= 3.5) return "mid";
+  return "low";
 }
 
 /**
@@ -157,8 +168,16 @@ export function estimateHumus(
   const vGrid = VALUE_GRID as unknown as readonly number[];
   const { lo: vLo, hi: vHi, t: vT } = interpolateAxis(vGrid, value);
 
-  const { lo: pLo, hi: pHi, t: pT } = interpolateAxis(PH_GRID as unknown as readonly number[], pH);
-  const { lo: cLo, hi: cHi, t: cT } = interpolateAxis(CLAY_GRID as unknown as readonly number[], clay);
+  const {
+    lo: pLo,
+    hi: pHi,
+    t: pT,
+  } = interpolateAxis(PH_GRID as unknown as readonly number[], pH);
+  const {
+    lo: cLo,
+    hi: cHi,
+    t: cT,
+  } = interpolateAxis(CLAY_GRID as unknown as readonly number[], clay);
 
   // Trilinear interpolation: value × pH × clay
   function sample(vi: number, pi: number, ci: number) {
@@ -166,10 +185,16 @@ export function estimateHumus(
   }
 
   const v0 = lerp(
-    lerp(lerp(sample(vLo, pLo, cLo), sample(vLo, pLo, cHi), cT),
-         lerp(sample(vLo, pHi, cLo), sample(vLo, pHi, cHi), cT), pT),
-    lerp(lerp(sample(vHi, pLo, cLo), sample(vHi, pLo, cHi), cT),
-         lerp(sample(vHi, pHi, cLo), sample(vHi, pHi, cHi), cT), pT),
+    lerp(
+      lerp(sample(vLo, pLo, cLo), sample(vLo, pLo, cHi), cT),
+      lerp(sample(vLo, pHi, cLo), sample(vLo, pHi, cHi), cT),
+      pT,
+    ),
+    lerp(
+      lerp(sample(vHi, pLo, cLo), sample(vHi, pLo, cHi), cT),
+      lerp(sample(vHi, pHi, cLo), sample(vHi, pHi, cHi), cT),
+      pT,
+    ),
     vT,
   );
 
@@ -180,25 +205,35 @@ export function estimateHumus(
 
 const BODENART_CLAY: Record<string, number> = {
   S: 3,
-  Su: 4, U: 4, Sl: 4, Slu: 4,
-  Us: 6, Ut: 6,
+  Su: 4,
+  U: 4,
+  Sl: 4,
+  Slu: 4,
+  Us: 6,
+  Ut: 6,
   St: 12,
-  Ls: 20, Lu: 20,
-  Ts: 35, Lts: 35, Lt: 35,
-  Tl: 55, Tu: 55,
+  Ls: 20,
+  Lu: 20,
+  Ts: 35,
+  Lts: 35,
+  Lt: 35,
+  Tl: 55,
+  Tu: 55,
   T: 72,
 };
 
 /** Strips trailing digits (e.g. "Su2" → "Su") then looks up clay %. Returns null if unknown. */
 export function bodenartToClay(bodenart: string): number | null {
-  const key = bodenart.trim().replace(/\d+$/, '');
+  const key = bodenart.trim().replace(/\d+$/, "");
   return BODENART_CLAY[key] ?? null;
 }
 
 // ─── Munsell parser ───────────────────────────────────────────────────────────
 
 /** Parses "10YR 4/3" → { value: 4, chroma: 3 }. Returns null if unparseable. */
-export function parseMunsell(s: string): { value: number; chroma: number } | null {
+export function parseMunsell(
+  s: string,
+): { value: number; chroma: number } | null {
   const m = s.match(/([\d.]+)\s*\/\s*([\d.]+)/);
   if (!m) return null;
   return { value: parseFloat(m[1]), chroma: parseFloat(m[2]) };
@@ -209,10 +244,10 @@ export function parseMunsell(s: string): { value: number; chroma: number } | nul
 export type HumusKlasse = { klasse: string; label: string };
 
 export function humusKlasse(humus: number): HumusKlasse {
-  if (humus < 1)   return { klasse: 'h1', label: 'sehr schwach humos' };
-  if (humus < 2)   return { klasse: 'h2', label: 'schwach humos' };
-  if (humus < 5)   return { klasse: 'h3', label: 'humos' };
-  if (humus < 10)  return { klasse: 'h4', label: 'stark humos' };
-  if (humus < 15)  return { klasse: 'h5', label: 'sehr stark humos' };
-  return             { klasse: 'h6', label: 'extrem humos (anmoorig)' };
+  if (humus < 1) return { klasse: "h1", label: "sehr schwach humos" };
+  if (humus < 2) return { klasse: "h2", label: "schwach humos" };
+  if (humus < 5) return { klasse: "h3", label: "humos" };
+  if (humus < 10) return { klasse: "h4", label: "stark humos" };
+  if (humus < 15) return { klasse: "h5", label: "sehr stark humos" };
+  return { klasse: "h6", label: "extrem humos (anmoorig)" };
 }

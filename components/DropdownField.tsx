@@ -1,8 +1,14 @@
-import { useState } from 'react';
-import { Text, TouchableOpacity, Modal, FlatList, StyleSheet } from 'react-native';
-import { View } from 'react-native';
-import { styles } from '@/styles/styles';
-import { colors } from '@/styles/colors';
+import { useState } from "react";
+import {
+  Text,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  StyleSheet,
+  View,
+} from "react-native";
+import { styles } from "@/styles/styles";
+import { colors } from "@/styles/colors";
 
 type Props = {
   value: string;
@@ -15,7 +21,12 @@ type Props = {
  * A minimal single-select dropdown backed by a fullscreen modal sheet.
  * Tapping the trigger opens the option list; tapping the overlay or an item closes it.
  */
-export default function DropdownField({ value, options, placeholder = 'Auswählen...', onChange }: Props) {
+export default function DropdownField({
+  value,
+  options,
+  placeholder = "Auswählen...",
+  onChange,
+}: Props) {
   // Controls whether the option-list modal is visible
   const [open, setOpen] = useState(false);
 
@@ -24,29 +35,51 @@ export default function DropdownField({ value, options, placeholder = 'Auswähle
    * Tapping the already-selected item clears the value (acts as a toggle).
    */
   const handleSelect = (item: string) => {
-    onChange(item === value ? '' : item);
+    onChange(item === value ? "" : item);
     setOpen(false);
   };
 
   return (
     <>
-      <TouchableOpacity style={[styles.input, localStyles.trigger]} onPress={() => setOpen(true)}>
-        <Text style={value ? localStyles.value : localStyles.placeholder}>{value || placeholder}</Text>
+      <TouchableOpacity
+        style={[styles.input, localStyles.trigger]}
+        onPress={() => setOpen(true)}
+      >
+        <Text style={value ? localStyles.value : localStyles.placeholder}>
+          {value || placeholder}
+        </Text>
         <Text style={localStyles.arrow}>▾</Text>
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={localStyles.overlay} activeOpacity={1} onPress={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+      >
+        <TouchableOpacity
+          style={localStyles.overlay}
+          activeOpacity={1}
+          onPress={() => setOpen(false)}
+        >
           <View style={localStyles.sheet}>
             <FlatList
               data={options}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[localStyles.option, item === value && localStyles.optionSelected]}
+                  style={[
+                    localStyles.option,
+                    item === value && localStyles.optionSelected,
+                  ]}
                   onPress={() => handleSelect(item)}
                 >
-                  <Text style={[localStyles.optionText, item === value && localStyles.optionTextSelected]}>
+                  <Text
+                    style={[
+                      localStyles.optionText,
+                      item === value && localStyles.optionTextSelected,
+                    ]}
+                  >
                     {item}
                   </Text>
                 </TouchableOpacity>
@@ -61,32 +94,32 @@ export default function DropdownField({ value, options, placeholder = 'Auswähle
 
 const localStyles = StyleSheet.create({
   trigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  value: { color: '#222', fontSize: 16 },
-  placeholder: { color: colors.primary + '66', fontSize: 16 },
+  value: { color: "#222", fontSize: 16 },
+  placeholder: { color: colors.primary + "66", fontSize: 16 },
   arrow: { color: colors.primary, fontSize: 18 },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
     padding: 32,
   },
   sheet: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
     maxHeight: 320,
   },
   option: {
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
-  optionSelected: { backgroundColor: colors.primary + '18' },
-  optionText: { fontSize: 16, color: '#222' },
-  optionTextSelected: { color: colors.primary, fontWeight: '700' },
+  optionSelected: { backgroundColor: colors.primary + "18" },
+  optionText: { fontSize: 16, color: "#222" },
+  optionTextSelected: { color: colors.primary, fontWeight: "700" },
 });

@@ -14,7 +14,11 @@ type Props = {
  * Shows the horizon number + optional name on the left and a colored status badge on the right.
  * Long-press triggers deletion (handled by the parent screen).
  */
-export default function HorizontButton({ horizont, onPress, onLongPress }: Props) {
+export default function HorizontButton({
+  horizont,
+  onPress,
+  onLongPress,
+}: Props) {
   const { label, badgeBg } = statusStyle[horizont.status];
 
   return (
@@ -25,7 +29,8 @@ export default function HorizontButton({ horizont, onPress, onLongPress }: Props
       activeOpacity={0.75}
     >
       <Text style={localStyles.name}>
-        H{horizont.nummer}{horizont.horizontname ? ` – ${horizont.horizontname}` : ""}
+        H{horizont.nummer}
+        {horizont.horizontname ? ` – ${horizont.horizontname}` : ""}
       </Text>
       <View style={[styles.badge, { backgroundColor: badgeBg }]}>
         <Text style={styles.badgeText}>{label}</Text>
@@ -36,7 +41,10 @@ export default function HorizontButton({ horizont, onPress, onLongPress }: Props
 }
 
 // Maps each horizon status to a human-readable label and badge background color
-const statusStyle: Record<Horizont["status"], { label: string; badgeBg: string }> = {
+const statusStyle: Record<
+  Horizont["status"],
+  { label: string; badgeBg: string }
+> = {
   leer: { label: "leer", badgeBg: "#6c757d" },
   angefangen: { label: "begonnen", badgeBg: "#e0a020" },
   vollstaendig: { label: "vollständig", badgeBg: colors.primary },

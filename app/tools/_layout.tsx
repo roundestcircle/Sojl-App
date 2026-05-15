@@ -40,6 +40,16 @@ export default function ToolsLayout() {
       <Stack.Screen name="gefuege" options={{ title: "Gefüge" }} />
       <Stack.Screen name="bodentyp" options={{ title: "Bodentyp" }} />
       <Stack.Screen name="horizonte" options={{ title: "Horizontsymbole" }} />
+      <Stack.Screen name="humusformen" options={{ title: "Humusformen" }} />
+      <Stack.Screen name="kak" options={{ title: "KAK berechnen" }} />
+      <Stack.Screen
+        name="basensaettigung"
+        options={{ title: "Basensättigung berechnen" }}
+      />
+      <Stack.Screen
+        name="aufnahme-redirect"
+        options={{ title: "Aufnahme erforderlich" }}
+      />
     </Stack>
   );
 }

@@ -145,26 +145,24 @@ export default function PictureTaker({ onConfirm }: Props) {
 
         {soilColor && (
           <View
-            style={{
-              position: "absolute",
-              top: 40,
-              left: 0,
-              right: 0,
-              backgroundColor: "rgba(20,86,0,0.85)",
-              borderRadius: 10,
-              padding: 12,
-              gap: 6,
-              alignItems: "center",
-            }}
+            style={[
+              styles.resultBox,
+              {
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                marginTop: 0,
+                backgroundColor: "rgba(220, 240, 210, 0.93)",
+              },
+            ]}
           >
-            <Text style={[styles.maintext, { color: "#fff" }]}>
+            {munsellColor && (
+              <Text style={styles.resultValue}>{munsellColor}</Text>
+            )}
+            <Text style={styles.resultLabel}>
               RGB: R={soilColor.r} G={soilColor.g} B={soilColor.b}
             </Text>
-            {munsellColor && (
-              <Text style={[styles.maintext, { color: "#fff" }]}>
-                Munsell: {munsellColor}
-              </Text>
-            )}
           </View>
         )}
 

@@ -2,6 +2,7 @@ import {
   lookupPoreValues,
   soilGroupFromBodenart,
   getHumusAdjustmentInterpolated,
+  parseDensityMidpoint,
 } from "./PoreLookUp";
 import type { Horizont } from "./HorizonQueries";
 
@@ -27,7 +28,13 @@ export function calcGrundigkeitCm(maechtigkeiten: string[]): string {
 }
 
 // ─── Rating categories ──────────────────────────────────────────────────────
-export type Rating = "sehr gering" | "gering" | "mittel" | "hoch" | "sehr hoch";
+export type Rating =
+  | "sehr gering"
+  | "gering"
+  | "mäßig"
+  | "mittel"
+  | "hoch"
+  | "sehr hoch";
 
 // ─── GPV (Gesamtporenvolumen) in Vol% ───────────────────────────────────────
 // Thresholds: <30, 30–40, 40–50, 50–60, >60
@@ -157,6 +164,130 @@ export function calcPoreCapacities(
     nfk_pct: fmt(nfk),
     nfk_lm2: fmtLm2(nfk),
   };
+}
+
+// ─── KAK rating ─────────────────────────────────────────────────────────────
+// Thresholds in cmolc/kg: <5, 5–10, 10–20, 20–40, 40–80, ≥80
+export function rateKAK(value: number): Rating {
+  if (value < 5) return "sehr gering";
+  if (value < 10) return "gering";
+  if (value < 20) return "mäßig";
+  if (value < 40) return "mittel";
+  if (value < 80) return "hoch";
+  return "sehr hoch";
+}
+
+// ─── KAK (Kationenaustauschkapazität) ──────────────────────────────────────
+
+const KAK_BASE: Record<string, number> = {
+  gS: 1,
+  mS: 2,
+  fS: 2,
+  Ss: 3,
+  Su: 4,
+  Su2: 4,
+  Su3: 4,
+  Su4: 4,
+  Sl: 6,
+  Sl2: 6,
+  Sl3: 6,
+  Sl4: 6,
+  Uu: 6,
+  Us: 6,
+  St: 9,
+  St2: 9,
+  St3: 9,
+  Slu: 9,
+  Uls: 9,
+  Ut: 12,
+  Ut2: 12,
+  Ut3: 12,
+  Ut4: 12,
+  Ls: 12,
+  Ls2: 12,
+  Ls3: 12,
+  Ls4: 12,
+  Lu: 15,
+  Lt: 19,
+  Lt2: 19,
+  Lt3: 19,
+  Lts: 19,
+  Ts3: 19,
+  Ts4: 19,
+  Tu3: 19,
+  Tu4: 19,
+  Ts2: 29,
+  Tu2: 29,
+  Tl: 29,
+  Tt: 38,
+};
+
+const HUMUS_KAK_FACTOR: Record<string, number> = {
+  Rohhumus: 1.5,
+  Moder: 2.0,
+  Mull: 2.5,
+};
+
+/** Returns KAK in cmolc/kg, or empty string if bodenart is not in the lookup table. */
+export function calcKAK(
+  bodenart: string,
+  humusform: string,
+  humusPct: string,
+): string {
+  const base = KAK_BASE[bodenart.trim()];
+  if (base === undefined) return "";
+  const factor = HUMUS_KAK_FACTOR[humusform] ?? 0;
+  const pct = parseFloat(humusPct);
+  const humusContrib = !isNaN(pct) && pct > 0 && factor > 0 ? factor * pct : 0;
+  return (base + humusContrib).toFixed(1);
+}
+
+// ─── S-Wert (Sorptionssumme) ─────────────────────────────────────────────────
+// Thresholds in mol_c/m²·We: <1, 1–10, 10–50, 50–200, ≥200
+export function rateSWert(value: number): Rating {
+  if (value < 1) return "sehr gering";
+  if (value < 10) return "gering";
+  if (value < 50) return "mittel";
+  if (value < 200) return "hoch";
+  return "sehr hoch";
+}
+
+/**
+ * Sums the S-Wert (KAK × BS/100 × LD × Mächtigkeit) over all horizons up to depthLimitCm.
+ * Horizons with an uppercase 'A' in their name contribute fully (×1); all others ×0.5.
+ * Depth-clipping follows the same proportional logic as calcProfileFKOrNFK.
+ * Result is in mol_c/m²·We. Returns null if no horizon had all required values.
+ */
+export function calcProfileSWert(
+  horizonte: Horizont[],
+  depthLimitCm: number,
+): number | null {
+  if (isNaN(depthLimitCm) || depthLimitCm <= 0) return null;
+  let total = 0;
+  let hasAny = false;
+  for (const h of horizonte) {
+    const top = parseFloat(h.tiefe_oben ?? "");
+    const bot = parseFloat(h.tiefe_unten ?? "");
+    const kak = parseFloat(h.kak ?? "");
+    const bs = parseFloat(h.basensaettigung ?? "");
+    const ld = parseDensityMidpoint(h.lagerungsdichte ?? "");
+    if (
+      isNaN(top) ||
+      isNaN(bot) ||
+      isNaN(kak) ||
+      isNaN(bs) ||
+      ld === null ||
+      bot <= top
+    )
+      continue;
+    if (top >= depthLimitCm) continue;
+    const clippedBot = Math.min(bot, depthLimitCm);
+    const maechtigkDm = (clippedBot - top) / 10;
+    const weight = /A/.test(h.horizontname ?? "") ? 1 : 0.5;
+    total += kak * (bs / 100) * ld * maechtigkDm * weight;
+    hasAny = true;
+  }
+  return hasAny ? total : null;
 }
 
 /**

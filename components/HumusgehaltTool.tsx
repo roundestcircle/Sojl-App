@@ -186,15 +186,15 @@ export default function HumusgehaltTool({
 
         {/* ── Result ── */}
         {result ? (
-          <View style={localStyles.resultBox}>
-            <Text style={localStyles.resultHumus}>{result.humus} %</Text>
-            <Text style={localStyles.resultKlasse}>
+          <View style={styles.resultBox}>
+            <Text style={styles.resultValue}>{result.humus} %</Text>
+            <Text style={styles.resultLabel}>
               {result.klasse} — {result.label}
             </Text>
           </View>
         ) : (
-          <View style={localStyles.resultBox}>
-            <Text style={localStyles.resultPlaceholder}>
+          <View style={styles.resultBox}>
+            <Text style={styles.resultPlaceholder}>
               Alle Felder ausfüllen
             </Text>
           </View>
@@ -307,28 +307,6 @@ const localStyles = StyleSheet.create({
   },
   estimateBtn: {
     paddingHorizontal: 10,
-  },
-  resultBox: {
-    backgroundColor: colors.primary + "12",
-    borderRadius: 10,
-    padding: 16,
-    alignItems: "center",
-    gap: 4,
-    marginTop: 4,
-  },
-  resultHumus: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: colors.primary,
-  },
-  resultKlasse: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  resultPlaceholder: {
-    fontSize: 14,
-    color: "#aaa",
   },
   modalOverlay: {
     flex: 1,

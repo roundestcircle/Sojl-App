@@ -343,4 +343,34 @@ export const styles = StyleSheet.create({
     paddingBottom: 16,
     gap: 8,
   },
+
+  // ─── Tool result display ─────────────────────────────────────────────────────
+
+  resultBox: {
+    backgroundColor: colors.resultBackground,
+    borderRadius: 10,
+    padding: 16,
+    alignItems: "center" as const,
+    gap: 4,
+    marginTop: 4,
+  },
+
+  resultValue: {
+    fontSize: 32,
+    fontWeight: "800" as const,
+    color: colors.primary,
+    textAlign: "center" as const,
+  },
+
+  resultLabel: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    color: colors.primary,
+    textAlign: "center" as const,
+  },
+
+  resultPlaceholder: {
+    fontSize: 14,
+    color: "#aaa",
+  },
 });

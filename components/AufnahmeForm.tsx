@@ -18,7 +18,13 @@ import { colors } from "@/styles/colors";
 import { latLonToUTM, utmToLatLon } from "@/utils/utmConversion";
 import type { Aufnahme, AufnahmeDetails } from "@/utils/MappingQueries";
 import type { Horizont } from "@/utils/HorizonQueries";
-import { calcProfileFKOrNFK, rateFK, rateNFK } from "@/utils/MappingMaths";
+import {
+  calcProfileFKOrNFK,
+  calcProfileSWert,
+  rateFK,
+  rateNFK,
+  rateSWert,
+} from "@/utils/MappingMaths";
 import DropdownField from "@/components/DropdownField";
 import LabeledDropdownField, {
   type LabeledOption,
@@ -26,7 +32,9 @@ import LabeledDropdownField, {
 } from "@/components/LabeledDropdownField";
 import BodenTypTool from "@/components/BodenTypTool";
 import HorizontLexikonContent from "@/components/HorizontLexikonContent";
+import HumusformLexikonContent from "@/components/HumusformLexikonContent";
 import CollapsibleSection from "@/components/CollapsibleSection";
+import InfoButton from "@/components/InfoButton";
 
 // ─── Dropdown options ──────────────────────────────────────────────────────────
 
@@ -469,6 +477,7 @@ export default function AufnahmeForm({
   const [bodentypModal, setBodentypModal] = useState(false);
   // Controls visibility of the Horizontlexikon modal (openable from within the Bodentyp modal)
   const [lexikonVisible, setLexikonVisible] = useState(false);
+  const [humusformLexikonVisible, setHumusformLexikonVisible] = useState(false);
 
   const { control, setValue, watch, getValues } = useForm<FormData>({
     defaultValues: {
@@ -526,6 +535,7 @@ export default function AufnahmeForm({
   const profileFK = calcProfileFKOrNFK(horizonte, 100, "fk_lm2");
   const effWzNum = parseFloat(watchedEffektiverWurzelraum);
   const profileNFK = calcProfileFKOrNFK(horizonte, effWzNum, "nfk_lm2");
+  const profileSWert = calcProfileSWert(horizonte, effWzNum);
 
   useEffect(() => {
     const { unsubscribe } = watch((data) => {
@@ -862,12 +872,11 @@ export default function AufnahmeForm({
               control={control}
               name="humusform"
               render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="z.B. F-Mull"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={onChange}
+                <DropdownField
                   value={value}
+                  options={["Mull", "Moder", "Rohhumus"]}
+                  placeholder="Auswählen…"
+                  onChange={onChange}
                 />
               )}
             />
@@ -889,6 +898,12 @@ export default function AufnahmeForm({
             />
           </View>
         </View>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => setHumusformLexikonVisible(true)}
+        >
+          <Text style={styles.actionButtonText}>Humusformlexikon</Text>
+        </TouchableOpacity>
 
         <Text style={styles.fieldLabel}>Ausgangsgestein (62)</Text>
         <Controller
@@ -898,6 +913,24 @@ export default function AufnahmeForm({
             <TextInput
               style={styles.input}
               placeholder="z.B. Kalkstein"
+              placeholderTextColor={colors.primary + "66"}
+              onChangeText={onChange}
+              value={value}
+            />
+          )}
+        />
+
+        <Text style={[styles.fieldLabel, { marginTop: 8 }]}>
+          Effektiver Wurzelraum (cm)
+        </Text>
+        <Controller
+          control={control}
+          name="effektiver_wurzelraum"
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              style={styles.input}
+              keyboardType="number-pad"
+              placeholder="z.B. 80"
               placeholderTextColor={colors.primary + "66"}
               onChangeText={onChange}
               value={value}
@@ -1331,7 +1364,16 @@ export default function AufnahmeForm({
           expanded={autoExpanded}
           onToggle={() => setAutoExpanded((v) => !v)}
         >
-          <Text style={styles.fieldLabel}>Gründigkeit (cm)</Text>
+          <Text style={styles.erweiterteHint}>
+            Alle Werte werden automatisch aus den Horizontdaten berechnet. Falls
+            nichts angezeigt wird, bitte die entsprechenden Felder in den
+            Horizonten prüfen.
+          </Text>
+
+          <View style={localStyles.headingRow}>
+            <Text style={styles.fieldLabel}>Gründigkeit (cm)</Text>
+            <InfoButton text="Summe aller Horizont-Mächtigkeiten in cm, berechnet aus den Tiefenangaben der Horizonte." />
+          </View>
           <Controller
             control={control}
             name="grundigkeit"
@@ -1346,26 +1388,11 @@ export default function AufnahmeForm({
             )}
           />
 
-          <Text style={[styles.fieldLabel, { marginTop: 8 }]}>
-            Effektiver Wurzelraum (cm)
-          </Text>
-          <Controller
-            control={control}
-            name="effektiver_wurzelraum"
-            render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={styles.input}
-                keyboardType="number-pad"
-                placeholder="z.B. 80"
-                placeholderTextColor={colors.primary + "66"}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
-
           <View style={localStyles.poreBlock}>
-            <Text style={styles.sectionTitle}>Feldkapazität bis 1 m</Text>
+            <View style={localStyles.headingRow}>
+              <Text style={styles.sectionTitle}>Feldkapazität bis 1 m</Text>
+              <InfoButton text="Profilsumme der Feldkapazität über alle Horizonte bis 1 m Tiefe in l/m². Benötigt Bodenart, Lagerungsdichte und Mächtigkeit in den Horizonten." />
+            </View>
             <Text style={styles.fieldLabel}>l/m²</Text>
             <TextInput
               style={[styles.input, styles.readonlyInput]}
@@ -1385,7 +1412,10 @@ export default function AufnahmeForm({
           </View>
 
           <View style={localStyles.poreBlock}>
-            <Text style={styles.sectionTitle}>Nutzbare Feldkapazität</Text>
+            <View style={localStyles.headingRow}>
+              <Text style={styles.sectionTitle}>Nutzbare Feldkapazität</Text>
+              <InfoButton text="Profilsumme der nutzbaren Feldkapazität über alle Horizonte bis zum effektiven Wurzelraum in l/m². Benötigt Bodenart, Lagerungsdichte, Mächtigkeit und den eingetragenen effektiven Wurzelraum." />
+            </View>
             <Text style={styles.fieldLabel}>l/m²</Text>
             <TextInput
               style={[styles.input, styles.readonlyInput]}
@@ -1400,6 +1430,29 @@ export default function AufnahmeForm({
               placeholder="Wird berechnet…"
               placeholderTextColor={colors.primary + "66"}
               value={profileNFK != null ? rateNFK(profileNFK) : ""}
+              editable={false}
+            />
+          </View>
+
+          <View style={localStyles.poreBlock}>
+            <View style={localStyles.headingRow}>
+              <Text style={styles.sectionTitle}>S-Wert (im eff. Wurzelraum)</Text>
+              <InfoButton text="Sorptionssumme im effektiven Wurzelraum in mol&#x2c;/m². Berechnet als KAK × (Basensättigung/100) × Lagerungsdichte × Mächtigkeit je Horizont. A-Horizonte gehen vollständig ein, alle anderen zur Hälfte. Benötigt KAK, Basensättigung und Lagerungsdichte in den Horizonten." />
+            </View>
+            <Text style={styles.fieldLabel}>mol&#x2c;/m²</Text>
+            <TextInput
+              style={[styles.input, styles.readonlyInput]}
+              placeholder="Wird berechnet…"
+              placeholderTextColor={colors.primary + "66"}
+              value={profileSWert != null ? profileSWert.toFixed(2) : ""}
+              editable={false}
+            />
+            <Text style={styles.fieldLabel}>Bewertung</Text>
+            <TextInput
+              style={[styles.input, styles.readonlyInput]}
+              placeholder="Wird berechnet…"
+              placeholderTextColor={colors.primary + "66"}
+              value={profileSWert != null ? rateSWert(profileSWert) : ""}
               editable={false}
             />
           </View>
@@ -1446,6 +1499,21 @@ export default function AufnahmeForm({
             </TouchableOpacity>
           </View>
           <HorizontLexikonContent />
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={humusformLexikonVisible}
+        animationType="slide"
+        onRequestClose={() => setHumusformLexikonVisible(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+          <View style={localStyles.modalHeader}>
+            <TouchableOpacity onPress={() => setHumusformLexikonVisible(false)}>
+              <Text style={localStyles.modalClose}>✕ Schließen</Text>
+            </TouchableOpacity>
+          </View>
+          <HumusformLexikonContent />
         </SafeAreaView>
       </Modal>
     </>
@@ -1504,5 +1572,10 @@ const localStyles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#ddd",
+  },
+  headingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
 });

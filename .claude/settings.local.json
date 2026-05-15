@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebSearch"
+      "WebSearch",
+      "Skill(code-review-skill)",
+      "Skill(code-review-skill:*)"
     ]
   }
 }

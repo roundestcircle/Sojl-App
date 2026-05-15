@@ -56,6 +56,8 @@ export type Horizont = {
   fk_lm2: string | null;
   nfk_pct: string | null;
   nfk_lm2: string | null;
+  kak: string | null;
+  basensaettigung: string | null;
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -159,10 +161,24 @@ export function saveHorizont(
       | "fk_lm2"
       | "nfk_pct"
       | "nfk_lm2"
+      | "kak"
+      | "basensaettigung"
     >
   >,
 ) {
-  const isFull = data.farbe_munsell && data.bodenart;
+  const isFull =
+    data.horizontname &&
+    data.tiefe_oben != null &&
+    data.tiefe_unten != null &&
+    data.bodenart &&
+    data.anteil != null &&
+    data.ph_cacl2 != null &&
+    data.farbe_munsell &&
+    data.humus &&
+    data.carbonat &&
+    data.lagerungsdichte &&
+    data.feinwurzeln &&
+    data.gefuege;
   const status = isFull ? "vollstaendig" : "angefangen";
 
   db.runSync(
@@ -215,6 +231,8 @@ export function saveHorizont(
          fk_lm2             = ?,
          nfk_pct            = ?,
          nfk_lm2            = ?,
+         kak                = ?,
+         basensaettigung    = ?,
          status             = ?
      WHERE aufnahme_id = ? AND nummer = ?`,
     data.horizontname ?? null,
@@ -265,6 +283,8 @@ export function saveHorizont(
     data.fk_lm2 ?? null,
     data.nfk_pct ?? null,
     data.nfk_lm2 ?? null,
+    data.kak ?? null,
+    data.basensaettigung ?? null,
     status,
     aufnahmeId,
     nummer,

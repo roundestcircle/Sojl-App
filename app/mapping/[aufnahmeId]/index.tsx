@@ -46,11 +46,8 @@ function deriveStandortStatus(a: Aufnahme): StandortStatus {
   const allFilled =
     hasGps &&
     a.bodentyp != null &&
-    a.bodtyp_abk != null &&
     a.humusform != null &&
-    a.humsfrm_abk != null &&
     a.ausgangsgestein != null &&
-    a.grundigkeit != null &&
     a.m_ue_nn != null &&
     a.reliefpos != null &&
     a.expos != null &&

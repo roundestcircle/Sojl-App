@@ -105,6 +105,8 @@ type HorizontCSVRow = {
   fk_lm2: string;
   nfk_pct: string;
   nfk_lm2: string;
+  kak: string;
+  basensaettigung: string;
 };
 
 // ─── Shared internals ─────────────────────────────────────────────────────────
@@ -214,6 +216,8 @@ function buildRows(aufnahmen: Aufnahme[]): {
         fk_lm2: h.fk_lm2 ?? "",
         nfk_pct: h.nfk_pct ?? "",
         nfk_lm2: h.nfk_lm2 ?? "",
+        kak: h.kak ?? "",
+        basensaettigung: h.basensaettigung ?? "",
       });
     }
   }

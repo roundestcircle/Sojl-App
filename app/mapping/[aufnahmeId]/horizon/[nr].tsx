@@ -18,6 +18,7 @@ import {
   saveHorizont,
   type Horizont,
 } from "@/utils/HorizonQueries";
+import { getAufnahme } from "@/utils/MappingQueries";
 import HorizontFormular, {
   type HorizontFormData,
 } from "@/components/HorizonForm";
@@ -49,6 +50,7 @@ export default function HorizontScreen() {
 
   // The Horizont record used to seed form defaults
   const [horizont, setHorizont] = useState<Horizont | null>(null);
+  const [humusform, setHumusform] = useState<string | undefined>(undefined);
   // Prevents rendering the form before the DB read completes
   const [loading, setLoading] = useState(true);
 
@@ -56,6 +58,8 @@ export default function HorizontScreen() {
     useCallback(() => {
       const data = getHorizont(aufnahmeId, nummer);
       setHorizont(data);
+      const aufnahme = getAufnahme(aufnahmeId);
+      setHumusform(aufnahme?.humusform ?? undefined);
       setLoading(false);
     }, [aufnahmeId, nummer]),
   );
@@ -122,6 +126,8 @@ export default function HorizontScreen() {
         fk_lm2: data.fk_lm2 || null,
         nfk_pct: data.nfk_pct || null,
         nfk_lm2: data.nfk_lm2 || null,
+        kak: data.kak || null,
+        basensaettigung: data.basensaettigung || null,
       });
     },
     [aufnahmeId, nummer],
@@ -143,6 +149,7 @@ export default function HorizontScreen() {
       <HorizontFormular
         initialData={horizont ?? undefined}
         onSave={handleSave}
+        humusform={humusform}
       />
     </KeyboardAvoidingView>
   );

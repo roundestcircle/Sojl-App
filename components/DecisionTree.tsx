@@ -1,4 +1,3 @@
-import { colors } from "@/styles/colors";
 import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { styles } from "@/styles/styles";
@@ -114,27 +113,11 @@ export default function DecisionTree({
 
       {/* ── Result display (only shown on leaf nodes) ── */}
       {isResult && (
-        <View
-          style={{
-            backgroundColor: colors.primary,
-            borderRadius: 10,
-            padding: 20,
-            gap: 10,
-            minWidth: "100%",
-          }}
-        >
-          <Text
-            style={[
-              styles.maintext,
-              {
-                textAlign: "center",
-                marginBottom: 40,
-                marginTop: 40,
-                color: "#fff",
-              },
-            ]}
-          >
-            {(node as ResultNode).result.title};{" "}
+        <View style={[styles.resultBox, { minWidth: "100%", padding: 20, marginTop: 10 }]}>
+          <Text style={styles.resultValue}>
+            {(node as ResultNode).result.title}
+          </Text>
+          <Text style={styles.resultLabel}>
             {(node as ResultNode).result.description}
           </Text>
         </View>

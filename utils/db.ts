@@ -132,6 +132,12 @@ export function initDatabase() {
   try {
     db.execSync(`ALTER TABLE aufnahmen ADD COLUMN effektiver_wurzelraum REAL`);
   } catch (_) {}
+  try {
+    db.execSync(`ALTER TABLE horizonte ADD COLUMN kak TEXT`);
+  } catch (_) {}
+  try {
+    db.execSync(`ALTER TABLE horizonte ADD COLUMN basensaettigung TEXT`);
+  } catch (_) {}
 }
 
 export default db;

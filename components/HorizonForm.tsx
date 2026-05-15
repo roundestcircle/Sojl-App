@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Keyboard,
   Animated,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -24,18 +25,28 @@ import PictureTaker from "@/components/PictureTaker";
 import HorizontLexikonContent from "@/components/HorizontLexikonContent";
 import TexTree from "@/components/TexTree";
 import SoilShareScroll from "@/components/SoilShareScroll";
-import HumusgehaltTool from "@/components/HumusgehaltTool";
 import CarbonatTool from "@/components/CarbonatTool";
 import LagerungsdichteTool from "@/components/LagerungsdichteTool";
 import FeinwurzelnTool from "@/components/FeinwurzelnTool";
 import GefuegeTool from "@/components/GefuegeTool";
 import CollapsibleSection from "@/components/CollapsibleSection";
+import InfoButton from "@/components/InfoButton";
 import {
   calcMaechtigkeitDm,
   calcPoreCapacities,
+  calcKAK,
   rateGPV,
   rateLK,
+  rateKAK,
 } from "@/utils/MappingMaths";
+import { calcBasensaettigung } from "@/utils/BasensaettigungLookup";
+import {
+  bodenartToClay,
+  humusKlasse,
+  estimateHumus,
+  parseMunsell,
+  type ChromaClass,
+} from "@/utils/renger1987";
 
 // ─── Form shape ────────────────────────────────────────────────────────────────
 
@@ -63,6 +74,8 @@ export type HorizontFormData = {
   fk_lm2: string;
   nfk_pct: string;
   nfk_lm2: string;
+  kak: string;
+  basensaettigung: string;
   // Erweiterte fields
   bodenfeuchte: string;
   konsistenz: string;
@@ -95,13 +108,13 @@ export type HorizontFormData = {
 type Props = {
   initialData?: Partial<Horizont>;
   onSave: (data: HorizontFormData) => void;
+  humusform?: string;
 };
 
 type ActiveModal =
   | "farbe"
   | "bodenart"
   | "anteil"
-  | "humus"
   | "carbonat"
   | "lagerungsdichte"
   | "feinwurzeln"
@@ -119,7 +132,11 @@ type ActiveModal =
  * Fields that receive values from tools use Controller with a reactive value prop
  * so the input re-renders immediately when setValue is called.
  */
-export default function HorizontFormular({ initialData, onSave }: Props) {
+export default function HorizontFormular({
+  initialData,
+  onSave,
+  humusform,
+}: Props) {
   const methods = useForm<HorizontFormData>({
     defaultValues: {
       horizontname: initialData?.horizontname ?? "",
@@ -146,6 +163,8 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
       fk_lm2: initialData?.fk_lm2 ?? "",
       nfk_pct: initialData?.nfk_pct ?? "",
       nfk_lm2: initialData?.nfk_lm2 ?? "",
+      kak: initialData?.kak ?? "",
+      basensaettigung: initialData?.basensaettigung ?? "",
       bodenfeuchte: initialData?.bodenfeuchte ?? "",
       konsistenz: initialData?.konsistenz ?? "",
       oxidationsmerkmale: initialData?.oxidationsmerkmale ?? "",
@@ -216,6 +235,7 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
   // Which tool modal is currently open; null means all modals are closed
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [autoExpanded, setAutoExpanded] = useState(false);
+  const [tonanteil, setTonanteil] = useState("");
   const [erweiterteExpanded, setErweiterteExpanded] = useState(false);
   const isFirstWatch = useRef(true);
 
@@ -241,6 +261,7 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
   const watchedAnteil = watch("anteil");
   const watchedGpvPct = watch("gpv_pct");
   const watchedLkPct = watch("lk_pct");
+  const watchedKak = watch("kak");
 
   useEffect(() => {
     setValue(
@@ -281,6 +302,51 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
     watchedTiefeOben,
     watchedTiefeUnten,
   ]);
+
+  useEffect(() => {
+    const pct = parseFloat(watchedHumusPct);
+    if (!isNaN(pct) && pct > 0) {
+      setValue("humus", humusKlasse(pct).klasse);
+    } else {
+      setValue("humus", "");
+    }
+  }, [watchedHumusPct]);
+
+  useEffect(() => {
+    const parsed = parseMunsell(watchedFarbe);
+    const pH = parseFloat(watchedPH);
+    const clay = parseFloat(tonanteil);
+    if (!parsed || isNaN(pH) || isNaN(clay)) {
+      setValue("humus_pct", "");
+      return;
+    }
+    const munsellValue = parsed.value;
+    const chroma: ChromaClass =
+      parsed.chroma > 6 ? "high" : parsed.chroma >= 3.5 ? "mid" : "low";
+    if (
+      munsellValue < 1 ||
+      munsellValue > 8 ||
+      pH < 2 ||
+      pH > 9 ||
+      clay < 0 ||
+      clay > 100
+    ) {
+      setValue("humus_pct", "");
+      return;
+    }
+    setValue("humus_pct", String(estimateHumus(munsellValue, chroma, pH, clay)));
+  }, [watchedFarbe, watchedPH, tonanteil]);
+
+  useEffect(() => {
+    setValue("kak", calcKAK(watchedBodenart, humusform ?? "", watchedHumusPct));
+  }, [watchedBodenart, humusform, watchedHumusPct]);
+
+  useEffect(() => {
+    setValue(
+      "basensaettigung",
+      calcBasensaettigung(watchedPH, watchedHumusPct),
+    );
+  }, [watchedPH, watchedHumusPct]);
 
   return (
     <>
@@ -374,6 +440,37 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
 
           {/* ── Bodeneigenschaften ── */}
           <Section title="Bodeneigenschaften">
+            <Text style={styles.fieldLabel}>Tonanteil</Text>
+            <View style={localStyles.fieldWithTool}>
+              <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 4 }}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="z.B. 17"
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={colors.primary + "66"}
+                  onChangeText={setTonanteil}
+                  value={tonanteil}
+                />
+                <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 18 }}>%</Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.actionButton, localStyles.toolBtn]}
+                onPress={() => {
+                  const clay = bodenartToClay(watchedBodenart);
+                  if (clay !== null) {
+                    setTonanteil(String(clay));
+                  } else {
+                    Alert.alert(
+                      "Bodenart nicht erkannt",
+                      "Bitte zuerst eine gültige KA5-Bodenart eingeben.",
+                    );
+                  }
+                }}
+              >
+                <Text style={styles.actionButtonText}>Abschätzen</Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.fieldLabel}>Skelettanteil (45)</Text>
             <View style={localStyles.fieldWithTool}>
               <View
@@ -448,61 +545,6 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
               <TouchableOpacity
                 style={[styles.actionButton, localStyles.toolBtn]}
                 onPress={() => setActiveModal("farbe")}
-              >
-                <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.fieldLabel}>Humusgehalt (29)</Text>
-            <View style={localStyles.fieldWithTool}>
-              <Controller
-                control={control}
-                name="humus"
-                render={({ field: { onChange, value } }) => (
-                  <TextInput
-                    style={[styles.input, { width: 60 }]}
-                    placeholder="h2"
-                    placeholderTextColor={colors.primary + "66"}
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                )}
-              />
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  flex: 1,
-                  gap: 4,
-                }}
-              >
-                <Controller
-                  control={control}
-                  name="humus_pct"
-                  render={({ field: { onChange, value } }) => (
-                    <TextInput
-                      style={[styles.input, { flex: 1 }]}
-                      placeholder="Humus"
-                      placeholderTextColor={colors.primary + "66"}
-                      keyboardType="decimal-pad"
-                      onChangeText={onChange}
-                      value={value}
-                    />
-                  )}
-                />
-                <Text
-                  style={{
-                    color: colors.primary,
-                    fontWeight: "600",
-                    fontSize: 18,
-                  }}
-                >
-                  %
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.actionButton, localStyles.toolBtn]}
-                onPress={() => setActiveModal("humus")}
               >
                 <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
               </TouchableOpacity>
@@ -772,7 +814,10 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
             expanded={autoExpanded}
             onToggle={() => setAutoExpanded((v) => !v)}
           >
-            <Text style={styles.fieldLabel}>Mächtigkeit (dm)</Text>
+            <View style={localStyles.headingRow}>
+              <Text style={styles.sectionTitle}>Mächtigkeit (dm)</Text>
+              <InfoButton text="Dicke des Horizonts in Dezimetern, automatisch berechnet aus Tiefe oben und Tiefe unten. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt." />
+            </View>
             <Controller
               control={control}
               name="maechtigk_dm"
@@ -787,12 +832,54 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
               )}
             />
 
+            <View style={{ gap: 6 }}>
+              <View style={localStyles.headingRow}>
+                <Text style={styles.sectionTitle}>Humusgehalt (29)</Text>
+                <InfoButton text="Geschätzter Humusgehalt nach Renger (1987) in %; benötigt Bodenfarbe (Munsell), pH (CaCl₂) und Tonanteil. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt." />
+              </View>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fieldLabel}>Humusgehalt (%)</Text>
+                  <Controller
+                    control={control}
+                    name="humus_pct"
+                    render={({ field: { value } }) => (
+                      <TextInput
+                        style={[styles.input, styles.readonlyInput]}
+                        placeholder="Wird berechnet…"
+                        placeholderTextColor={colors.primary + "66"}
+                        value={value}
+                        editable={false}
+                      />
+                    )}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fieldLabel}>Humusklasse</Text>
+                  <Controller
+                    control={control}
+                    name="humus"
+                    render={({ field: { value } }) => (
+                      <TextInput
+                        style={[styles.input, styles.readonlyInput]}
+                        placeholder="Wird berechnet…"
+                        placeholderTextColor={colors.primary + "66"}
+                        value={value}
+                        editable={false}
+                      />
+                    )}
+                  />
+                </View>
+              </View>
+            </View>
+
             <PoreReadout
               title="Gesamte Porenkapazität (GPV)"
               pctField="gpv_pct"
               lm2Field="gpv_lm2"
               rating={watchedGpvPct ? rateGPV(parseFloat(watchedGpvPct)) : ""}
               control={control}
+              info="Gesamtvolumen aller Bodenporen in Vol% und l/m²; benötigt Bodenart, Lagerungsdichte, Humusgehalt, Skelettanteil und Mächtigkeit (Tiefe oben + Tiefe unten). Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
             />
             <PoreReadout
               title="Luftkapazität (LK)"
@@ -800,19 +887,70 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
               lm2Field="lk_lm2"
               rating={watchedLkPct ? rateLK(parseFloat(watchedLkPct)) : ""}
               control={control}
+              info="Anteil grober Poren (Luftporen) in Vol% und l/m²; benötigt Bodenart, Lagerungsdichte, Humusgehalt, Skelettanteil und Mächtigkeit (Tiefe oben + Tiefe unten). Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
             />
             <PoreReadout
               title="Feldkapazität (FK)"
               pctField="fk_pct"
               lm2Field="fk_lm2"
               control={control}
+              info="Wassergehalt nach Ablauf des Schwerkraftwassers in l/m²; benötigt Bodenart, Lagerungsdichte, Humusgehalt, Skelettanteil und Mächtigkeit. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
             />
             <PoreReadout
               title="Nutzbare Feldkapazität (nFK)"
               pctField="nfk_pct"
               lm2Field="nfk_lm2"
               control={control}
+              info="Pflanzenverfügbares Wasser zwischen Feldkapazität und permanentem Welkepunkt in l/m²; benötigt Bodenart, Lagerungsdichte, Humusgehalt, Skelettanteil und Mächtigkeit. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
             />
+
+            <View style={localStyles.poreBlock}>
+              <View style={localStyles.headingRow}>
+                <Text style={styles.sectionTitle}>KAK (cmol&#x2c;/kg)</Text>
+                <InfoButton text="Kationenaustauschkapazität nach Bodenart-Nachschlagetabelle mit Humuskorrektur; benötigt Bodenart, Humusform (Aufnahme) und Humusgehalt. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt." />
+              </View>
+              <Controller
+                control={control}
+                name="kak"
+                render={({ field: { value } }) => (
+                  <TextInput
+                    style={[styles.input, styles.readonlyInput]}
+                    placeholder="Wird berechnet…"
+                    placeholderTextColor={colors.primary + "66"}
+                    value={value}
+                    editable={false}
+                  />
+                )}
+              />
+              <Text style={styles.fieldLabel}>Bewertung</Text>
+              <TextInput
+                style={[styles.input, styles.readonlyInput]}
+                placeholder="Wird berechnet…"
+                placeholderTextColor={colors.primary + "66"}
+                value={watchedKak ? rateKAK(parseFloat(watchedKak)) : ""}
+                editable={false}
+              />
+            </View>
+
+            <View style={localStyles.poreBlock}>
+              <View style={localStyles.headingRow}>
+                <Text style={styles.sectionTitle}>Basensättigung (%)</Text>
+                <InfoButton text="Anteil der Basen (Ca, Mg, K, Na) an der Kationenaustauschkapazität in %; benötigt pH (CaCl₂) und Humusgehalt. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt." />
+              </View>
+              <Controller
+                control={control}
+                name="basensaettigung"
+                render={({ field: { value } }) => (
+                  <TextInput
+                    style={[styles.input, styles.readonlyInput]}
+                    placeholder="Wird berechnet…"
+                    placeholderTextColor={colors.primary + "66"}
+                    value={value}
+                    editable={false}
+                  />
+                )}
+              />
+            </View>
           </CollapsibleSection>
         </ScrollView>
       </FormProvider>
@@ -869,27 +1007,6 @@ export default function HorizontFormular({ initialData, onSave }: Props) {
               }}
             />
           </View>
-        </SafeAreaView>
-      </Modal>
-
-      {/* ── Humusgehalt modal ── */}
-      <Modal
-        visible={activeModal === "humus"}
-        animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
-      >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <ModalHeader onClose={() => setActiveModal(null)} />
-          <HumusgehaltTool
-            onConfirm={(klasse, pct) => {
-              setValue("humus", klasse);
-              setValue("humus_pct", pct);
-              setActiveModal(null);
-            }}
-            initialFarbeMunsell={watchedFarbe}
-            initialPH={watchedPH}
-            initialBodenart={watchedBodenart}
-          />
         </SafeAreaView>
       </Modal>
 
@@ -1007,25 +1124,29 @@ function Section({
   );
 }
 
-/** Read-only display row for one pore property (Vol%, l/m², and optional verbal rating). */
 function PoreReadout({
   title,
   pctField,
   lm2Field,
   rating,
   control,
+  info,
 }: {
   title: string;
   pctField: keyof HorizontFormData;
   lm2Field: keyof HorizontFormData;
   rating?: string;
   control: any;
+  info?: string;
 }) {
   const placeholder = "Wird berechnet…";
   const ph = colors.primary + "66";
   return (
     <View style={localStyles.poreBlock}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={localStyles.headingRow}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {info && <InfoButton text={info} />}
+      </View>
       <View style={styles.formRow}>
         <View style={styles.halfField}>
           <Text style={styles.fieldLabel}>Vol%</Text>
@@ -1083,6 +1204,11 @@ const localStyles = StyleSheet.create({
     padding: 16,
     gap: 8,
     paddingBottom: 40,
+  },
+  headingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   fieldWithTool: {
     flexDirection: "row",

@@ -4,12 +4,8 @@ import {
   useFocusEffect,
 } from "expo-router";
 import { useLayoutEffect, useCallback, useState } from "react";
-import {
-  View,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { View, ActivityIndicator } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
@@ -147,15 +143,18 @@ export default function HorizontScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <KeyboardAwareScrollView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid
+      extraScrollHeight={165}
     >
       <HorizontFormular
         initialData={horizont ?? undefined}
         onSave={debouncedSave}
         humusform={humusform}
       />
-    </KeyboardAvoidingView>
+    </KeyboardAwareScrollView>
   );
 }

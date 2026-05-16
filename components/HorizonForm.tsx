@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  ScrollView,
   TouchableOpacity,
   Modal,
   StyleSheet,
@@ -52,7 +51,6 @@ import {
   rateKAK,
 } from "@/utils/MappingMaths";
 import { calcBasensaettigung } from "@/utils/BasensaettigungLookup";
-import { useNotizenScroll } from "@/utils/useNotizenScroll";
 import {
   bodenartToClay,
   humusKlasse,
@@ -221,14 +219,6 @@ export default function HorizontFormular({
     append: appendProbe,
     remove: removeProbe,
   } = useFieldArray({ control, name: "probennummern" });
-  const {
-    scrollViewRef,
-    onNotizenFocus,
-    onNotizenBlur,
-    onScroll,
-    onContentSizeChange,
-    onLayout,
-  } = useNotizenScroll();
   // Which tool modal is currently open; null means all modals are closed
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [autoExpanded, setAutoExpanded] = useState(false);
@@ -355,15 +345,7 @@ export default function HorizontFormular({
   return (
     <>
       <FormProvider {...methods}>
-        <ScrollView
-          ref={scrollViewRef}
-          contentContainerStyle={localStyles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          scrollEventThrottle={16}
-          onScroll={onScroll}
-          onContentSizeChange={onContentSizeChange}
-          onLayout={onLayout}
-        >
+        <View style={localStyles.formContent}>
           {/* ── Horizontname ── */}
           <Section title="Horizontname (58)">
             <View style={localStyles.fieldWithTool}>
@@ -702,8 +684,6 @@ export default function HorizontFormular({
                   numberOfLines={4}
                   onChangeText={onChange}
                   value={value}
-                  onFocus={onNotizenFocus}
-                  onBlur={onNotizenBlur}
                 />
               )}
             />
@@ -1008,7 +988,7 @@ export default function HorizontFormular({
               />
             </View>
           </CollapsibleSection>
-        </ScrollView>
+        </View>
       </FormProvider>
 
       {/* ── Farbe modal ── */}
@@ -1272,10 +1252,8 @@ function PoreReadout({
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
 const localStyles = StyleSheet.create({
-  scrollContent: {
-    padding: 16,
+  formContent: {
     gap: 8,
-    paddingBottom: 40,
   },
   headingRow: {
     flexDirection: "row",

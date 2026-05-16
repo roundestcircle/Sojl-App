@@ -89,8 +89,6 @@ type Props = {
   onSave: (data: AufnahmeDetails) => void;
   calcGrundigkeit?: string;
   horizonte?: Horizont[];
-  onNotizenFocus?: () => void;
-  onNotizenBlur?: () => void;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -127,8 +125,6 @@ export default function AufnahmeForm({
   onSave,
   calcGrundigkeit,
   horizonte = [],
-  onNotizenFocus,
-  onNotizenBlur,
 }: Props) {
   // Derive initial UTM and lat/lon values from whichever coordinate format is stored
   let initUtm: { easting: string; northing: string; zone: string } | null =
@@ -810,8 +806,6 @@ export default function AufnahmeForm({
               numberOfLines={3}
               onChangeText={onChange}
               value={value}
-              onFocus={onNotizenFocus}
-              onBlur={onNotizenBlur}
             />
           )}
         />

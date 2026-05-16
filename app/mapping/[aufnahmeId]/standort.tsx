@@ -1,11 +1,6 @@
 import { useCallback, useState } from "react";
-import {
-  ScrollView,
-  ActivityIndicator,
-  View,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
@@ -19,7 +14,6 @@ import { getHorizonteForAufnahme, type Horizont } from "@/utils/HorizonQueries";
 import { calcGrundigkeitCm } from "@/utils/MappingMaths";
 import AufnahmeForm from "@/components/AufnahmeForm";
 import { useDebouncedCallback } from "@/utils/useDebouncedCallback";
-import { useNotizenScroll } from "@/utils/useNotizenScroll";
 
 /**
  * Standortdaten screen.
@@ -34,15 +28,6 @@ export default function StandortScreen() {
   const [aufnahme, setAufnahme] = useState<Aufnahme | null>(null);
   const [calcGrundigkeit, setCalcGrundigkeit] = useState("");
   const [horizonte, setHorizonte] = useState<Horizont[]>([]);
-
-  const {
-    scrollViewRef,
-    onNotizenFocus,
-    onNotizenBlur,
-    onScroll,
-    onContentSizeChange,
-    onLayout,
-  } = useNotizenScroll();
 
   // Reload the record and recalculate derived values whenever the screen comes back into focus
   useFocusEffect(
@@ -79,29 +64,19 @@ export default function StandortScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <KeyboardAwareScrollView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid
+      extraScrollHeight={165}
     >
-      <ScrollView
-        ref={scrollViewRef}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        keyboardShouldPersistTaps="handled"
-        scrollEventThrottle={16}
-        onScroll={onScroll}
-        onContentSizeChange={onContentSizeChange}
-        onLayout={onLayout}
-      >
-        <AufnahmeForm
-          initialData={aufnahme}
-          onSave={debouncedSave}
-          calcGrundigkeit={calcGrundigkeit}
-          horizonte={horizonte}
-          onNotizenFocus={onNotizenFocus}
-          onNotizenBlur={onNotizenBlur}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <AufnahmeForm
+        initialData={aufnahme}
+        onSave={debouncedSave}
+        calcGrundigkeit={calcGrundigkeit}
+        horizonte={horizonte}
+      />
+    </KeyboardAwareScrollView>
   );
 }

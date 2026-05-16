@@ -61,10 +61,10 @@ Kampagnen-Detailscreen. Listet Aufnahmen mit Status-Badge und ZIP-Export. Verwen
 Zentraler Aufnahme-Screen mit Standortdaten-Button, Horizont-Liste und Abschließen-Button. `deriveStandortStatus` ermittelt `leer`/`begonnen`/`abgeschlossen` anhand von `STANDORT_REQUIRED_FOR_VOLLSTAENDIG`. Verwendet den geteilten `<Badge>` für die Standortdaten-Statusanzeige.
 
 ### `app/mapping/[aufnahmeId]/standort.tsx`
-Standortdaten-Formular-Screen. Lädt Aufnahme und alle Horizonte per `useFocusEffect`, rendert `AufnahmeForm` in einer `ScrollView`. Verwendet das `useNotizenScroll`-Hook (Keyboard-Scroll für Notizen) und das `useDebouncedCallback`-Hook (250 ms) für die Datenbankschreibungen, damit nicht jeder Tastenanschlag ein vollständiges UPDATE auslöst. Berechnet `calcGrundigkeit` (Summe aller Horizont-Mächtigkeiten) und reicht Horizonte als Prop weiter (für FK/nFK/S-Wert-Berechnung in `AufnahmeForm`).
+Standortdaten-Formular-Screen. Lädt Aufnahme und alle Horizonte per `useFocusEffect`, rendert `AufnahmeForm` in einer `KeyboardAwareScrollView` (scrollt fokussierte Inputs automatisch über die Tastatur). Verwendet das `useDebouncedCallback`-Hook (250 ms) für die Datenbankschreibungen, damit nicht jeder Tastenanschlag ein vollständiges UPDATE auslöst. Berechnet `calcGrundigkeit` (Summe aller Horizont-Mächtigkeiten) und reicht Horizonte als Prop weiter (für FK/nFK/S-Wert-Berechnung in `AufnahmeForm`).
 
 ### `app/mapping/[aufnahmeId]/horizon/[nr].tsx`
-Horizont-Formularscreen. Rendert `HorizontFormular` in `KeyboardAvoidingView`. `handleSave` persistiert alle Felder einschließlich aller erweiterten Felder, serialisiert `probennummern` als JSON und speichert alle Porenkennwert-Felder sowie `kak`, `basensaettigung` und `tonanteil`. Speicherung erfolgt debounced (250 ms) via `useDebouncedCallback`; ausstehende Schreibungen werden beim Unmount geflusht.
+Horizont-Formularscreen. Rendert `HorizontFormular` in einer `KeyboardAwareScrollView` (scrollt fokussierte Inputs automatisch über die Tastatur) — gleiches Muster wie `standort.tsx`. `handleSave` persistiert alle Felder einschließlich aller erweiterten Felder, serialisiert `probennummern` als JSON und speichert alle Porenkennwert-Felder sowie `kak`, `basensaettigung` und `tonanteil`. Speicherung erfolgt debounced (250 ms) via `useDebouncedCallback`; ausstehende Schreibungen werden beim Unmount geflusht.
 
 ---
 
@@ -135,7 +135,7 @@ React-Hook-Form-Formular für einen Horizont. Auto-speichert via `watch` (Abonne
 - **Erweiterte Bodenaufnahme** (CollapsibleSection, eingeklappt): 14 einfache Felder (30–49), Substratkennzeichnung-Unterabschnitt (43, 51, 55, 52a, 52b, 53, 54), Geruch (56), Substratart, Probennummern (59) mit dynamischer Liste via `useFieldArray`.
 - **Automatisch berechnete Werte** (CollapsibleSection, eingeklappt): Mächtigkeit (dm) via `calcMaechtigkeitDm`; GPV, LK, FK, nFK je Vol% + l/m² mit verbaler Bewertung; KAK via `calcKAK` (mit `rateKAK`); Basensättigung via `calcBasensaettigung`. Berechnungen werden in `useEffect`-Hooks getriggert und via `setValue` persistiert.
 
-Alle Felder verwenden `Controller` (keine uncontrolled Inputs mehr). Einheiten (Vol%, l/m², cmol_c/kg, %) werden über den geteilten `localStyles.unit`-Stil (`color: colors.primary`, `fontSize: 13`) neben den jeweiligen Inputs angezeigt — analog zu `AufnahmeForm`. Der `Lagerungsdichte`-Modal-Handler (`onConfirm`) extrahiert beim Übernehmen alle numerischen Teile, normalisiert Komma → Punkt und übernimmt einen einzelnen Wert oder einen Bereich im Format `1.2 - 1.5` (statt die Einheit `kg/dm³` mitzukopieren). Keyboard-Avoidance über das geteilte `useNotizenScroll`-Hook.
+Alle Felder verwenden `Controller` (keine uncontrolled Inputs mehr). Einheiten (Vol%, l/m², cmol_c/kg, %) werden über den geteilten `localStyles.unit`-Stil (`color: colors.primary`, `fontSize: 13`) neben den jeweiligen Inputs angezeigt — analog zu `AufnahmeForm`. Der `Lagerungsdichte`-Modal-Handler (`onConfirm`) extrahiert beim Übernehmen alle numerischen Teile, normalisiert Komma → Punkt und übernimmt einen einzelnen Wert oder einen Bereich im Format `1.2 - 1.5` (statt die Einheit `kg/dm³` mitzukopieren). Das Formular ist scrollfrei — das Scrolling (inkl. Keyboard-Avoidance über `KeyboardAwareScrollView`) übernimmt der umgebende Screen, parallel zu `AufnahmeForm`.
 
 ### `components/AufnahmeForm.tsx`
 React-Hook-Form-Formular für Standortdaten einer Aufnahme. Auto-speichert via `watch` (mit `onSaveRef`-Schutz wie bei `HorizonForm`). Dropdown-Optionen kommen aus `utils/aufnahmeOptions.ts`. Felder mit Formblatt-Nummern in Klammern. Sektionen:
@@ -143,11 +143,11 @@ React-Hook-Form-Formular für Standortdaten einer Aufnahme. Auto-speichert via `
 - **Profil**: Bodentyp (60) + Abk. + Bestimmungshilfe, Humusform (63) + Abk., Ausgangsgestein (62).
 - **Standorteigenschaften**: Reliefposition (15), Exposition (13), Nutzung (18), Vegetation (19) — alle als `LabeledDropdownField`.
 - **Klimadaten**: Witterung (20), Mittl. Niederschlag, Mittl. Temperatur.
-- **Notizen**: mit `onNotizenFocus`/`onNotizenBlur`-Callbacks für Keyboard-Scroll im Screen.
+- **Notizen**: einfaches Multiline-Feld; Keyboard-Scroll erfolgt zentral in der `KeyboardAwareScrollView` des Screens.
 - **Erweiterte Bodenaufnahme** (CollapsibleSection, eingeklappt): 17 Felder (Hangneigung … Erosionsgrad), datengesteuert via `.map()` über `[name, label, placeholder]`-Tupel.
 - **Automatisch berechnete Werte** (CollapsibleSection, eingeklappt): Gründigkeit (cm), readonly, vom Screen befüllt. Effektiver Wurzelraum (cm), editierbar, wird in DB gespeichert. Feldkapazität bis 1 m (l/m² + Bewertung), Nutzbare Feldkapazität (l/m² + Bewertung) und S-Wert (im eff. Wurzelraum, mol_c/m² + Bewertung) — alle readonly, berechnet aus den per Prop übergebenen Horizonten via `calcProfileFKOrNFK` und `calcProfileSWert`.
 
-Props: `initialData`, `onSave`, `calcGrundigkeit?`, `horizonte?`, `onNotizenFocus?`, `onNotizenBlur?`. Einheiten (`cm`, `mm`, `°C`, `l/m²`) werden über `localStyles.unit` neben den jeweiligen Inputs angezeigt (Effektiver Wurzelraum, Mittl. Niederschlag, Mittl. Temperatur, Gründigkeit, Feldkapazität, Nutzbare Feldkapazität).
+Props: `initialData`, `onSave`, `calcGrundigkeit?`, `horizonte?`. Einheiten (`cm`, `mm`, `°C`, `l/m²`) werden über `localStyles.unit` neben den jeweiligen Inputs angezeigt (Effektiver Wurzelraum, Mittl. Niederschlag, Mittl. Temperatur, Gründigkeit, Feldkapazität, Nutzbare Feldkapazität).
 
 ### `components/PictureTaker.tsx`
 Kamera-Screen für die Bodenfarb-Analyse. Overlay-Rechtecke (Greycard und Bodenprobe) werden aus `utils/cameraOverlay.ts` (`OVERLAY_FRACTIONS.*.display`) berechnet, sodass UI und Extraktor dieselbe Quelle teilen. Akzeptiert optionalen `onConfirm(munsell)`-Prop.
@@ -242,9 +242,6 @@ Dropdown-Daten für `AufnahmeForm` (aus dem Aufnahmeformblatt): `EXPOS`, `RELIEF
 
 ### `utils/useDebouncedCallback.ts`
 Hook: gibt eine stabile Callback-Wrapper zurück, die Aufrufe um `delayMs` debounced. Ausstehende Aufrufe werden beim Unmount automatisch geflusht — verhindert Datenverlust beim Verlassen des Screens.
-
-### `utils/useNotizenScroll.ts`
-Hook für die geteilte Keyboard-Scroll-Logik (Animated, 600 ms): liefert `scrollViewRef`, `onNotizenFocus`/`Blur`, `onScroll`, `onContentSizeChange`, `onLayout`. Bei Tastaturöffnung im Notizen-Feld scrollt der `ScrollView` sanft ans Ende, damit das Notizenfeld sichtbar bleibt. Wird von `standort.tsx` und `HorizonForm.tsx` verwendet.
 
 ### `utils/formatDate.ts`
 Geteilte `formatDate(iso)`-Funktion: ISO-Datetime → `"YYYY-MM-DD HH:MM"` für die Listen-Anzeige.

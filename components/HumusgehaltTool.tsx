@@ -8,9 +8,18 @@ import {
   ScrollView,
   Modal,
 } from "react-native";
+import ValidatedField from "@/components/ValidatedField";
+import {
+  validateTonanteil,
+  validatePh,
+  validateBodenart,
+  validateMunsellValue,
+} from "@/utils/fieldValidation";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
+import PictureTaker from "@/components/PictureTaker";
+import TexTree from "@/components/TexTree";
 import {
   estimateHumus,
   humusKlasse,
@@ -64,6 +73,7 @@ export default function HumusgehaltTool({
   const [clayStr, setClayStr] = useState("");
   const [phStr, setPhStr] = useState(initialPH ?? "");
   const [bodenartError, setBodenartError] = useState(false);
+  const [activeModal, setActiveModal] = useState<"farbe" | "bodenart" | null>(null);
 
   function estimateClayFromBodenart() {
     const clay = bodenartToClay(bodenart);
@@ -130,26 +140,61 @@ export default function HumusgehaltTool({
         <View style={localStyles.fieldGroup}>
           <Text style={localStyles.label}>Munsell Value (feucht)</Text>
           <Text style={localStyles.hint}>Helligkeit 1 (dunkel) – 8 (hell)</Text>
-          <TextInput
+          <ValidatedField
             style={styles.input}
             keyboardType="decimal-pad"
             placeholder="z.B. 4"
             placeholderTextColor={colors.primary + "66"}
             value={valueStr}
             onChangeText={setValueStr}
+            validate={validateMunsellValue}
+            fieldLabel="Munsell Value (feucht)"
           />
+          <TouchableOpacity
+            style={[styles.actionButton, localStyles.toolBtn, { marginTop: 8 }]}
+            onPress={() => setActiveModal("farbe")}
+          >
+            <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ── Bodenart + Schätzung ── */}
         <View style={localStyles.fieldGroup}>
           <Text style={localStyles.label}>Bodenart</Text>
-          <View style={localStyles.rowWithBtn}>
-            <TextInput
+          <View style={localStyles.fieldWithTool}>
+            <ValidatedField
               style={[styles.input, { flex: 1 }]}
               placeholder="z.B. Su2"
               placeholderTextColor={colors.primary + "66"}
               value={bodenart}
-              onChangeText={setBodenart}
+              onChangeText={(t) => {
+                setBodenart(t);
+              }}
+              validate={validateBodenart}
+              fieldLabel="Bodenart"
+            />
+            <TouchableOpacity
+              style={[styles.actionButton, localStyles.toolBtn]}
+              onPress={() => setActiveModal("bodenart")}
+            >
+              <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ── Tongehalt ── */}
+        <View style={localStyles.fieldGroup}>
+          <Text style={localStyles.label}>Tongehalt (%)</Text>
+          <View style={localStyles.rowWithBtn}>
+            <ValidatedField
+              style={[styles.input, { flex: 1 }]}
+              keyboardType="decimal-pad"
+              placeholder="z.B. 17"
+              placeholderTextColor={colors.primary + "66"}
+              value={clayStr}
+              onChangeText={setClayStr}
+              validate={validateTonanteil}
+              fieldLabel="Tongehalt (%)"
             />
             <TouchableOpacity
               style={[styles.actionButton, localStyles.estimateBtn]}
@@ -160,29 +205,18 @@ export default function HumusgehaltTool({
           </View>
         </View>
 
-        {/* ── Tongehalt ── */}
-        <View style={localStyles.fieldGroup}>
-          <Text style={localStyles.label}>Tongehalt (%)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="decimal-pad"
-            placeholder="z.B. 17"
-            placeholderTextColor={colors.primary + "66"}
-            value={clayStr}
-            onChangeText={setClayStr}
-          />
-        </View>
-
         {/* ── pH ── */}
         <View style={localStyles.fieldGroup}>
           <Text style={localStyles.label}>pH (CaCl₂)</Text>
-          <TextInput
+          <ValidatedField
             style={styles.input}
             keyboardType="decimal-pad"
             placeholder="z.B. 5.5"
             placeholderTextColor={colors.primary + "66"}
             value={phStr}
             onChangeText={setPhStr}
+            validate={validatePh}
+            fieldLabel="pH (CaCl₂)"
           />
         </View>
 
@@ -215,6 +249,54 @@ export default function HumusgehaltTool({
           </TouchableOpacity>
         )}
       </ScrollView>
+
+      {/* ── Farbe modal ── */}
+      <Modal
+        visible={activeModal === "farbe"}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+          <View style={localStyles.modalHeader}>
+            <TouchableOpacity onPress={() => setActiveModal(null)}>
+              <Text style={localStyles.modalClose}>✕ Schließen</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ flex: 1, padding: 20 }}>
+            <PictureTaker
+              onConfirm={(munsell) => {
+                const parsed = parseMunsell(munsell);
+                if (parsed) {
+                  setValueStr(String(parsed.value));
+                  setChroma(chromaToClass(parsed.chroma));
+                }
+                setActiveModal(null);
+              }}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* ── Bodenart modal ── */}
+      <Modal
+        visible={activeModal === "bodenart"}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+          <View style={localStyles.modalHeader}>
+            <TouchableOpacity onPress={() => setActiveModal(null)}>
+              <Text style={localStyles.modalClose}>✕ Schließen</Text>
+            </TouchableOpacity>
+          </View>
+          <TexTree
+            onConfirm={(result) => {
+              setBodenart(result);
+              setActiveModal(null);
+            }}
+          />
+        </SafeAreaView>
+      </Modal>
 
       <Modal
         visible={bodenartError}
@@ -334,5 +416,27 @@ const localStyles = StyleSheet.create({
     color: colors.primary,
     fontWeight: "600",
     lineHeight: 22,
+  },
+  fieldWithTool: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  toolBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#ccc",
+  },
+  modalClose: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

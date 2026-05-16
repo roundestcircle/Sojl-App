@@ -172,8 +172,8 @@ export default function DecisionTree({
       <ResetInstructionButton
         storageKey={storageKey}
         onReset={() => setModalKey((prev) => prev + 1)}
-        style={{ alignSelf: "stretch", marginTop: 20, marginHorizontal: 20 }}
       />
+      
     </View>
   );
 }

@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TextInput, StyleSheet, ScrollView, Modal, TouchableOpacity } from "react-native";
+import ValidatedField from "@/components/ValidatedField";
+import { validatePh, validateTonanteil } from "@/utils/fieldValidation";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import {
   calcBasensaettigung,
   humusGroupLabel,
 } from "@/utils/BasensaettigungLookup";
+import { SafeAreaView } from "react-native-safe-area-context";
+import HumusgehaltTool from "@/components/HumusgehaltTool";
 
 export default function BasensaettigungTool() {
   const [pH, setPH] = useState("");
   const [humusPct, setHumusPct] = useState("");
+  const [activeModal, setActiveModal] = useState<"humus" | null>(null);
 
   const allFilled =
     pH !== "" &&
@@ -20,34 +25,45 @@ export default function BasensaettigungTool() {
   const group = allFilled ? humusGroupLabel(humusPct) : null;
 
   return (
-    <ScrollView
+    <>
+      <ScrollView
       contentContainerStyle={localStyles.container}
       keyboardShouldPersistTaps="handled"
     >
       <View style={localStyles.fieldGroup}>
         <Text style={localStyles.label}>pH (CaCl₂)</Text>
-        <TextInput
+        <ValidatedField
           style={styles.input}
           placeholder="z.B. 5.5"
           placeholderTextColor={colors.primary + "66"}
           keyboardType="decimal-pad"
           onChangeText={setPH}
           value={pH}
+          validate={validatePh}
+          fieldLabel="pH (CaCl₂)"
         />
       </View>
 
       <View style={localStyles.fieldGroup}>
         <Text style={localStyles.label}>Humusgehalt</Text>
         <View style={localStyles.inputRow}>
-          <TextInput
+          <ValidatedField
             style={[styles.input, { flex: 1 }]}
             placeholder="z.B. 2.5"
             placeholderTextColor={colors.primary + "66"}
             keyboardType="decimal-pad"
             onChangeText={setHumusPct}
             value={humusPct}
+            validate={validateTonanteil}
+            fieldLabel="Humusgehalt (%)"
           />
           <Text style={localStyles.unit}>%</Text>
+          <TouchableOpacity
+            style={[styles.actionButton, localStyles.toolBtn]}
+            onPress={() => setActiveModal("humus")}
+          >
+            <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -61,7 +77,28 @@ export default function BasensaettigungTool() {
           <Text style={styles.resultPlaceholder}>Alle Felder ausfüllen</Text>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+
+      <Modal
+      visible={activeModal === "humus"}
+      animationType="slide"
+      onRequestClose={() => setActiveModal(null)}
+    >
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+        <View style={localStyles.modalHeader}>
+          <TouchableOpacity onPress={() => setActiveModal(null)}>
+            <Text style={localStyles.modalClose}>✕ Schließen</Text>
+          </TouchableOpacity>
+        </View>
+        <HumusgehaltTool
+          onConfirm={(_klasse, pct) => {
+            setHumusPct(pct);
+            setActiveModal(null);
+          }}
+        />
+      </SafeAreaView>
+    </Modal>
+    </>
   );
 }
 
@@ -87,6 +124,23 @@ const localStyles = StyleSheet.create({
   unit: {
     color: colors.primary,
     fontWeight: "600",
-    fontSize: 18,
+    fontSize: 15,
+  },
+  toolBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#ccc",
+  },
+  modalClose: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

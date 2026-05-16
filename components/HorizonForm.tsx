@@ -29,6 +29,20 @@ import FeinwurzelnTool from "@/components/FeinwurzelnTool";
 import GefuegeTool from "@/components/GefuegeTool";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import InfoButton from "@/components/InfoButton";
+import ValidatedField from "@/components/ValidatedField";
+import LabeledDropdownField from "@/components/LabeledDropdownField";
+import { CARBONAT_OPTIONS, FEINWURZELN_OPTIONS } from "@/utils/horizonOptions";
+import {
+  validateTiefe,
+  validateBodenart,
+  validateTonanteil,
+  validateAnteil,
+  validatePh,
+  validateMunsell,
+  validateLagerungsdichte,
+  tiefeOrderInvalid,
+  TIEFE_ORDER_SUGGESTION,
+} from "@/utils/fieldValidation";
 import {
   calcMaechtigkeitDm,
   calcPoreCapacities,
@@ -384,13 +398,19 @@ export default function HorizontFormular({
                   control={control}
                   name="tiefe_oben"
                   render={({ field: { onChange, value } }) => (
-                    <TextInput
-                      style={styles.input}
+                    <ValidatedField
                       keyboardType="number-pad"
                       placeholder="z.B. 0"
                       placeholderTextColor={colors.primary + "66"}
                       onChangeText={onChange}
                       value={value}
+                      validate={validateTiefe}
+                      externalInvalid={tiefeOrderInvalid(
+                        watchedTiefeOben,
+                        watchedTiefeUnten,
+                      )}
+                      externalSuggestion={TIEFE_ORDER_SUGGESTION}
+                      fieldLabel="Tiefe oben (cm)"
                     />
                   )}
                 />
@@ -401,13 +421,19 @@ export default function HorizontFormular({
                   control={control}
                   name="tiefe_unten"
                   render={({ field: { onChange, value } }) => (
-                    <TextInput
-                      style={styles.input}
+                    <ValidatedField
                       keyboardType="number-pad"
                       placeholder="z.B. 30"
                       placeholderTextColor={colors.primary + "66"}
                       onChangeText={onChange}
                       value={value}
+                      validate={validateTiefe}
+                      externalInvalid={tiefeOrderInvalid(
+                        watchedTiefeOben,
+                        watchedTiefeUnten,
+                      )}
+                      externalSuggestion={TIEFE_ORDER_SUGGESTION}
+                      fieldLabel="Tiefe unten (cm)"
                     />
                   )}
                 />
@@ -422,12 +448,13 @@ export default function HorizontFormular({
                 control={control}
                 name="bodenart"
                 render={({ field: { onChange, value } }) => (
-                  <TextInput
-                    style={[styles.input, { flex: 1 }]}
+                  <ValidatedField
                     placeholder="z.B. Su2"
                     placeholderTextColor={colors.primary + "66"}
                     onChangeText={onChange}
                     value={value}
+                    validate={validateBodenart}
+                    fieldLabel="Bodenart / Textur"
                   />
                 )}
               />
@@ -456,25 +483,18 @@ export default function HorizontFormular({
                   control={control}
                   name="tonanteil"
                   render={({ field: { onChange, value } }) => (
-                    <TextInput
-                      style={[styles.input, { flex: 1 }]}
+                    <ValidatedField
                       placeholder="z.B. 17"
                       keyboardType="decimal-pad"
                       placeholderTextColor={colors.primary + "66"}
                       onChangeText={onChange}
                       value={value}
+                      validate={validateTonanteil}
+                      fieldLabel="Tonanteil"
                     />
                   )}
                 />
-                <Text
-                  style={{
-                    color: colors.primary,
-                    fontWeight: "600",
-                    fontSize: 18,
-                  }}
-                >
-                  %
-                </Text>
+                <Text style={localStyles.unit}>%</Text>
               </View>
               <TouchableOpacity
                 style={[styles.actionButton, localStyles.toolBtn]}
@@ -508,25 +528,18 @@ export default function HorizontFormular({
                   control={control}
                   name="anteil"
                   render={({ field: { onChange, value } }) => (
-                    <TextInput
-                      style={[styles.input, { flex: 1 }]}
+                    <ValidatedField
                       placeholder="z.B. 35"
                       keyboardType="number-pad"
                       placeholderTextColor={colors.primary + "66"}
                       onChangeText={onChange}
                       value={value}
+                      validate={validateAnteil}
+                      fieldLabel="Skelettanteil"
                     />
                   )}
                 />
-                <Text
-                  style={{
-                    color: colors.primary,
-                    fontWeight: "600",
-                    fontSize: 18,
-                  }}
-                >
-                  %
-                </Text>
+                <Text style={localStyles.unit}>%</Text>
               </View>
               <TouchableOpacity
                 style={[styles.actionButton, localStyles.toolBtn]}
@@ -541,13 +554,14 @@ export default function HorizontFormular({
               control={control}
               name="ph_cacl2"
               render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={styles.input}
+                <ValidatedField
                   keyboardType="decimal-pad"
                   placeholder="z.B. 5.5"
                   placeholderTextColor={colors.primary + "66"}
                   onChangeText={onChange}
                   value={value}
+                  validate={validatePh}
+                  fieldLabel="pH (CaCl₂)"
                 />
               )}
             />
@@ -558,12 +572,13 @@ export default function HorizontFormular({
                 control={control}
                 name="farbe_munsell"
                 render={({ field: { onChange, value } }) => (
-                  <TextInput
-                    style={[styles.input, { flex: 1 }]}
+                  <ValidatedField
                     placeholder="z.B. 10YR 4/3"
                     placeholderTextColor={colors.primary + "66"}
                     onChangeText={onChange}
                     value={value}
+                    validate={validateMunsell}
+                    fieldLabel="Bodenfarbe (Munsell)"
                   />
                 )}
               />
@@ -577,19 +592,20 @@ export default function HorizontFormular({
 
             <Text style={styles.fieldLabel}>Carbonatgehalt (48)</Text>
             <View style={localStyles.fieldWithTool}>
-              <Controller
-                control={control}
-                name="carbonat"
-                render={({ field: { onChange, value } }) => (
-                  <TextInput
-                    style={[styles.input, { flex: 1 }]}
-                    placeholder="z.B. C0"
-                    placeholderTextColor={colors.primary + "66"}
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                )}
-              />
+              <View style={{ flex: 1 }}>
+                <Controller
+                  control={control}
+                  name="carbonat"
+                  render={({ field: { onChange, value } }) => (
+                    <LabeledDropdownField
+                      value={value}
+                      options={CARBONAT_OPTIONS}
+                      placeholder="Auswählen…"
+                      onChange={onChange}
+                    />
+                  )}
+                />
+              </View>
               <TouchableOpacity
                 style={[styles.actionButton, localStyles.toolBtn]}
                 onPress={() => setActiveModal("carbonat")}
@@ -604,15 +620,18 @@ export default function HorizontFormular({
                 control={control}
                 name="lagerungsdichte"
                 render={({ field: { onChange, value } }) => (
-                  <TextInput
+                  <ValidatedField
                     style={[styles.input, { flex: 1 }]}
-                    placeholder="z.B. 4"
+                    placeholder="z.B. 1,5 oder 1,4–1,6"
                     placeholderTextColor={colors.primary + "66"}
                     onChangeText={onChange}
                     value={value}
+                    validate={validateLagerungsdichte}
+                    fieldLabel="Lagerungsdichte"
                   />
                 )}
               />
+              <Text style={localStyles.unit}>kg/dm³</Text>
               <TouchableOpacity
                 style={[styles.actionButton, localStyles.toolBtn]}
                 onPress={() => setActiveModal("lagerungsdichte")}
@@ -623,19 +642,20 @@ export default function HorizontFormular({
 
             <Text style={styles.fieldLabel}>Feinwurzeln (41a)</Text>
             <View style={localStyles.fieldWithTool}>
-              <Controller
-                control={control}
-                name="feinwurzeln"
-                render={({ field: { onChange, value } }) => (
-                  <TextInput
-                    style={[styles.input, { flex: 1 }]}
-                    placeholder="z.B. w2"
-                    placeholderTextColor={colors.primary + "66"}
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                )}
-              />
+              <View style={{ flex: 1 }}>
+                <Controller
+                  control={control}
+                  name="feinwurzeln"
+                  render={({ field: { onChange, value } }) => (
+                    <LabeledDropdownField
+                      value={value}
+                      options={FEINWURZELN_OPTIONS}
+                      placeholder="Auswählen…"
+                      onChange={onChange}
+                    />
+                  )}
+                />
+              </View>
               <TouchableOpacity
                 style={[styles.actionButton, localStyles.toolBtn]}
                 onPress={() => setActiveModal("feinwurzeln")}
@@ -865,22 +885,25 @@ export default function HorizontFormular({
                 <InfoButton text="Geschätzter Humusgehalt nach Renger (1987) in %; benötigt Bodenfarbe (Munsell), pH (CaCl₂) und Tonanteil. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt." />
               </View>
               <View style={{ flexDirection: "row", gap: 8 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.fieldLabel}>Humusgehalt (%)</Text>
-                  <Controller
-                    control={control}
-                    name="humus_pct"
-                    render={({ field: { value } }) => (
-                      <TextInput
-                        style={[styles.input, styles.readonlyInput]}
-                        placeholder="Wird berechnet…"
-                        placeholderTextColor={colors.primary + "66"}
-                        value={value}
-                        editable={false}
-                      />
-                    )}
-                  />
-                </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Humusgehalt</Text>
+                    <Controller
+                      control={control}
+                      name="humus_pct"
+                      render={({ field: { value } }) => (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                          <TextInput
+                            style={[styles.input, styles.readonlyInput, { flex: 1 }]}
+                            placeholder="Wird berechnet…"
+                            placeholderTextColor={colors.primary + "66"}
+                            value={value}
+                            editable={false}
+                          />
+                          <Text style={localStyles.unit}>%</Text>
+                        </View>
+                      )}
+                    />
+                  </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.fieldLabel}>Humusklasse</Text>
                   <Controller
@@ -931,22 +954,25 @@ export default function HorizontFormular({
               info="Pflanzenverfügbares Wasser zwischen Feldkapazität und permanentem Welkepunkt in l/m²; benötigt Bodenart, Lagerungsdichte, Humusgehalt, Skelettanteil und Mächtigkeit. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
             />
 
-            <View style={localStyles.poreBlock}>
+              <View style={localStyles.poreBlock}>
               <View style={localStyles.headingRow}>
-                <Text style={styles.sectionTitle}>KAK (cmol&#x2c;/kg)</Text>
+                <Text style={styles.sectionTitle}>KAK</Text>
                 <InfoButton text="Kationenaustauschkapazität nach Bodenart-Nachschlagetabelle mit Humuskorrektur; benötigt Bodenart, Humusform (Aufnahme) und Humusgehalt. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt." />
               </View>
               <Controller
                 control={control}
                 name="kak"
                 render={({ field: { value } }) => (
-                  <TextInput
-                    style={[styles.input, styles.readonlyInput]}
-                    placeholder="Wird berechnet…"
-                    placeholderTextColor={colors.primary + "66"}
-                    value={value}
-                    editable={false}
-                  />
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <TextInput
+                      style={[styles.input, styles.readonlyInput, { flex: 1 }]}
+                      placeholder="Wird berechnet…"
+                      placeholderTextColor={colors.primary + "66"}
+                      value={value}
+                      editable={false}
+                    />
+                    <Text style={localStyles.unit}>cmol_c/kg</Text>
+                  </View>
                 )}
               />
               <Text style={styles.fieldLabel}>Bewertung</Text>
@@ -961,20 +987,23 @@ export default function HorizontFormular({
 
             <View style={localStyles.poreBlock}>
               <View style={localStyles.headingRow}>
-                <Text style={styles.sectionTitle}>Basensättigung (%)</Text>
+                <Text style={styles.sectionTitle}>Basensättigung</Text>
                 <InfoButton text="Anteil der Basen (Ca, Mg, K, Na) an der Kationenaustauschkapazität in %; benötigt pH (CaCl₂) und Humusgehalt. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt." />
               </View>
               <Controller
                 control={control}
                 name="basensaettigung"
                 render={({ field: { value } }) => (
-                  <TextInput
-                    style={[styles.input, styles.readonlyInput]}
-                    placeholder="Wird berechnet…"
-                    placeholderTextColor={colors.primary + "66"}
-                    value={value}
-                    editable={false}
-                  />
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <TextInput
+                      style={[styles.input, styles.readonlyInput, { flex: 1 }]}
+                      placeholder="Wird berechnet…"
+                      placeholderTextColor={colors.primary + "66"}
+                      value={value}
+                      editable={false}
+                    />
+                    <Text style={localStyles.unit}>%</Text>
+                  </View>
                 )}
               />
             </View>
@@ -1064,7 +1093,19 @@ export default function HorizontFormular({
           <ModalHeader onClose={() => setActiveModal(null)} />
           <LagerungsdichteTool
             onConfirm={(v) => {
-              setValue("lagerungsdichte", v);
+              if (typeof v === "string") {
+                // Extract all numeric parts (e.g. "1,2 - 1,5 kg/dm³" -> ["1,2","1,5"]) and
+                // join them with ' - ' while normalizing commas to dots.
+                const matches = v.match(/[-+]?\d*[.,]?\d+/g);
+                if (matches && matches.length > 0) {
+                  const cleaned = matches.map((m) => m.replace(',', '.')).join(' - ');
+                  setValue("lagerungsdichte", cleaned);
+                } else {
+                  setValue("lagerungsdichte", v);
+                }
+              } else {
+                setValue("lagerungsdichte", String(v));
+              }
               setActiveModal(null);
             }}
           />
@@ -1176,34 +1217,38 @@ function PoreReadout({
       </View>
       <View style={styles.formRow}>
         <View style={styles.halfField}>
-          <Text style={styles.fieldLabel}>Vol%</Text>
           <Controller
             control={control}
             name={pctField}
             render={({ field: { value } }) => (
-              <TextInput
-                style={[styles.input, styles.readonlyInput]}
-                placeholder={placeholder}
-                placeholderTextColor={ph}
-                value={value as string}
-                editable={false}
-              />
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <TextInput
+                  style={[styles.input, styles.readonlyInput, { flex: 1 }]}
+                  placeholder={placeholder}
+                  placeholderTextColor={ph}
+                  value={value as string}
+                  editable={false}
+                />
+                <Text style={localStyles.unit}>Vol%</Text>
+              </View>
             )}
           />
         </View>
         <View style={styles.halfField}>
-          <Text style={styles.fieldLabel}>l/m²</Text>
           <Controller
             control={control}
             name={lm2Field}
             render={({ field: { value } }) => (
-              <TextInput
-                style={[styles.input, styles.readonlyInput]}
-                placeholder={placeholder}
-                placeholderTextColor={ph}
-                value={value as string}
-                editable={false}
-              />
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <TextInput
+                  style={[styles.input, styles.readonlyInput, { flex: 1 }]}
+                  placeholder={placeholder}
+                  placeholderTextColor={ph}
+                  value={value as string}
+                  editable={false}
+                />
+                <Text style={localStyles.unit}>l/m²</Text>
+              </View>
             )}
           />
         </View>
@@ -1262,6 +1307,10 @@ const localStyles = StyleSheet.create({
     color: colors.primary,
     fontSize: 16,
     fontWeight: "600",
+  },
+  unit: {
+    color: colors.primary,
+    fontSize: 13,
   },
   poreBlock: {
     gap: 6,

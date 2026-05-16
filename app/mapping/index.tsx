@@ -154,6 +154,7 @@ export default function FeldkampagnenScreen() {
         <ResetInstructionButton
           storageKey="mappingDontShowAgain"
           onReset={() => setModalKey((prev) => prev + 1)}
+          style={{ position: "relative", alignSelf: "stretch" }}
         />
       </View>
 

@@ -267,7 +267,7 @@ export default function PictureTaker({ onConfirm }: Props) {
       <ResetInstructionButton
         storageKey="soilColDontShowAgain"
         onReset={handleReset}
-        style={{ alignSelf: "stretch", marginTop: 20, marginHorizontal: 15 }}
+        style={{ position: "absolute", left: 0, right: 0, bottom: 16, paddingHorizontal: 0 }}
       />
     </View>
   );

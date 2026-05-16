@@ -38,6 +38,8 @@ import HorizontLexikonContent from "@/components/HorizontLexikonContent";
 import HumusformLexikonContent from "@/components/HumusformLexikonContent";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import InfoButton from "@/components/InfoButton";
+import ValidatedField from "@/components/ValidatedField";
+import { validateEffektiverWurzelraum } from "@/utils/fieldValidation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -634,21 +636,24 @@ export default function AufnahmeForm({
           )}
         />
 
-        <Text style={[styles.fieldLabel, { marginTop: 8 }]}>
-          Effektiver Wurzelraum (cm)
-        </Text>
+        <Text style={[styles.fieldLabel, { marginTop: 8 }]}>Effektiver Wurzelraum</Text>
         <Controller
           control={control}
           name="effektiver_wurzelraum"
           render={({ field: { onChange, value } }) => (
-            <TextInput
-              style={styles.input}
-              keyboardType="number-pad"
-              placeholder="z.B. 80"
-              placeholderTextColor={colors.primary + "66"}
-              onChangeText={onChange}
-              value={value}
-            />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <ValidatedField
+                keyboardType="number-pad"
+                placeholder="z.B. 80"
+                placeholderTextColor={colors.primary + "66"}
+                onChangeText={onChange}
+                value={value}
+                validate={validateEffektiverWurzelraum}
+                fieldLabel="Effektiver Wurzelraum"
+                style={{ flex: 1 }}
+              />
+              <Text style={localStyles.unit}>cm</Text>
+            </View>
           )}
         />
 
@@ -745,19 +750,22 @@ export default function AufnahmeForm({
             />
           </View>
           <View style={styles.halfField}>
-            <Text style={styles.fieldLabel}>Mittl. Niederschlag (mm)</Text>
+            <Text style={styles.fieldLabel}>Mittl. Niederschlag</Text>
             <Controller
               control={control}
               name="mittl_n"
               render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={styles.input}
-                  keyboardType="number-pad"
-                  placeholder="z.B. 700"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={onChange}
-                  value={value}
-                />
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    keyboardType="number-pad"
+                    placeholder="z.B. 700"
+                    placeholderTextColor={colors.primary + "66"}
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                  <Text style={localStyles.unit}>mm</Text>
+                </View>
               )}
             />
           </View>
@@ -765,19 +773,22 @@ export default function AufnahmeForm({
 
         <View style={styles.formRow}>
           <View style={styles.halfField}>
-            <Text style={styles.fieldLabel}>Mittl. Temperatur (°C)</Text>
+            <Text style={styles.fieldLabel}>Mittl. Temperatur</Text>
             <Controller
               control={control}
               name="mittl_temp"
               render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={styles.input}
-                  keyboardType="decimal-pad"
-                  placeholder="z.B. 9.5"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={onChange}
-                  value={value}
-                />
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    keyboardType="decimal-pad"
+                    placeholder="z.B. 9.5"
+                    placeholderTextColor={colors.primary + "66"}
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                  <Text style={localStyles.unit}>°C</Text>
+                </View>
               )}
             />
           </View>
@@ -875,20 +886,23 @@ export default function AufnahmeForm({
           </Text>
 
           <View style={localStyles.headingRow}>
-            <Text style={styles.fieldLabel}>Gründigkeit (cm)</Text>
+            <Text style={styles.fieldLabel}>Gründigkeit</Text>
             <InfoButton text="Summe aller Horizont-Mächtigkeiten in cm, berechnet aus den Tiefenangaben der Horizonte." />
           </View>
           <Controller
             control={control}
             name="grundigkeit"
             render={({ field: { value } }) => (
-              <TextInput
-                style={[styles.input, styles.readonlyInput]}
-                placeholder="Wird automatisch berechnet"
-                placeholderTextColor={colors.primary + "66"}
-                value={value}
-                editable={false}
-              />
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <TextInput
+                  style={[styles.input, styles.readonlyInput, { flex: 1 }]}
+                  placeholder="Wird automatisch berechnet"
+                  placeholderTextColor={colors.primary + "66"}
+                  value={value}
+                  editable={false}
+                />
+                <Text style={localStyles.unit}>cm</Text>
+              </View>
             )}
           />
 
@@ -897,14 +911,16 @@ export default function AufnahmeForm({
               <Text style={styles.sectionTitle}>Feldkapazität bis 1 m</Text>
               <InfoButton text="Profilsumme der Feldkapazität über alle Horizonte bis 1 m Tiefe in l/m². Benötigt Bodenart, Lagerungsdichte und Mächtigkeit in den Horizonten." />
             </View>
-            <Text style={styles.fieldLabel}>l/m²</Text>
-            <TextInput
-              style={[styles.input, styles.readonlyInput]}
-              placeholder="Wird berechnet…"
-              placeholderTextColor={colors.primary + "66"}
-              value={profileFK != null ? profileFK.toFixed(1) : ""}
-              editable={false}
-            />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <TextInput
+                style={[styles.input, styles.readonlyInput, { flex: 1 }]}
+                placeholder="Wird berechnet…"
+                placeholderTextColor={colors.primary + "66"}
+                value={profileFK != null ? profileFK.toFixed(1) : ""}
+                editable={false}
+              />
+              <Text style={localStyles.unit}>l/m²</Text>
+            </View>
             <Text style={styles.fieldLabel}>Bewertung</Text>
             <TextInput
               style={[styles.input, styles.readonlyInput]}
@@ -920,14 +936,16 @@ export default function AufnahmeForm({
               <Text style={styles.sectionTitle}>Nutzbare Feldkapazität</Text>
               <InfoButton text="Profilsumme der nutzbaren Feldkapazität über alle Horizonte bis zum effektiven Wurzelraum in l/m². Benötigt Bodenart, Lagerungsdichte, Mächtigkeit und den eingetragenen effektiven Wurzelraum." />
             </View>
-            <Text style={styles.fieldLabel}>l/m²</Text>
-            <TextInput
-              style={[styles.input, styles.readonlyInput]}
-              placeholder="Wird berechnet…"
-              placeholderTextColor={colors.primary + "66"}
-              value={profileNFK != null ? profileNFK.toFixed(1) : ""}
-              editable={false}
-            />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <TextInput
+                style={[styles.input, styles.readonlyInput, { flex: 1 }]}
+                placeholder="Wird berechnet…"
+                placeholderTextColor={colors.primary + "66"}
+                value={profileNFK != null ? profileNFK.toFixed(1) : ""}
+                editable={false}
+              />
+              <Text style={localStyles.unit}>l/m²</Text>
+            </View>
             <Text style={styles.fieldLabel}>Bewertung</Text>
             <TextInput
               style={[styles.input, styles.readonlyInput]}
@@ -945,14 +963,16 @@ export default function AufnahmeForm({
               </Text>
               <InfoButton text="Sorptionssumme im effektiven Wurzelraum in mol&#x2c;/m². Berechnet als KAK × (Basensättigung/100) × Lagerungsdichte × Mächtigkeit je Horizont. A-Horizonte gehen vollständig ein, alle anderen zur Hälfte. Benötigt KAK, Basensättigung und Lagerungsdichte in den Horizonten." />
             </View>
-            <Text style={styles.fieldLabel}>mol&#x2c;/m²</Text>
-            <TextInput
-              style={[styles.input, styles.readonlyInput]}
-              placeholder="Wird berechnet…"
-              placeholderTextColor={colors.primary + "66"}
-              value={profileSWert != null ? profileSWert.toFixed(2) : ""}
-              editable={false}
-            />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <TextInput
+                style={[styles.input, styles.readonlyInput, { flex: 1 }]}
+                placeholder="Wird berechnet…"
+                placeholderTextColor={colors.primary + "66"}
+                value={profileSWert != null ? profileSWert.toFixed(2) : ""}
+                editable={false}
+              />
+              <Text style={localStyles.unit}>cmol_c/m2</Text>
+            </View>
             <Text style={styles.fieldLabel}>Bewertung</Text>
             <TextInput
               style={[styles.input, styles.readonlyInput]}
@@ -1083,5 +1103,9 @@ const localStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+  },
+  unit: {
+    color: colors.primary,
+    fontSize: 13,
   },
 });

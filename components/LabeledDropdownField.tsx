@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Text,
   TouchableOpacity,
@@ -7,6 +7,7 @@ import {
   SectionList,
   StyleSheet,
   View,
+  TextInput,
 } from "react-native";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
@@ -47,6 +48,36 @@ export default function LabeledDropdownField({
 }: Props) {
   const [open, setOpen] = useState(false);
   const flatOptions = normalize(options);
+  const [query, setQuery] = useState("");
+
+  const filteredFlat = useMemo(() => {
+    if (!flatOptions) return undefined;
+    const q = query.trim().toLowerCase();
+    if (!q) return flatOptions;
+    return flatOptions.filter((o) => {
+      const label = (o.label ?? "") + " " + o.code;
+      return (
+        label.toLowerCase().includes(q) || o.code.toLowerCase().includes(q)
+      );
+    });
+  }, [flatOptions, query]);
+
+  const filteredSections = useMemo(() => {
+    if (!sections) return undefined;
+    const q = query.trim().toLowerCase();
+    if (!q) return sections;
+    return sections
+      .map((s) => ({
+        ...s,
+        data: s.data.filter((o) => {
+          const label = (o.label ?? "") + " " + o.code;
+          return (
+            label.toLowerCase().includes(q) || o.code.toLowerCase().includes(q)
+          );
+        }),
+      }))
+      .filter((s) => s.data.length > 0);
+  }, [sections, query]);
 
   const handleSelect = (code: string) => {
     onChange(code === value ? "" : code);
@@ -116,21 +147,35 @@ export default function LabeledDropdownField({
             style={localStyles.sheet}
             onStartShouldSetResponder={() => true}
           >
-            {sections ? (
-              <SectionList
-                sections={sections}
-                keyExtractor={(item) => item.code}
-                renderItem={renderItem}
-                renderSectionHeader={renderSectionHeader}
-                stickySectionHeadersEnabled={false}
-              />
-            ) : (
-              <FlatList
-                data={flatOptions}
-                keyExtractor={(item) => item.code}
-                renderItem={renderItem}
-              />
-            )}
+              <View>
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Suchen..."
+                  style={localStyles.search}
+                  clearButtonMode="while-editing"
+                />
+
+                {filteredSections ? (
+                  <SectionList
+                    sections={filteredSections}
+                    keyExtractor={(item) => item.code}
+                    renderItem={renderItem}
+                    renderSectionHeader={renderSectionHeader}
+                    stickySectionHeadersEnabled={false}
+                    ListEmptyComponent={<Text style={localStyles.empty}>Keine Ergebnisse</Text>}
+                    keyboardShouldPersistTaps="handled"
+                  />
+                ) : (
+                  <FlatList
+                    data={filteredFlat}
+                    keyExtractor={(item) => item.code}
+                    renderItem={renderItem}
+                    ListEmptyComponent={<Text style={localStyles.empty}>Keine Ergebnisse</Text>}
+                    keyboardShouldPersistTaps="handled"
+                  />
+                )}
+              </View>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -150,10 +195,14 @@ const localStyles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     padding: 32,
   },
   sheet: {
+    position: "absolute",
+    left: 32,
+    right: 32,
+    top: "20%",
     backgroundColor: "#fff",
     borderRadius: 12,
     overflow: "hidden",
@@ -185,5 +234,17 @@ const localStyles = StyleSheet.create({
     color: "#888",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+  },
+  search: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#eee",
+    fontSize: 16,
+  },
+  empty: {
+    padding: 16,
+    textAlign: "center" as const,
+    color: "#888",
   },
 });

@@ -118,9 +118,32 @@ export const ResetInstructionButton: React.FC<{
       console.error(error);
     }
   };
+  // If the caller passed explicit positioning (e.g. `position: 'absolute'`) treat
+  // the `style` prop as button/style overrides. Otherwise render the button in
+  // a container that pins it to the bottom of the page with 16px horizontal
+  // padding and 16px bottom spacing so it matches other full-width buttons.
+  const hasExplicitPosition = !!(style && (style as any).position);
+
+  if (hasExplicitPosition) {
+    return (
+      <TouchableOpacity style={[styles.resetButton, style]} onPress={handleReset}>
+        <Text style={styles.resetButtonText}>Anleitung erneut zeigen</Text>
+      </TouchableOpacity>
+    );
+  }
+
+  const containerStyle: ViewStyle = {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    bottom: 16,
+  };
+
   return (
-    <TouchableOpacity style={[styles.resetButton, style]} onPress={handleReset}>
-      <Text style={styles.resetButtonText}>Anleitung erneut zeigen</Text>
-    </TouchableOpacity>
+    <View style={containerStyle}>
+      <TouchableOpacity style={[styles.resetButton, { alignSelf: "stretch" }]} onPress={handleReset}>
+        <Text style={styles.resetButtonText}>Anleitung erneut zeigen</Text>
+      </TouchableOpacity>
+    </View>
   );
 };

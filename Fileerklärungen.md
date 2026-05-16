@@ -277,3 +277,28 @@ Lagerungsdichte Ld1–Ld5 per Stechzylinder- und Fingerprobe.
 
 ### `scripts/generateMunsellData.js`
 Erzeugt `utils/munsellData.ts` aus dem RIT Munsell Renotation Dataset (`real.dat`). Wendet eine Bradford-Chromatic-Adaptation (Illuminant C → D65) an und konvertiert xyY → XYZ → sRGB. Wird nur manuell ausgeführt, nicht zur Laufzeit.
+
+---
+
+## Änderungen — Sitzung 2026-05-16
+
+Kurzüberblick der im Verlauf dieser Sitzung vorgenommenen Änderungen (UI-, Form- und Hilfslogik):
+
+- **components/HorizonForm.tsx**
+	- `PoreReadout`: Prozent-Unit von `%` auf `Vol%` geändert.
+	- Units (z. B. Vol%, l/m², cmol_c/kg für KAK, %) wurden in mehreren Feldern aus den Überschriften entfernt und als Unit-Labels nach den jeweiligen Eingabefeldern eingefügt (konsistente Platzierung neben Inputs).
+	- Einheit-Style (`localStyles.unit`) vereinheitlicht auf `color: colors.primary` und `fontSize: 13` (keine Font-Weight-Änderung), um mit `AufnahmeForm` übereinzustimmen.
+	- Überschreibungen großer Inline-`%`-Labels bei `Tonanteil` und `Skelettanteil` durch das gemeinsame `localStyles.unit` ersetzt, damit die Unit-Größen konsistent sind.
+	- `Lagerungsdichte`-Modal-Handler: `onConfirm` bereinigt nun die übernommenen Werte — extrahiert alle numerischen Teile, normalisiert Komma → Punkt und übernimmt Zahlen bzw. Zahlenbereiche im Format `1.2 - 1.5` (statt die Einheit `kg/dm³` mitzukopieren).
+
+- **components/AufnahmeForm.tsx**
+	- Units für mehrere Felder verschoben, sodass z. B. `Effektiver Wurzelraum` das Unit-Label `cm`, `Mittl. Niederschlag` → `mm`, `Mittl. Temperatur` → `°C`, `Gründigkeit` → `cm`, sowie `Feldkapazität / Nutzbare Feldkapazität` → `l/m²` nach den Eingaben angezeigt werden.
+	- `localStyles.unit` eingeführt (Farbe + Größe) und Inline-Wrapper verwendet, um das Unit-Label neben Inputs konsistent darzustellen.
+
+- **app/mapping/index.tsx**
+	- `ResetInstructionButton` wird jetzt mit einem expliziten `style`-Prop (`position: 'relative', alignSelf: 'stretch'`) gerendert, damit es inline in der `bottomBar` sitzt und nicht absolut über der Schaltfläche `+ Neue Kampagne` liegt (vermeidet Überlappung).
+
+- **components/LagerungsdichteTool.tsx / Interaktion**
+	- Keine Änderung an `LagerungsdichteTool` selbst (Wrapper um `DecisionTree`), aber die `HorizonForm`-Seite wertet nun die vom Tool zurückgelieferten Strings robust aus und übernimmt nur die numerischen Teile (Unterstützung für Einzelwert und numerische Bereiche).
+
+Hinweis: Die Änderungen zielen auf konsistente Unit-Platzierung, verbesserte Übernahme-Logik von Tool-Ergebnissen und einheitliche Unit-Styling ab. Wenn du möchtest, kann ich die Unit-Komponenten weiter vereinfachen (z. B. gemeinsames `InputWithUnit`-Component, zentrale Unit-Constants in `utils/`) — sag Bescheid, welche Priorität das haben soll.

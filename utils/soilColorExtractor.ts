@@ -1,15 +1,6 @@
 import { Skia } from "@shopify/react-native-skia";
 import { rgbToMunsell } from "./munsellLookup";
-
-/**
- * Rectangle coordinates for image regions
- */
-interface RectangleCoords {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
+import { getSamplingRect, type OverlayRect } from "./cameraOverlay";
 
 /**
  * RGB color object
@@ -26,33 +17,6 @@ interface RGBColor {
 interface MunsellColor {
   full: string; // e.g., "7.5YR 6/4"
 }
-
-/**
- * Get rectangle coordinates relative to image dimensions
- */
-const getRectangleCoords = (
-  imageWidth: number,
-  imageHeight: number,
-  type: "greyCard" | "soilSample",
-): RectangleCoords => {
-  if (type === "greyCard") {
-    // large rectangle (center) for grey card
-    return {
-      top: Math.floor(imageHeight * 0.25),
-      left: Math.floor(imageWidth * 0.2),
-      width: Math.floor(imageWidth * 0.6),
-      height: Math.floor(imageHeight * 0.35),
-    };
-  } else {
-    // small rectangle (bottom center) for soil sample
-    return {
-      top: Math.floor(imageHeight * 0.65),
-      left: Math.floor(imageWidth * 0.42),
-      width: Math.floor(imageWidth * 0.16),
-      height: Math.floor(imageHeight * 0.1),
-    };
-  }
-};
 
 /**
  * Calculate color correction factors based on grey card
@@ -87,7 +51,7 @@ const applyCorrectionToColor = (
  */
 const extractColorFromRegion = async (
   pixels: Uint8Array | Float32Array,
-  rect: RectangleCoords,
+  rect: OverlayRect,
   imageWidth: number,
   imageHeight: number,
 ): Promise<RGBColor> => {
@@ -107,8 +71,10 @@ const extractColorFromRegion = async (
     const startX = Math.max(0, rect.left);
     const endX = Math.min(imageWidth, rect.left + rect.width);
 
-    // Extract region and average colors
-    // Skia returns RGBA byte order
+    // Assumes RGBA byte order from Skia.Image.readPixels(). This is the
+    // documented default for react-native-skia on iOS and Android — if a
+    // future Skia/platform returns BGRA the channel mapping below would
+    // need to swap pixels[i] and pixels[i+2].
     for (let y = startY; y < endY; y++) {
       for (let x = startX; x < endX; x++) {
         // Each pixel is 4 bytes (RGBA)
@@ -147,15 +113,14 @@ export const extractSoilColor = async (
   greyCardColor: RGBColor;
   correctionFactors: RGBColor;
 }> => {
+  const data = await Skia.Data.fromURI(imageUri);
+  const image = Skia.Image.MakeImageFromEncoded(data);
+
+  if (!image) {
+    throw new Error("Failed to decode image");
+  }
+
   try {
-    // Load and decode image once
-    const data = await Skia.Data.fromURI(imageUri);
-    const image = Skia.Image.MakeImageFromEncoded(data);
-
-    if (!image) {
-      throw new Error("Failed to decode image");
-    }
-
     const pixels = image.readPixels();
 
     if (!pixels) {
@@ -166,11 +131,7 @@ export const extractSoilColor = async (
     const actualHeight = image.height();
 
     // Get grey card region color
-    const greyCardRect = getRectangleCoords(
-      actualWidth,
-      actualHeight,
-      "greyCard",
-    );
+    const greyCardRect = getSamplingRect("greyCard", actualWidth, actualHeight);
     const greyCardColor = await extractColorFromRegion(
       pixels,
       greyCardRect,
@@ -182,10 +143,10 @@ export const extractSoilColor = async (
     const correctionFactors = calculateCorrectionFactors(greyCardColor);
 
     // Get soil sample region color
-    const soilSampleRect = getRectangleCoords(
+    const soilSampleRect = getSamplingRect(
+      "soilSample",
       actualWidth,
       actualHeight,
-      "soilSample",
     );
     const correctedColor = await extractColorFromRegion(
       pixels,
@@ -207,8 +168,8 @@ export const extractSoilColor = async (
       greyCardColor,
       correctionFactors,
     };
-  } catch (error) {
-    console.error("Error extracting soil color:", error);
-    throw error;
+  } finally {
+    // Release native image memory so repeated captures don't leak.
+    image.dispose();
   }
 };

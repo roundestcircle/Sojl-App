@@ -3,7 +3,7 @@ import {
   useNavigation,
   useFocusEffect,
 } from "expo-router";
-import { useLayoutEffect, useCallback, useState, useRef } from "react";
+import { useLayoutEffect, useCallback, useState } from "react";
 import {
   View,
   ActivityIndicator,
@@ -22,6 +22,7 @@ import { getAufnahme } from "@/utils/MappingQueries";
 import HorizontFormular, {
   type HorizontFormData,
 } from "@/components/HorizonForm";
+import { useDebouncedCallback } from "@/utils/useDebouncedCallback";
 
 /**
  * Individual horizon detail screen.
@@ -46,7 +47,7 @@ export default function HorizontScreen() {
   // Set header title once nummer is available
   useLayoutEffect(() => {
     navigation.setOptions({ title: `Horizont ${nummer}` });
-  }, [nummer]);
+  }, [navigation, nummer]);
 
   // The Horizont record used to seed form defaults
   const [horizont, setHorizont] = useState<Horizont | null>(null);
@@ -77,7 +78,6 @@ export default function HorizontScreen() {
       saveHorizont(aufnahmeId, nummer, {
         horizontname: data.horizontname || null,
         farbe_munsell: data.farbe_munsell || null,
-        farbe_rgb: null,
         bodenart: data.bodenart || null,
         anteil: data.anteil || null,
         notizen: data.notizen || null,
@@ -128,10 +128,15 @@ export default function HorizontScreen() {
         nfk_lm2: data.nfk_lm2 || null,
         kak: data.kak || null,
         basensaettigung: data.basensaettigung || null,
+        tonanteil: data.tonanteil || null,
       });
     },
     [aufnahmeId, nummer],
   );
+
+  // Debounce saves so per-keystroke writes don't hit SQLite with a full UPDATE
+  // of ~45 columns + status re-derivation on every character.
+  const debouncedSave = useDebouncedCallback(handleSave, 250);
 
   if (loading) {
     return (
@@ -148,7 +153,7 @@ export default function HorizontScreen() {
     >
       <HorizontFormular
         initialData={horizont ?? undefined}
-        onSave={handleSave}
+        onSave={debouncedSave}
         humusform={humusform}
       />
     </KeyboardAvoidingView>

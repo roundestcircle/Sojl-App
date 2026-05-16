@@ -11,8 +11,8 @@ export default function AboutScreen() {
       <Text style={styles.text}>
         Diese App ist ein Freizeitprojekt von mir. Sie dient der Bodenaufnahme
         im Feld nach der deutschen KA6. Mich hat aber das nasse Papier, die viel
-        zu teure Farbtafel und die nervige Excelübetragung der Bodenaufnahmen in
-        der Praxis genervt. Diese Problem will ich mit einer App lösen.
+        zu teure Farbtafel und die nervige Excelübertragung der Bodenaufnahmen
+        in der Praxis genervt. Dieses Problem will ich mit einer App lösen.
       </Text>
       <Text style={styles.text}>
         Ich studiere irgendwas mit Boden im Bachelor, bin aber kein Experte und

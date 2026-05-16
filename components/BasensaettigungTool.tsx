@@ -1,22 +1,11 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
+import { View, Text, TextInput, StyleSheet, ScrollView } from "react-native";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
-import { calcBasensaettigung } from "@/utils/BasensaettigungLookup";
-
-function humusGroup(humusPct: string): string | null {
-  const n = parseFloat(humusPct);
-  if (isNaN(n)) return null;
-  if (n <= 4) return "≤ 4 % Humus";
-  if (n < 15) return "4 – 15 % Humus";
-  return "≥ 15 % Humus";
-}
+import {
+  calcBasensaettigung,
+  humusGroupLabel,
+} from "@/utils/BasensaettigungLookup";
 
 export default function BasensaettigungTool() {
   const [pH, setPH] = useState("");
@@ -28,7 +17,7 @@ export default function BasensaettigungTool() {
     humusPct !== "" &&
     !isNaN(parseFloat(humusPct));
   const result = allFilled ? calcBasensaettigung(pH, humusPct) : "";
-  const group = allFilled ? humusGroup(humusPct) : null;
+  const group = allFilled ? humusGroupLabel(humusPct) : null;
 
   return (
     <ScrollView

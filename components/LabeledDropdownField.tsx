@@ -11,16 +11,27 @@ import {
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 
-export type LabeledOption = { code: string; label: string };
+export type LabeledOption = { code: string; label?: string };
 export type LabeledSection = { title: string; data: LabeledOption[] };
 
 type Props = {
   value: string;
-  options?: LabeledOption[];
+  /** Either a flat option list or string array (treated as code-only options). */
+  options?: LabeledOption[] | readonly string[];
   sections?: LabeledSection[];
   placeholder?: string;
   onChange: (code: string) => void;
 };
+
+function normalize(
+  options: LabeledOption[] | readonly string[] | undefined,
+): LabeledOption[] | undefined {
+  if (!options) return undefined;
+  if (options.length === 0) return [];
+  return typeof options[0] === "string"
+    ? (options as readonly string[]).map((code) => ({ code }))
+    : (options as LabeledOption[]);
+}
 
 /**
  * Dropdown that shows "code — label" in the list but stores and displays only the code.
@@ -35,6 +46,7 @@ export default function LabeledDropdownField({
   onChange,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const flatOptions = normalize(options);
 
   const handleSelect = (code: string) => {
     onChange(code === value ? "" : code);
@@ -57,14 +69,16 @@ export default function LabeledDropdownField({
       >
         {item.code}
       </Text>
-      <Text
-        style={[
-          localStyles.optionLabel,
-          item.code === value && localStyles.optionActive,
-        ]}
-      >
-        {item.label}
-      </Text>
+      {item.label != null && (
+        <Text
+          style={[
+            localStyles.optionLabel,
+            item.code === value && localStyles.optionActive,
+          ]}
+        >
+          {item.label}
+        </Text>
+      )}
     </TouchableOpacity>
   );
 
@@ -112,7 +126,7 @@ export default function LabeledDropdownField({
               />
             ) : (
               <FlatList
-                data={options}
+                data={flatOptions}
                 keyExtractor={(item) => item.code}
                 renderItem={renderItem}
               />

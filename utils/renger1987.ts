@@ -9,12 +9,14 @@
  *
  * ⚠️  TABLE VALUES ARE APPROXIMATE — read from a small image.
  *     Verify each entry against the original printed diagram.
- *     Axes: Value 1–7 (index 0–6) × pH 3–7 (index 0–4) × clay% grid (index 0–6)
+ *     Axes:  Value [1, 3, 5, 7]  (index 0–3, length 4)
+ *          × pH    [3, 5, 7]     (index 0–2, length 3)
+ *          × clay% [2, 8, 25, 65] (index 0–3, length 4)
+ *     Intermediate inputs are trilinearly interpolated by interpolateAxis().
  */
 
 // ─── Grid axes ────────────────────────────────────────────────────────────────
 
-// Reduced grids
 export const CLAY_GRID = [2, 8, 25, 65] as const;
 export const PH_GRID = [3, 5, 7] as const;
 export const VALUE_GRID = [1, 3, 5, 7] as const;
@@ -23,7 +25,6 @@ export const VALUE_GRID = [1, 3, 5, 7] as const;
 type HumusTable = number[][][];
 
 // ─── HIGH chroma (>6) ───────────────────────────────────────────────────────
-// All values are NaN – replace with numbers read from your diagram.
 // Order: valueIdx 0 = Value 1, 1 = Value 3, 2 = Value 5, 3 = Value 7
 //        pHIdx   0 = pH 3,    1 = pH 5,    2 = pH 7
 //        clayIdx 0 = 2% clay, 1 = 8% clay, 2 = 25% clay, 3 = 65% clay

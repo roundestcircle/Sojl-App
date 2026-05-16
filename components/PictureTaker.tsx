@@ -11,31 +11,36 @@ import { Image } from "expo-image";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import { extractSoilColor } from "../utils/soilColorExtractor";
+import { OVERLAY_FRACTIONS } from "@/utils/cameraOverlay";
 import { InstructionModal, ResetInstructionButton } from "./InstructionModal";
 
 /**
- * Overlay rectangles guide proper positioning:
- * - largeRectangle: For grey card reference (18% grey card)
- * - smallRectangle: For soil sample placement
+ * Overlay rectangles guide proper positioning. Display fractions are kept in
+ * sync with the sampling rectangles in `utils/cameraOverlay.ts`; the grey card
+ * display rect is intentionally taller than its sampling rect so the user has
+ * slack while aligning.
  */
+const greyCardDisplay = OVERLAY_FRACTIONS.greyCard.display;
+const soilSampleDisplay = OVERLAY_FRACTIONS.soilSample.display;
+
 const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } =
   {
     largeRectangle: {
       position: "absolute",
-      top: "25%",
-      left: "20%",
-      width: "60%",
-      height: "50%",
+      top: `${greyCardDisplay.top * 100}%`,
+      left: `${greyCardDisplay.left * 100}%`,
+      width: `${greyCardDisplay.width * 100}%`,
+      height: `${greyCardDisplay.height * 100}%`,
       borderWidth: 3,
       borderColor: "white",
-      backgroundColor: "transparent", // Transparent so camera view shows through
+      backgroundColor: "transparent",
     },
     smallRectangle: {
       position: "absolute",
-      top: "65%",
-      right: "42%",
-      width: "16%",
-      height: "10%",
+      top: `${soilSampleDisplay.top * 100}%`,
+      left: `${soilSampleDisplay.left * 100}%`,
+      width: `${soilSampleDisplay.width * 100}%`,
+      height: `${soilSampleDisplay.height * 100}%`,
       borderWidth: 2,
       borderColor: "white",
       backgroundColor: "transparent",
@@ -251,7 +256,7 @@ export default function PictureTaker({ onConfirm }: Props) {
       <InstructionModal
         key={modalKey} // Remount when key changes to reset shown state
         title="Anleitung"
-        instructionText="Platziere die Bodenprobe im kleinen, die GreyCard im großen Rechteck. Du kannst jede beliebige 18%-Greycard vom Fotofchhandel oder Amazon verwenden. Drücke auf 'Foto aufnehmen'."
+        instructionText="Platziere die Bodenprobe im kleinen, die GreyCard im großen Rechteck. Du kannst jede beliebige 18%-Greycard vom Fotofachhandel oder Amazon verwenden. Drücke auf 'Foto aufnehmen'."
         storageKey="soilColDontShowAgain"
       />
 
@@ -262,14 +267,7 @@ export default function PictureTaker({ onConfirm }: Props) {
       <ResetInstructionButton
         storageKey="soilColDontShowAgain"
         onReset={handleReset}
-        style={{
-          alignSelf: "stretch",
-          width: "auto",
-          marginTop: 20,
-          bottom: 15,
-          left: 0,
-          right: 0,
-        }}
+        style={{ alignSelf: "stretch", marginTop: 20, marginHorizontal: 15 }}
       />
     </View>
   );

@@ -39,11 +39,19 @@ export default function DecisionTree({
   /**
    * Looks up a node by id.
    * The root node lives directly on the tree object rather than in nodes map,
-   * so it needs a special-case check.
+   * so it needs a special-case check. Falls back to a stub when an id is
+   * missing — that indicates a malformed tree, so we warn loudly in dev.
    */
   const getNode = (id: string): TreeNode => {
     if (id === tree.id) return tree as TreeNode;
-    return tree.nodes[id] ?? { id, question: "?", options: [] };
+    const found = tree.nodes[id];
+    if (!found) {
+      console.warn(
+        `DecisionTree: node id "${id}" not found in tree "${tree.id}".`,
+      );
+      return { id, question: "?", options: [] };
+    }
+    return found;
   };
 
   const node = getNode(currentNode);
@@ -54,7 +62,7 @@ export default function DecisionTree({
    * Pushes the current node id onto the history stack so the user can go back.
    */
   const handlePress = (nextId: string) => {
-    setHistory([...history, currentNode]);
+    setHistory((h) => [...h, currentNode]);
     setCurrentNode(nextId);
   };
 
@@ -63,11 +71,12 @@ export default function DecisionTree({
    * No-op if already at the root.
    */
   const handleBack = () => {
-    if (history.length > 0) {
-      const newHistory = [...history];
-      setCurrentNode(newHistory.pop()!);
-      setHistory(newHistory);
-    }
+    setHistory((h) => {
+      if (h.length === 0) return h;
+      const next = h.slice(0, -1);
+      setCurrentNode(h[h.length - 1]);
+      return next;
+    });
   };
 
   return (
@@ -113,7 +122,12 @@ export default function DecisionTree({
 
       {/* ── Result display (only shown on leaf nodes) ── */}
       {isResult && (
-        <View style={[styles.resultBox, { minWidth: "100%", padding: 20, marginTop: 10 }]}>
+        <View
+          style={[
+            styles.resultBox,
+            { minWidth: "100%", padding: 20, marginTop: 10 },
+          ]}
+        >
           <Text style={styles.resultValue}>
             {(node as ResultNode).result.title}
           </Text>
@@ -158,14 +172,7 @@ export default function DecisionTree({
       <ResetInstructionButton
         storageKey={storageKey}
         onReset={() => setModalKey((prev) => prev + 1)}
-        style={{
-          alignSelf: "stretch",
-          width: "auto",
-          marginTop: 20,
-          bottom: 15,
-          left: 20,
-          right: 20,
-        }}
+        style={{ alignSelf: "stretch", marginTop: 20, marginHorizontal: 20 }}
       />
     </View>
   );

@@ -3,72 +3,51 @@
 
 ## Blocking / Correctness
 
-- [ ] **Autosave watch resubscribes on every onSave identity change**
-  AufnahmeForm.tsx:540-621 and HorizonForm.tsx:243-252 do `useEffect(() => { watch(...) }, [onSave])`. `isFirstWatch` only blocks the very first watch tick, not the first after each resubscribe. The parent screens (standort.tsx:81, [nr].tsx:71) memoize via useCallback, so identity is stable in practice — but if the dep ever changes (e.g. a non-memoized callback is passed), saves silently drop. Either drop `onSave` from the dep array and pin it via ref, or document the contract.
+- [x] **Autosave watch resubscribes on every onSave identity change** — pinned `onSave` via `onSaveRef` in both AufnahmeForm and HorizonForm; watch effect now has empty deps. First-tick guard now holds across re-renders.
 
-- [ ] **Inconsistent controlled/uncontrolled inputs in HorizonForm**
-  HorizonForm.tsx mixes patterns: `horizontname` (376), `tiefe_oben` (398), `tiefe_unten` (409), `ph_cacl2` (522), `notizen` (654) use uncontrolled `<TextInput>` with `defaultValue` + `setValue` callback. All other fields use `Controller`. Tools/external setters cannot update those five fields visually (only the form state). Pick one pattern — Controller everywhere.
+- [x] **Inconsistent controlled/uncontrolled inputs in HorizonForm** — all five uncontrolled inputs (horizontname, tiefe_oben, tiefe_unten, ph_cacl2, notizen) converted to `Controller`. Now any `setValue` call re-renders the input visually.
 
-- [ ] **`tonanteil` is local state in HorizonForm, not persisted**
-  HorizonForm.tsx:238. Used in the humus_pct auto-calc effect (315-338). When the user revisits the horizon, tonanteil resets to "" and humus_pct may get cleared on next render of the dependent effect. Either persist tonanteil to the horizon row, or remove the auto-recalc on remount.
+- [x] **`tonanteil` is local state in HorizonForm, not persisted** — persisted as a new `tonanteil` TEXT column on horizonte. Migration added in db.ts, threaded through Horizont type, saveHorizont, HorizontFormData, form defaults, the Tonanteil input (now Controller-driven), the humus_pct auto-calc dependency, [nr].tsx save call, and CSV export.
 
-- [ ] **`farbe_rgb` is dead schema**
-  Declared in [utils/db.ts](utils/db.ts) (horizonte table), [utils/HorizonQueries.ts](utils/HorizonQueries.ts) (Horizont type + UPDATE), [utils/csvExport.ts](utils/csvExport.ts) (split into 3 columns), but never set: PictureTaker.tsx onConfirm signature is `(munsell: string) => void` and [nr].tsx:80 hardcodes `farbe_rgb: null` on every save. Either wire PictureTaker to also emit RGB or drop the column + type + CSV fields.
+- [x] **`farbe_rgb` is dead schema** — dropped. Removed from `Horizont` type, `saveHorizont` SQL/params, `[nr].tsx`'s hardcoded null, db.ts CREATE TABLE schema, and CSV export type + buildRows. Old DBs keep the orphan column (SQLite CREATE TABLE IF NOT EXISTS); new installs don't have it.
 
-- [ ] **CSV export missing `effektiver_wurzelraum`**
-  Added to DB (db.ts:133) and AufnahmeDetails (MappingQueries.ts:116) but not in AufnahmeCSVRow (csvExport.ts:11-52) or buildRows (118-159). Exports silently lose this field.
+- [x] **CSV export missing `effektiver_wurzelraum`** — added to AufnahmeCSVRow and buildRows.
 
 ## Important
 
-- [ ] **`Rating` type vs implementation mismatch**
-  MappingMaths.ts:31 declares 6 categories ("sehr gering", "gering", "mäßig", "mittel", "hoch", "sehr hoch"). `rateGPV`/`rateLK`/`rateFK`/`rateNFK` only return 5 — they skip "mäßig". `rateKAK`/`rateSWert` use a different 5. Either tighten the type per function or align the thresholds.
+- [x] **`Rating` type vs implementation mismatch** — documented as intentional (KA6 thresholds differ per metric). Added JSDoc above the type explaining the superset shape.
 
-- [ ] **Autosave fires on every keystroke**
-  Each character in HorizonForm runs a full UPDATE of ~45 columns + status re-derivation in saveHorizont. Same for AufnahmeForm. Add a small debounce (200–300 ms) in standort.tsx:81 and [nr].tsx:71 around `handleSave`.
+- [x] **Autosave fires on every keystroke** — added `useDebouncedCallback` hook (utils/useDebouncedCallback.ts) at 250 ms, wired into both standort.tsx and [nr].tsx. Pending writes flush on unmount so navigating away doesn't drop the last edit.
 
-- [ ] **`A`-horizon detection is over-loose**
-  MappingMaths.ts:286 uses `/A/.test(h.horizontname ?? "")` for the S-Wert weighting — matches any uppercase A anywhere ("BvA", "fAh" with leading letter, etc.). Confirm with KA5: probably should be `/^[a-z]?A/` or a dedicated `isAHorizon(name)` helper.
+- [x] **`A`-horizon detection is over-loose** — tightened to `/^[a-z]*A/` so it matches Ah/Ap/fAh/rAp but not BvA or names where A appears mid-string.
 
-- [ ] **Unused `useRef` import**
-  [app/mapping/[aufnahmeId]/horizon/[nr].tsx](app/mapping/%5BaufnahmeId%5D/horizon/%5Bnr%5D.tsx) line 6 — `useRef` imported but not used. Same for `autoExpanded`/`erweiterteExpanded` cross-check in both forms (verify all imports are actually referenced).
+- [x] **Unused `useRef` import** — removed from `[nr].tsx`. (Forms' imports verified — all used.)
 
-- [ ] **`createAufnahme` race on nummer**
-  MappingQueries.ts:59-84 reads MAX(nummer) and inserts in two statements. expo-sqlite is sync so unlikely to race in practice, but if the call ever becomes async-batched, two concurrent creations produce duplicate nummern. Either UNIQUE(feldkampagne_id, nummer) + retry, or `INSERT … SELECT COALESCE(MAX(nummer),0)+1 …` in one statement.
+- [x] **`createAufnahme` race on nummer** — collapsed to one `INSERT … SELECT COALESCE(MAX(nummer),0)+1 …` statement. Same fix applied to `addHorizont`.
 
 ## Maintainability / Nice-to-have
 
-- [ ] **AufnahmeForm.tsx is 1500+ lines**
-  Move dropdown option arrays (EXPOS, RELIEFPOS_OPTIONS, WITTERUNG_OPTIONS, NUTZUNG_SECTIONS, VEGETATION_SECTIONS — lines 41-331) into `utils/aufnahmeOptions.ts`. They're data, not view logic.
+- [x] **AufnahmeForm.tsx is 1500+ lines** — moved EXPOS / RELIEFPOS_OPTIONS / WITTERUNG_OPTIONS / NUTZUNG_SECTIONS / VEGETATION_SECTIONS into `utils/aufnahmeOptions.ts`. AufnahmeForm shrank by ~290 lines.
 
-- [ ] **Repeated TextInput blocks in AufnahmeForm extended section**
-  AufnahmeForm.tsx:1100-1359 has ~17 near-identical `<Controller><TextInput/></Controller>` blocks for extended fields. HorizonForm.tsx:676-771 already does this data-driven with `.map()` over `[name, label]` tuples — apply the same here.
+- [x] **Repeated TextInput blocks in AufnahmeForm extended section** — collapsed 17 near-identical `<Controller><TextInput/></Controller>` blocks into a `.map()` over `[name, label, placeholder]` tuples.
 
-- [ ] **Keyboard avoidance logic duplicated**
-  Same Animated/Keyboard pattern in standort.tsx:38-63 and HorizonForm.tsx:209-234. Extract a `useNotizenScroll(scrollRef)` hook returning the scroll handlers + a focus/blur pair.
+- [x] **Keyboard avoidance logic duplicated** — extracted `useNotizenScroll` hook (utils/useNotizenScroll.ts). Both standort.tsx and HorizonForm now use it; duplicated Animated/Keyboard plumbing gone from both.
 
-- [ ] **CSV row types duplicate DB types**
-  AufnahmeCSVRow / HorizontCSVRow in csvExport.ts enumerate every field that already exists in Aufnahme/Horizont. They've already drifted (effektiver_wurzelraum). Either generate the CSV rows directly from the source types with a single `?? ""` mapper, or generate the type from a single field list.
+- [~] **CSV row types duplicate DB types** — left as-is. Refactor was non-trivial and the immediate drift (effektiver_wurzelraum, tonanteil) has been fixed. Worth revisiting if a third field drifts.
 
-- [ ] **`useEffect` exhaustive-deps lint**
-  HorizonForm.tsx:271, 297-304, 313, 338, 342, 349 and AufnahmeForm.tsx:530-532 reference `setValue` but omit it from deps. RHF setValue is stable so it's fine, but ESLint will flag it — either add deps or add `// eslint-disable-next-line react-hooks/exhaustive-deps` with a one-line reason.
+- [x] **`useEffect` exhaustive-deps lint** — added `setValue` to the dep arrays of every effect that uses it in HorizonForm and AufnahmeForm. (RHF's setValue is stable so behaviour is unchanged.)
 
-- [ ] **tools/index.tsx has 11 near-identical Link blocks**
-  Lines 14-121: extract `const TOOLS = [{ href, label, section }]` and `.map()`.
+- [x] **tools/index.tsx has 11 near-identical Link blocks** — replaced with a `TOOL_SECTIONS` array and one `.map()`. ~110 LOC → ~90 LOC, and easier to reorder/add tools.
 
-- [ ] **Orphan docstring in app/mapping/index.tsx**
-  Line 52-55 describes `handleCreate` but sits above `handleExport`. Reorder so the docstring is above its function.
+- [x] **Orphan docstring in app/mapping/index.tsx** — fixed: gave `handleExport` its own short docstring and moved the "create new Feldkampagne" docstring above `handleCreate`.
 
-- [ ] **`BasensaettigungLookup.CURVE_4TO15` has data gap**
-  Lines 30-50: jumps from `[60, 4.903]` to `[75, 5.546]` — BS 65 % and 70 % are linearly interpolated across a 15-pp gap. Either fill in the digitized points or add a `// gap intentional, digitized source has no point here` comment.
+- [x] **`BasensaettigungLookup.CURVE_4TO15` has data gap** — annotated as intentional with a comment explaining the linear-interp behaviour across BS 65/70 %.
 
-- [ ] **Status-derivation logic should live closer to schema**
-  HorizonQueries.ts:169-181 (`isFull = data.horizontname && data.tiefe_oben != null && ...`) hardcodes the "required for vollständig" field list. The same list is partly recreated for Standortdaten in app/mapping/[aufnahmeId]/index.tsx:44-71. Consider one source of truth (e.g. `REQUIRED_FIELDS` arrays in each Queries file) so future field additions don't drift.
+- [x] **Status-derivation logic should live closer to schema** — exported `HORIZONT_REQUIRED_FOR_VOLLSTAENDIG` from HorizonQueries.ts and `STANDORT_REQUIRED_FOR_VOLLSTAENDIG` from MappingQueries.ts. `saveHorizont.isFull` and `deriveStandortStatus` now iterate those arrays. Adding a new required field is now a one-line change.
 
-- [ ] **JSON.parse without try/catch in csvExport**
-  csvExport.ts:164: `const rgb = h.farbe_rgb ? JSON.parse(h.farbe_rgb) : null;` — once `farbe_rgb` is removed (see above) this whole branch goes. Until then, wrap in try/catch.
+- [x] **JSON.parse without try/catch in csvExport** — gone with `farbe_rgb` removal.
 
-- [ ] **Magic horizon-class regex**
-  Same `/A/.test(name)` problem in #A-horizon-detection. If domain-class detection is needed elsewhere (it isn't yet), pre-emptively extract `utils/horizonClass.ts` with `isAHorizon(name)`.
+- [x] **Magic horizon-class regex** — kept inline with a clarifying comment (only one call site). If a second consumer appears, extract `isAHorizon()` then.
 
 ---
 
@@ -76,99 +55,69 @@
 
 ## Blocking / Correctness
 
-- [ ] **`initDatabase()` runs on every render of RootLayout**
-  [app/_layout.tsx](app/_layout.tsx#L22) calls `initDatabase()` directly in the render body, not inside `useEffect`. Every re-render runs the full schema `execSync` + 4 `ALTER TABLE` migrations (the latter throw and are swallowed, but still execute). Wrap in `useEffect(() => { initDatabase(); }, [])`.
+- [x] **`initDatabase()` runs on every render of RootLayout** — wrapped in `useEffect(() => initDatabase(), [])`. Schema + migrations now run once on mount.
 
-- [ ] **`farbe_rgb` is dead schema (also flagged in branch review)**
-  PictureTaker.tsx:45 emits only `(munsell: string)`; the RGB value is computed in soilColorExtractor.ts but discarded. Either pipe it back through onConfirm or drop the column.
+- [x] **`farbe_rgb` is dead schema (also flagged in branch review)** — see branch review entry above; dropped throughout.
 
-- [ ] **PictureTaker doesn't dispose Skia image**
-  soilColorExtractor.ts:152-159 calls `Skia.Image.MakeImageFromEncoded(data)` but never disposes the image. Repeated captures leak GPU/CPU memory. Add `image.dispose()` in a `finally`.
+- [x] **PictureTaker doesn't dispose Skia image** — added `image.dispose()` in a `finally` block.
 
-- [ ] **`anmoorig_*` entries in PoreLookUp are unreachable**
-  PoreLookUp.ts:502-533. `bodenartToLookupKey()` never returns `"anmoorig_sand"` / `"anmoorig_loam_clay"` — there is no bodenart string that maps to them. Either wire the mapping (e.g., a horizonname-based prefix like "Aa") or remove the entries.
+- [x] **`anmoorig_*` entries in PoreLookUp are unreachable** — kept as reference data with a `// TODO: currently unreachable …` comment so future contributors know they need a horizonname-based dispatch to use them.
 
-- [ ] **Stale grid-axis comment in renger1987**
-  renger1987.ts:13 and 27-29 describe a 7×5×7 grid but the actual arrays are 4×3×4 (`VALUE_GRID=[1,3,5,7]`, `PH_GRID=[3,5,7]`, `CLAY_GRID=[2,8,25,65]`). Update comment to match — otherwise future contributors will add NaN entries that won't be reached.
+- [x] **Stale grid-axis comment in renger1987** — comment now reflects the actual 4 × 3 × 4 grid. Removed the misleading "All values are NaN — replace with numbers from your diagram" note (values are populated).
 
 ## Important
 
-- [ ] **`munsellLookup.rgbToMunsell` does 2N Lab conversions per call**
-  munsellLookup.ts:81-88. For each entry in MUNSELL_DATA, `calculateColorDistance` calls `rgbToLab(input)` AND `rgbToLab(entry)`. The input Lab can be precomputed once before the loop; the entry Lab values are static and could be precomputed at module load (or baked into munsellData.ts). MUNSELL_DATA has ~3,000 entries — current cost is ~6k conversions per pickup.
+- [x] **`munsellLookup.rgbToMunsell` does 2N Lab conversions per call** — entry Labs precomputed once at module load into `MUNSELL_LAB`; input Lab converted once per call. Also switched to squared-distance comparison so the per-entry `sqrt` is gone (one sqrt at the end for the returned distance).
 
-- [ ] **`DropdownField` modal closes on inner taps**
-  DropdownField.tsx:60-89: the inner `<View>` lacks `onStartShouldSetResponder={() => true}` (LabeledDropdownField has it at line 102-103). Tapping the FlatList background closes the dropdown. Add the responder OR replace overlay TouchableOpacity with `<Pressable onPress={…}>` + a stopPropagation inner view.
+- [x] **`DropdownField` modal closes on inner taps** — gone with DropdownField (see next entry).
 
-- [ ] **DropdownField and LabeledDropdownField are 90% identical**
-  Same trigger + modal + overlay + sheet markup. LabeledDropdownField could subsume DropdownField if option type accepts `{code, label?}` and falls back to just `code` when label is absent. Reduces ~50 LOC of duplication.
+- [x] **DropdownField and LabeledDropdownField are 90% identical** — deleted DropdownField. LabeledDropdownField now accepts `string[]` as a shorthand for code-only options and renders the label conditionally. Two call sites in AufnahmeForm migrated.
 
-- [ ] **HorizonButton and StatusBadge use two different badge implementations**
-  HorizonButton.tsx:35 uses `styles.badge` (global), StatusBadge.tsx:14-22 defines its own `localStyles.badge`. The Standortdaten badge in app/mapping/[aufnahmeId]/index.tsx:75-78 also rolls its own. Unify into a single `<Badge label color>` or pick one shared style.
+- [x] **HorizonButton and StatusBadge use two different badge implementations** — extracted shared `<Badge label color>` component (components/Badge.tsx). HorizonButton, StatusBadge, and the Standortdaten row in `[aufnahmeId]/index.tsx` all use it now.
 
-- [ ] **`HorizontLexikonContent` and `HumusformLexikonContent` duplicate ~95% of structure**
-  Both have search bar + SectionList + useMemo filter + scroll-to-top effect + identical local styles. Extract a generic `<LexikonContent sections searchPredicate renderItem>` component.
+- [x] **`HorizontLexikonContent` and `HumusformLexikonContent` duplicate ~95% of structure** — extracted generic `<LexikonContent>` (search bar, SectionList, filter useMemo, scroll-to-top-on-filter, sticky headers). Both wrappers now only supply data, filter predicate, renderItem, and styling.
 
-- [ ] **`DecisionTree` history setter is non-functional**
-  components/DecisionTree.tsx:57 uses `setHistory([...history, currentNode])` from the closure. In rapid double-taps this can drop entries. Use `setHistory(h => [...h, currentNode])`.
+- [x] **`DecisionTree` history setter is non-functional** — switched both `handlePress` and `handleBack` to functional updaters (`setHistory(h => …)`). Rapid taps no longer drop entries.
 
-- [ ] **`DecisionTree` silent dead-end on missing node**
-  components/DecisionTree.tsx:46 returns `{ id, question: "?", options: [] }` when an id isn't found. The user sees "?" with no buttons and no way forward except Back. At least `console.warn` the missing id; ideally show an error UI.
+- [x] **`DecisionTree` silent dead-end on missing node** — `getNode` now `console.warn`s the missing id (with the tree id for context) before returning the stub. Easier to diagnose malformed trees in dev.
 
-- [ ] **`createAufnahme` race on `MAX(nummer) + 1`**
-  Already flagged earlier — applies equally to `createFeldkampagne` callers if they ever query the next id. Single statement: `INSERT … (nummer) SELECT COALESCE(MAX(nummer),0)+1 FROM …`.
+- [x] **`createAufnahme` race on `MAX(nummer) + 1`** — fixed above (also `addHorizont`).
 
 ## Maintainability / Nice-to-have
 
-- [ ] **PictureTaker overlay rectangles vs extractor rectangles are loosely coupled**
-  Both files re-encode the same 4 coordinates (greyCard at 25/20/60/50 in UI vs 25/20/60/35 in extractor — note height mismatch is intentional but undocumented; soil sample 65/16/10). One small typo breaks alignment silently. Move the 8 numbers into a single `utils/cameraOverlay.ts` consumed by both.
+- [x] **PictureTaker overlay rectangles vs extractor rectangles are loosely coupled** — centralized in `utils/cameraOverlay.ts` with both a `display` and a `sample` rect per region. PictureTaker reads display fractions; soilColorExtractor reads sample fractions via `getSamplingRect()`. Height mismatch between display and sample is now explicit + documented.
 
-- [ ] **`SoilShareScroll` over-commented**
-  Every line has a what-it-does comment, several of them stale (line 64-65: `squareSize = cellSize` with comment "Squares are 80% of cell size"). Trim to comments that explain WHY (e.g., "fixed seed for reproducible layout"). Same applies to PictureTaker.
+- [x] **`SoilShareScroll` over-commented** — pared down to ~5 WHY-comments. Removed the stale "Squares are 80 % of cell size" line and dozens of what-comments. File is ~30 lines shorter.
 
-- [ ] **`PictureTaker.tsx` typo**
-  Line 254: "Fotofchhandel" → "Fotofachhandel".
+- [x] **`PictureTaker.tsx` typo** — "Fotofchhandel" → "Fotofachhandel".
 
-- [ ] **`about.tsx` typos**
-  Line 14: "Excelübetragung" → "Excelübertragung"; line 15: "Diese Problem" → "Dieses Problem".
+- [x] **`about.tsx` typos** — "Excelübetragung" → "Excelübertragung"; "Diese Problem" → "Dieses Problem".
 
-- [ ] **`Dimensions.get('window')` captured at module load**
-  SoilShareScroll.tsx:15 — doesn't react to device rotation. Switch to `useWindowDimensions()` if rotation should be supported.
+- [~] **`Dimensions.get('window')` captured at module load** — deferred. Soil-mapping app currently runs portrait-locked, so rotation isn't an active concern.
 
-- [ ] **`chromaToClass` inlined in HumusgehaltTool and HorizonForm**
-  Both inline `chroma > 6 ? "high" : chroma >= 3.5 ? "mid" : "low"`. renger1987.ts exports `chromaToClass()` — use it instead.
+- [x] **`chromaToClass` inlined in HumusgehaltTool and HorizonForm** — both now call the exported `chromaToClass(chroma)` from renger1987.
 
-- [ ] **`bodenart → clay %` table vs `bodenart → KAK_BASE` table**
-  renger1987.ts:206 has BODENART_CLAY (16 keys); MappingMaths.ts:182 has KAK_BASE (~30 keys including suffixed variants). Two parallel KA5 tables. If a third table appears, consider a single `utils/bodenartProps.ts` keyed by base name with all properties.
+- [~] **`bodenart → clay %` vs `KAK_BASE`** — deferred. Tables are domain-correct as-is; consolidate only if a third bodenart-keyed table appears.
 
-- [ ] **`Skia.Image.readPixels()` byte order assumption**
-  soilColorExtractor.ts:115-118 hardcodes RGBA layout (`pixels[i], pixels[i+1], pixels[i+2]`). On some platforms/Skia builds this may differ. Either query the format or guard with a runtime check.
+- [x] **`Skia.Image.readPixels()` byte order assumption** — documented in soilColorExtractor.ts. If a future Skia returns BGRA the comment points to the swap.
 
-- [ ] **`utmConversion` has no domain validation**
-  Lat outside [-80, 84] is outside UTM coverage; lon outside [-180, 180] yields wrong zone. Norway 31V/32V and Svalbard 31X-37X special zones aren't handled. Either document the supported range or clamp.
+- [x] **`utmConversion` has no domain validation** — documented the supported range and the unhandled special-zone exceptions in the `latLonToUTM` JSDoc. For German use cases (typical inputs) this is sufficient; clamping would silently mask out-of-range input.
 
-- [ ] **`parseDensityMidpoint` invents midpoints for ">1.65" and "<1.45"**
-  PoreLookUp.ts:660-663: returns `gtMatch + 0.15` / `ltMatch - 0.15`. These guess offsets are not midpoints. Rename to `parseDensityRepresentative` or document the heuristic.
+- [x] **`parseDensityMidpoint` invents midpoints for ">1.65" and "<1.45"** — kept the name (callers untouched) but expanded the JSDoc to clearly call out that bounded forms return a heuristic ±0.15 representative, not a true midpoint, and that the offset is paired with the density-class boundaries.
 
-- [ ] **`humusGroup` in BasensaettigungTool is private**
-  components/BasensaettigungTool.tsx:13-19 reimplements logic that already lives inside `calcBasensaettigung` (BasensaettigungLookup.ts:100-106). Export a `humusGroupLabel(humusPct)` from the lookup module and call it from both.
+- [x] **`humusGroup` in BasensaettigungTool is private** — exported `humusGroupLabel(humusPctStr)` from BasensaettigungLookup; BasensaettigungTool calls it instead of its own local copy.
 
-- [ ] **`ResetInstructionButton` style overrides clash with `styles.resetButton`**
-  Callers pass `{ bottom: 15, left: 0, right: 0, marginTop: 20 }` which fight the default `position: absolute, bottom: 20, left: 20, right: 20` defined in styles.ts:181. Result is platform-dependent placement. Pick one positioning model.
+- [x] **`ResetInstructionButton` style overrides clash with `styles.resetButton`** — dropped the absolute positioning from the default `resetButton` style (now visual-only). Callers in PictureTaker, DecisionTree, mapping/index, and SoilShareScroll now pass minimal positioning that no longer fights the base style.
 
-- [ ] **Duplicate `formatDate` helper**
-  Defined in [app/mapping/index.tsx:242](app/mapping/index.tsx#L242) and [app/mapping/kampagne/[kampagneId]/index.tsx:292](app/mapping/kampagne/%5BkampagneId%5D/index.tsx#L292). Move to a shared util.
+- [x] **Duplicate `formatDate` helper** — moved to `utils/formatDate.ts`; both screens import it.
 
-- [ ] **`kampagne/[kampagneId]/index.tsx` empty StyleSheet**
-  Line 296: `const localStyles = StyleSheet.create({});` — dead. Delete.
+- [x] **`kampagne/[kampagneId]/index.tsx` empty StyleSheet** — deleted (and dropped the now-unused `StyleSheet` import).
 
-- [ ] **N+1 horizon count in campaign detail screen**
-  `reload()` (line 69-77) calls `getHorizonteForAufnahme(a.id)` for every Aufnahme just to count rows. For larger campaigns, do `SELECT a.*, (SELECT COUNT(*) FROM horizonte h WHERE h.aufnahme_id = a.id) AS horizontCount FROM aufnahmen a …` in one query.
+- [x] **N+1 horizon count in campaign detail screen** — added `getAufnahmenWithHorizontCount(sessionId)` that returns aufnahmen + COUNT(horizonte) in one SQL query via correlated subquery. The screen calls it instead of the per-row `getHorizonteForAufnahme().length`.
 
-- [ ] **`FlatList renderItem` destructures unused `index`**
-  app/mapping/kampagne/[kampagneId]/index.tsx:152 — `({ item, index })` but `index` is never used. Remove.
+- [x] **`FlatList renderItem` destructures unused `index`** — removed.
 
-- [ ] **`InstructionModal` remount-via-key pattern**
-  PictureTaker, SoilShareScroll, DecisionTree, etc. all use `key={modalKey}` + `setModalKey(k=>k+1)` to "reset" the modal. Works but unusual; a `forwardRef` API or imperative handle would be more idiomatic. Optional — current pattern is fine and consistent.
+- [~] **`InstructionModal` remount-via-key pattern** — deferred. Pattern is consistent across all callers and works fine.
 
-- [ ] **`Link href={"/mapping" as any}`** in app/index.tsx:9, 21 — typed routes are enabled in app.json but the cast is still needed. Once `expo-router` typegen catches up, remove.
+- [~] **`Link href={"/mapping" as any}`** — deferred. Awaiting expo-router typegen; will resolve itself on upgrade.
 

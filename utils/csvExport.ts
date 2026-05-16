@@ -24,6 +24,7 @@ type AufnahmeCSVRow = {
   humsfrm_abk: string;
   ausgangsgestein: string;
   grundigkeit: string;
+  effektiver_wurzelraum: string;
   reliefpos: string;
   expos: string;
   nutzung: string;
@@ -59,9 +60,6 @@ type HorizontCSVRow = {
   tiefe_unten: string;
   maechtigk_dm: string;
   farbe_munsell: string;
-  farbe_rgb_r: string;
-  farbe_rgb_g: string;
-  farbe_rgb_b: string;
   bodenart: string;
   anteil: string;
   ph_cacl2: string;
@@ -107,6 +105,7 @@ type HorizontCSVRow = {
   nfk_lm2: string;
   kak: string;
   basensaettigung: string;
+  tonanteil: string;
 };
 
 // ─── Shared internals ─────────────────────────────────────────────────────────
@@ -131,6 +130,8 @@ function buildRows(aufnahmen: Aufnahme[]): {
     humsfrm_abk: a.humsfrm_abk ?? "",
     ausgangsgestein: a.ausgangsgestein ?? "",
     grundigkeit: a.grundigkeit != null ? String(a.grundigkeit) : "",
+    effektiver_wurzelraum:
+      a.effektiver_wurzelraum != null ? String(a.effektiver_wurzelraum) : "",
     reliefpos: a.reliefpos ?? "",
     expos: a.expos ?? "",
     nutzung: a.nutzung ?? "",
@@ -161,7 +162,6 @@ function buildRows(aufnahmen: Aufnahme[]): {
   const horizonteRows: HorizontCSVRow[] = [];
   for (const aufnahme of aufnahmen) {
     for (const h of getHorizonteForAufnahme(aufnahme.id)) {
-      const rgb = h.farbe_rgb ? JSON.parse(h.farbe_rgb) : null;
       horizonteRows.push({
         aufnahme_id: aufnahme.id,
         horizont_nr: h.nummer,
@@ -170,9 +170,6 @@ function buildRows(aufnahmen: Aufnahme[]): {
         tiefe_unten: h.tiefe_unten ?? "",
         maechtigk_dm: h.maechtigk_dm ?? "",
         farbe_munsell: h.farbe_munsell ?? "",
-        farbe_rgb_r: rgb ? String(rgb.r) : "",
-        farbe_rgb_g: rgb ? String(rgb.g) : "",
-        farbe_rgb_b: rgb ? String(rgb.b) : "",
         bodenart: h.bodenart ?? "",
         anteil: h.anteil ?? "",
         ph_cacl2: h.ph_cacl2 != null ? String(h.ph_cacl2) : "",
@@ -218,6 +215,7 @@ function buildRows(aufnahmen: Aufnahme[]): {
         nfk_lm2: h.nfk_lm2 ?? "",
         kak: h.kak ?? "",
         basensaettigung: h.basensaettigung ?? "",
+        tonanteil: h.tonanteil ?? "",
       });
     }
   }

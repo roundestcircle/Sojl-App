@@ -2,6 +2,7 @@ import { colors } from "@/styles/colors";
 import { Stack, router } from "expo-router";
 import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect } from "react";
 import { initDatabase } from "@/utils/db";
 
 // Home icon rendered in the header right slot on most screens
@@ -16,10 +17,12 @@ const homeButton = () => (
 
 /**
  * Root layout for the whole app.
- * Initializes the SQLite database on first render and defines top-level navigation screens.
+ * Initializes the SQLite database on mount and defines top-level navigation screens.
  */
 export default function RootLayout() {
-  initDatabase();
+  useEffect(() => {
+    initDatabase();
+  }, []);
   return (
     <Stack
       screenOptions={{

@@ -16,6 +16,7 @@ import {
   humusKlasse,
   bodenartToClay,
   parseMunsell,
+  chromaToClass,
   type ChromaClass,
 } from "@/utils/renger1987";
 
@@ -42,9 +43,10 @@ function initFromMunsell(s?: string): {
   if (!s) return { valueStr: "", chroma: null };
   const parsed = parseMunsell(s);
   if (!parsed) return { valueStr: "", chroma: null };
-  const chroma: ChromaClass =
-    parsed.chroma > 6 ? "high" : parsed.chroma >= 3.5 ? "mid" : "low";
-  return { valueStr: String(parsed.value), chroma };
+  return {
+    valueStr: String(parsed.value),
+    chroma: chromaToClass(parsed.chroma),
+  };
 }
 
 export default function HumusgehaltTool({
@@ -194,9 +196,7 @@ export default function HumusgehaltTool({
           </View>
         ) : (
           <View style={styles.resultBox}>
-            <Text style={styles.resultPlaceholder}>
-              Alle Felder ausfüllen
-            </Text>
+            <Text style={styles.resultPlaceholder}>Alle Felder ausfüllen</Text>
           </View>
         )}
 
@@ -226,7 +226,7 @@ export default function HumusgehaltTool({
           <SafeAreaView style={localStyles.modalCard}>
             <Text style={localStyles.modalTitle}>Ungültige Bodenart</Text>
             <Text style={localStyles.modalBody}>
-              "{bodenart}" wurde nicht erkannt. Gültige Bodenarten (mit
+              „{bodenart}“ wurde nicht erkannt. Gültige Bodenarten (mit
               optionaler Nummer, z.B. Su2):
             </Text>
             <Text style={localStyles.modalList}>

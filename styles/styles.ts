@@ -178,11 +178,8 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
+  // Visual-only defaults; positioning/layout is up to the caller.
   resetButton: {
-    position: "absolute",
-    bottom: 20,
-    left: 20,
-    right: 20,
     borderWidth: 5,
     borderColor: colors.primary,
     backgroundColor: colors.primary,

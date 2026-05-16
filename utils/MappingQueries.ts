@@ -50,6 +50,25 @@ export type Aufnahme = {
   erosionsgrad: string | null;
 };
 
+/**
+ * Fields that all must be filled for an Aufnahme's Standortdaten to count as `abgeschlossen`.
+ * Excludes Erweiterte Bodenaufnahme fields and Automatisch berechnete Werte (grundigkeit,
+ * effektiver_wurzelraum). GPS is checked separately by the caller via `hasGps`.
+ */
+export const STANDORT_REQUIRED_FOR_VOLLSTAENDIG = [
+  "bodentyp",
+  "humusform",
+  "ausgangsgestein",
+  "m_ue_nn",
+  "reliefpos",
+  "expos",
+  "nutzung",
+  "vegetation",
+  "witterung",
+  "mittl_n",
+  "mittl_temp",
+] as const satisfies readonly (keyof Aufnahme)[];
+
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
 /**
@@ -60,15 +79,14 @@ export function createAufnahme(
   anzahlHorizonte: number,
   feldkampagneId: number,
 ): number {
-  const row = db.getFirstSync<{ max_nummer: number | null }>(
-    `SELECT MAX(nummer) as max_nummer FROM aufnahmen WHERE feldkampagne_id = ?`,
-    feldkampagneId,
-  );
-  const nextNummer = (row?.max_nummer ?? 0) + 1;
+  // Single statement: read-then-insert in one go so concurrent callers can't
+  // race to produce duplicate nummern within the same Feldkampagne.
   const result = db.runSync(
-    `INSERT INTO aufnahmen (status, feldkampagne_id, nummer) VALUES ('offen', ?, ?)`,
+    `INSERT INTO aufnahmen (status, feldkampagne_id, nummer)
+     SELECT 'offen', ?, COALESCE(MAX(nummer), 0) + 1
+       FROM aufnahmen WHERE feldkampagne_id = ?`,
     feldkampagneId,
-    nextNummer,
+    feldkampagneId,
   );
   const aufnahmeId = result.lastInsertRowId;
 

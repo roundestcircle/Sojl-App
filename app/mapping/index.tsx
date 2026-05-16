@@ -27,6 +27,7 @@ import {
   ResetInstructionButton,
 } from "@/components/InstructionModal";
 import StatusBadge from "@/components/StatusBadge";
+import { formatDate } from "@/utils/formatDate";
 
 /**
  * Feldkampagnen overview screen.
@@ -49,10 +50,7 @@ export default function FeldkampagnenScreen() {
     }, []),
   );
 
-  /**
-   * Creates a new Feldkampagne with the current name, then navigates to its detail screen.
-   * No-ops if the name is empty.
-   */
+  /** Exports a Feldkampagne as a ZIP and opens the system share dialog. */
   const handleExport = async (item: Feldkampagne) => {
     try {
       setExportingId(item.id);
@@ -64,6 +62,10 @@ export default function FeldkampagnenScreen() {
     }
   };
 
+  /**
+   * Creates a new Feldkampagne with the current name, then navigates to its detail screen.
+   * No-ops if the name is empty.
+   */
   const handleCreate = () => {
     const name = newName.trim();
     if (!name) return;
@@ -152,12 +154,6 @@ export default function FeldkampagnenScreen() {
         <ResetInstructionButton
           storageKey="mappingDontShowAgain"
           onReset={() => setModalKey((prev) => prev + 1)}
-          style={{
-            position: "relative",
-            bottom: undefined,
-            left: undefined,
-            right: undefined,
-          }}
         />
       </View>
 
@@ -215,7 +211,7 @@ export default function FeldkampagnenScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Kampagne löschen</Text>
             <Text style={styles.modalText}>
-              „{deleteTarget?.name}" und alle enthaltenen Aufnahmen löschen?
+              „{deleteTarget?.name}“ und alle enthaltenen Aufnahmen löschen?
             </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -236,11 +232,6 @@ export default function FeldkampagnenScreen() {
       </Modal>
     </View>
   );
-}
-
-/** Formats an ISO datetime string to "YYYY-MM-DD HH:MM" for display. */
-function formatDate(iso: string): string {
-  return iso.replace("T", " ").slice(0, 16);
 }
 
 const localStyles = StyleSheet.create({

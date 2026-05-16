@@ -77,7 +77,6 @@ export function initDatabase() {
       tiefe_unten   TEXT,
       maechtigk_dm  TEXT,
       farbe_munsell TEXT,
-      farbe_rgb     TEXT,
       bodenart      TEXT,
       anteil        TEXT,
       ph_cacl2      REAL,
@@ -137,6 +136,9 @@ export function initDatabase() {
   } catch (_) {}
   try {
     db.execSync(`ALTER TABLE horizonte ADD COLUMN basensaettigung TEXT`);
+  } catch (_) {}
+  try {
+    db.execSync(`ALTER TABLE horizonte ADD COLUMN tonanteil TEXT`);
   } catch (_) {}
 }
 

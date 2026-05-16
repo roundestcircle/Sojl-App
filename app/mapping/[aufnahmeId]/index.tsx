@@ -20,6 +20,7 @@ import { colors } from "@/styles/colors";
 import {
   closeAufnahme,
   getAufnahme,
+  STANDORT_REQUIRED_FOR_VOLLSTAENDIG,
   type Aufnahme,
 } from "@/utils/MappingQueries";
 import {
@@ -30,6 +31,7 @@ import {
 } from "@/utils/HorizonQueries";
 import { exportAufnahmeAsZip } from "@/utils/csvExport";
 import HorizontButton from "@/components/HorizonButton";
+import Badge from "@/components/Badge";
 
 // ─── Standortdaten status ─────────────────────────────────────────────────────
 
@@ -44,25 +46,9 @@ type StandortStatus = "leer" | "begonnen" | "abgeschlossen";
 function deriveStandortStatus(a: Aufnahme): StandortStatus {
   const hasGps = a.gps_lat != null || a.utm_easting != null;
   const allFilled =
-    hasGps &&
-    a.bodentyp != null &&
-    a.humusform != null &&
-    a.ausgangsgestein != null &&
-    a.m_ue_nn != null &&
-    a.reliefpos != null &&
-    a.expos != null &&
-    a.nutzung != null &&
-    a.vegetation != null &&
-    a.witterung != null &&
-    a.mittl_n != null &&
-    a.mittl_temp != null;
+    hasGps && STANDORT_REQUIRED_FOR_VOLLSTAENDIG.every((f) => a[f] != null);
   const anyFilled =
-    hasGps ||
-    a.bodentyp != null ||
-    a.humusform != null ||
-    a.reliefpos != null ||
-    a.nutzung != null ||
-    a.witterung != null;
+    hasGps || STANDORT_REQUIRED_FOR_VOLLSTAENDIG.some((f) => a[f] != null);
   if (allFilled) return "abgeschlossen";
   if (anyFilled) return "begonnen";
   return "leer";
@@ -190,9 +176,7 @@ export default function HorizonOverview() {
             activeOpacity={0.75}
           >
             <Text style={[styles.rowTitle, { flex: 1 }]}>Standortdaten</Text>
-            <View style={[styles.badge, { backgroundColor: badge.bg }]}>
-              <Text style={styles.badgeText}>{badge.label}</Text>
-            </View>
+            <Badge label={badge.label} color={badge.bg} />
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 

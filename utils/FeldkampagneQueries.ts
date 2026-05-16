@@ -46,6 +46,23 @@ export function getAufnahmenForFeldkampagne(sessionId: number): Aufnahme[] {
   );
 }
 
+/**
+ * Returns all Aufnahmen of a session with their horizon count computed in SQL,
+ * avoiding the N+1 round-trips of fetching each Aufnahme's horizons separately.
+ */
+export function getAufnahmenWithHorizontCount(
+  sessionId: number,
+): (Aufnahme & { horizontCount: number })[] {
+  return db.getAllSync<Aufnahme & { horizontCount: number }>(
+    `SELECT a.*,
+            (SELECT COUNT(*) FROM horizonte h WHERE h.aufnahme_id = a.id) AS horizontCount
+       FROM aufnahmen a
+      WHERE a.feldkampagne_id = ?
+      ORDER BY a.erstellt_am DESC`,
+    sessionId,
+  );
+}
+
 /** Sets a Feldkampagne status to 'abgeschlossen'. */
 export function closeFeldkampagne(id: number) {
   db.runSync(

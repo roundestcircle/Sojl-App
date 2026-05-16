@@ -28,6 +28,9 @@ export function calcGrundigkeitCm(maechtigkeiten: string[]): string {
 }
 
 // ─── Rating categories ──────────────────────────────────────────────────────
+// Superset of all KA6 rating labels. Not every metric uses every bucket —
+// KA6 defines different threshold scales per property (e.g. rateGPV/LK/FK/NFK/SWert
+// use a 5-bucket scale without "mäßig"; only rateKAK uses all 6).
 export type Rating =
   | "sehr gering"
   | "gering"
@@ -283,7 +286,8 @@ export function calcProfileSWert(
     if (top >= depthLimitCm) continue;
     const clippedBot = Math.min(bot, depthLimitCm);
     const maechtigkDm = (clippedBot - top) / 10;
-    const weight = /A/.test(h.horizontname ?? "") ? 1 : 0.5;
+    // A-Horizonte (Ah, Ap, fAh, rAp, …): optional lowercase prefix(es) then capital A.
+    const weight = /^[a-z]*A/.test(h.horizontname ?? "") ? 1 : 0.5;
     total += kak * (bs / 100) * ld * maechtigkDm * weight;
     hasAny = true;
   }

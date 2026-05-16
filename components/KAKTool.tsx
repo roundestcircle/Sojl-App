@@ -91,7 +91,9 @@ export default function KAKTool() {
         <View style={styles.resultBox}>
           <Text style={styles.resultValue}>{result} cmolc/kg</Text>
           <Text style={styles.resultLabel}>{rateKAK(parseFloat(result))}</Text>
-          <Text style={styles.resultLabel}>inkl. Humuskorrektur ({humusform})</Text>
+          <Text style={styles.resultLabel}>
+            inkl. Humuskorrektur ({humusform})
+          </Text>
         </View>
       ) : (
         <View style={styles.resultBox}>

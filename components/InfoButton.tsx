@@ -24,7 +24,10 @@ export default function InfoButton({ text }: { text: string }) {
           <View style={localStyles.infoCard}>
             <Text style={localStyles.infoText}>{text}</Text>
             <TouchableOpacity
-              style={[styles.actionButton, { alignSelf: "stretch", marginTop: 12 }]}
+              style={[
+                styles.actionButton,
+                { alignSelf: "stretch", marginTop: 12 },
+              ]}
               onPress={() => setVisible(false)}
             >
               <Text style={styles.actionButtonText}>Schließen</Text>

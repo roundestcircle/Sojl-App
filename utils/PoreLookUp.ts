@@ -499,6 +499,8 @@ export const soilLookup: Record<string, SoilHydraulics[]> = {
 
   // anmoorige Horizonte (Aa) – 15–30% organic matter
   // The original table shows two bulk density classes, only <1.45 and >1.65 are given
+  // TODO: currently unreachable — bodenartToLookupKey() does not route any input here.
+  // Wire up via Aa-horizonname detection when anmoorig support is needed.
   anmoorig_sand: [
     {
       bulkDensityClass: "<1.45",
@@ -651,7 +653,16 @@ export function soilGroupFromBodenart(bodenart: string): SoilGroup {
   return "U_L_except_Lt";
 }
 
-/** Parses a density midpoint (kg/dm³) from a string like "1,2–1,4 kg/dm³" or plain "1.6". */
+/**
+ * Parses a representative bulk-density value (kg/dm³) from a free-form string
+ * like "1,2–1,4 kg/dm³", ">1.65", "<1.45", or plain "1.6".
+ *
+ * For ranges, returns the arithmetic midpoint (true midpoint).
+ * For bounded forms (`>x` / `<x`), returns a heuristic ±0.15 offset from the
+ * bound — NOT a real midpoint, just a representative point inside the implied
+ * class so that `getDensityClass()` lands on the right bucket. Adjust the
+ * offset only if you also retune the density class boundaries.
+ */
 export function parseDensityMidpoint(lagerungsdichte: string): number | null {
   const s = lagerungsdichte.replace(/,/g, ".").replace(/[–−]/g, "-");
   const rangeMatch = s.match(/(\d+\.?\d*)\s*-\s*(\d+\.?\d*)/);

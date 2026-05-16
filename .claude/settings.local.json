@@ -3,7 +3,11 @@
     "allow": [
       "WebSearch",
       "Skill(code-review-skill)",
-      "Skill(code-review-skill:*)"
+      "Skill(code-review-skill:*)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(npm ls *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

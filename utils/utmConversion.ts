@@ -14,7 +14,16 @@ export type UTMCoord = {
   label: string; // e.g. "32N"
 };
 
-/** Converts WGS84 decimal degrees to UTM (WGS84). */
+/**
+ * Converts WGS84 decimal degrees to UTM (WGS84).
+ *
+ * Supported range: latitudes in [-80°, +84°] (standard UTM coverage),
+ * longitudes in [-180°, +180°]. Outside this band the result is undefined.
+ *
+ * Special non-standard zones (Norway 31V/32V, Svalbard 31X-37X) are NOT handled —
+ * inputs that fall into them will return the standard zone, not the special one.
+ * For German soil-mapping use cases this isn't a concern.
+ */
 export function latLonToUTM(lat: number, lon: number): UTMCoord {
   const φ = (lat * Math.PI) / 180;
   const λ = (lon * Math.PI) / 180;

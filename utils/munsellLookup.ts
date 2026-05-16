@@ -49,46 +49,38 @@ function rgbToLab(rgb: RGBColor): { L: number; a: number; b: number } {
   return { L, a, b: labB };
 }
 
-/**
- * Calculate Delta-E (CIE76) color distance between two RGB colors
- * Lower values mean more similar colors
- */
-function calculateColorDistance(color1: RGBColor, color2: RGBColor): number {
-  const lab1 = rgbToLab(color1);
-  const lab2 = rgbToLab(color2);
-
-  const dL = lab1.L - lab2.L;
-  const da = lab1.a - lab2.a;
-  const db = lab1.b - lab2.b;
-
-  return Math.sqrt(dL * dL + da * da + db * db);
-}
+// Precomputed Lab values for every MUNSELL_DATA entry. Built once at module load
+// so each lookup only converts the input color rather than 2N entries per call.
+const MUNSELL_LAB = MUNSELL_DATA.map((e) =>
+  rgbToLab({ r: e.r, g: e.g, b: e.b }),
+);
 
 /**
- * Find the closest Munsell color for a given RGB color
+ * Find the closest Munsell color for a given RGB color via CIE76 Delta-E in Lab space.
  */
 export function rgbToMunsell(rgb: RGBColor): {
   full: string;
   distance: number;
 } {
-  let closestEntry = MUNSELL_DATA[0];
-  let minDistance = calculateColorDistance(rgb, {
-    r: closestEntry.r,
-    g: closestEntry.g,
-    b: closestEntry.b,
-  });
+  const inputLab = rgbToLab(rgb);
+  let closestIdx = 0;
+  // Squared distance: avoids one sqrt per entry; we sqrt the winner at the end.
+  let minDistSq = Infinity;
 
-  for (const entry of MUNSELL_DATA) {
-    const entryRgb = { r: entry.r, g: entry.g, b: entry.b };
-    const distance = calculateColorDistance(rgb, entryRgb);
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestEntry = entry;
+  for (let i = 0; i < MUNSELL_LAB.length; i++) {
+    const lab = MUNSELL_LAB[i];
+    const dL = inputLab.L - lab.L;
+    const da = inputLab.a - lab.a;
+    const db = inputLab.b - lab.b;
+    const distSq = dL * dL + da * da + db * db;
+    if (distSq < minDistSq) {
+      minDistSq = distSq;
+      closestIdx = i;
     }
   }
 
   return {
-    full: closestEntry.munsell,
-    distance: minDistance,
+    full: MUNSELL_DATA[closestIdx].munsell,
+    distance: Math.sqrt(minDistSq),
   };
 }

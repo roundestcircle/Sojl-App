@@ -1,12 +1,10 @@
-import { useCallback, useState, useRef, useEffect } from "react";
+import { useCallback, useState } from "react";
 import {
   ScrollView,
   ActivityIndicator,
   View,
   KeyboardAvoidingView,
   Platform,
-  Animated,
-  Keyboard,
 } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { styles } from "@/styles/styles";
@@ -20,6 +18,8 @@ import {
 import { getHorizonteForAufnahme, type Horizont } from "@/utils/HorizonQueries";
 import { calcGrundigkeitCm } from "@/utils/MappingMaths";
 import AufnahmeForm from "@/components/AufnahmeForm";
+import { useDebouncedCallback } from "@/utils/useDebouncedCallback";
+import { useNotizenScroll } from "@/utils/useNotizenScroll";
 
 /**
  * Standortdaten screen.
@@ -35,32 +35,14 @@ export default function StandortScreen() {
   const [calcGrundigkeit, setCalcGrundigkeit] = useState("");
   const [horizonte, setHorizonte] = useState<Horizont[]>([]);
 
-  const scrollViewRef = useRef<ScrollView>(null);
-  const notizenFocused = useRef(false);
-  const currentScrollY = useRef(0);
-  const contentH = useRef(0);
-  const layoutH = useRef(0);
-  const scrollAnim = useRef(new Animated.Value(0)).current;
-
-  const slowScrollToEnd = () => {
-    const target = Math.max(0, contentH.current - layoutH.current);
-    scrollAnim.setValue(currentScrollY.current);
-    const listener = scrollAnim.addListener(({ value }) => {
-      scrollViewRef.current?.scrollTo({ y: value, animated: false });
-    });
-    Animated.timing(scrollAnim, {
-      toValue: target,
-      duration: 600,
-      useNativeDriver: false,
-    }).start(() => scrollAnim.removeListener(listener));
-  };
-
-  useEffect(() => {
-    const sub = Keyboard.addListener("keyboardDidShow", () => {
-      if (notizenFocused.current) setTimeout(slowScrollToEnd, 100);
-    });
-    return () => sub.remove();
-  }, []);
+  const {
+    scrollViewRef,
+    onNotizenFocus,
+    onNotizenBlur,
+    onScroll,
+    onContentSizeChange,
+    onLayout,
+  } = useNotizenScroll();
 
   // Reload the record and recalculate derived values whenever the screen comes back into focus
   useFocusEffect(
@@ -85,6 +67,9 @@ export default function StandortScreen() {
     [aufnahmeId],
   );
 
+  // Debounce saves so per-keystroke writes don't hit SQLite with a full UPDATE on every character.
+  const debouncedSave = useDebouncedCallback(handleSave, 250);
+
   if (!aufnahme) {
     return (
       <View style={[styles.container, { justifyContent: "center" }]}>
@@ -104,27 +89,17 @@ export default function StandortScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
         scrollEventThrottle={16}
-        onScroll={(e) => {
-          currentScrollY.current = e.nativeEvent.contentOffset.y;
-        }}
-        onContentSizeChange={(_, h) => {
-          contentH.current = h;
-        }}
-        onLayout={(e) => {
-          layoutH.current = e.nativeEvent.layout.height;
-        }}
+        onScroll={onScroll}
+        onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
       >
         <AufnahmeForm
           initialData={aufnahme}
-          onSave={handleSave}
+          onSave={debouncedSave}
           calcGrundigkeit={calcGrundigkeit}
           horizonte={horizonte}
-          onNotizenFocus={() => {
-            notizenFocused.current = true;
-          }}
-          onNotizenBlur={() => {
-            notizenFocused.current = false;
-          }}
+          onNotizenFocus={onNotizenFocus}
+          onNotizenBlur={onNotizenBlur}
         />
       </ScrollView>
     </KeyboardAvoidingView>

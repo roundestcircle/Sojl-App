@@ -1,6 +1,61 @@
+import { Fragment } from "react";
 import { Text, ScrollView, TouchableOpacity, View } from "react-native";
-import { Link } from "expo-router";
+import { Link, type Href } from "expo-router";
 import { styles } from "@/styles/styles";
+
+type ToolLink = {
+  label: string;
+  href: Href;
+};
+
+type ToolSection = {
+  /** Header above this group; undefined renders no header (top group). */
+  title?: string;
+  items: ToolLink[];
+};
+
+const TOOL_SECTIONS: ToolSection[] = [
+  {
+    items: [
+      { label: "Horizontlexikon", href: "/tools/horizonte" },
+      { label: "Humusformlexikon", href: "/tools/humusformen" },
+    ],
+  },
+  {
+    title: "Bestimmungshilfen",
+    items: [
+      { label: "Bodenart bestimmen", href: "/tools/bodenart" },
+      { label: "Bodentyp bestimmen", href: "/tools/bodentyp" },
+      { label: "Anteil schätzen", href: "/tools/anteil" },
+      { label: "Carbonatgehalt bestimmen", href: "/tools/carbonat" },
+      { label: "Lagerungsdichte bestimmen", href: "/tools/lagerungsdichte" },
+      { label: "Feinwurzeln bestimmen", href: "/tools/feinwurzeln" },
+      { label: "Gefüge bestimmen", href: "/tools/gefuege" },
+    ],
+  },
+  {
+    title: "Berechnungshilfen",
+    items: [
+      { label: "Humusgehalt bestimmen", href: "/tools/humusgehalt" },
+      { label: "KAK berechnen", href: "/tools/kak" },
+      { label: "Basensättigung berechnen", href: "/tools/basensaettigung" },
+      {
+        label: "Porenvolumen & Feldkapazität berechnen",
+        href: {
+          pathname: "/tools/aufnahme-redirect",
+          params: { title: "Porenvolumen & Feldkapazität berechnen" },
+        },
+      },
+      {
+        label: "S-Wert berechnen",
+        href: {
+          pathname: "/tools/aufnahme-redirect",
+          params: { title: "S-Wert berechnen" },
+        },
+      },
+    ],
+  },
+];
 
 export default function ToolsIndex() {
   return (
@@ -11,114 +66,24 @@ export default function ToolsIndex() {
         gap: 10,
       }}
     >
-      <Link href="/tools/horizonte" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Horizontlexikon</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href="/tools/humusformen" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Humusformlexikon</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-
-      <View style={{ height: 8 }} />
-
-      <Text style={styles.sectionTitle}>Bestimmungshilfen</Text>
-
-      <Link href="/tools/bodenart" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Bodenart bestimmen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href="/tools/bodentyp" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Bodentyp bestimmen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href="/tools/anteil" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Anteil schätzen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href="/tools/carbonat" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Carbonatgehalt bestimmen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href="/tools/lagerungsdichte" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Lagerungsdichte bestimmen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href="/tools/feinwurzeln" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Feinwurzeln bestimmen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href="/tools/gefuege" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Gefüge bestimmen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-
-      <View style={{ height: 8 }} />
-
-      <Text style={styles.sectionTitle}>Berechnungshilfen</Text>
-
-      <Link href="/tools/humusgehalt" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Humusgehalt bestimmen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href="/tools/kak" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>KAK berechnen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href="/tools/basensaettigung" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Basensättigung berechnen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link
-        href={{
-          pathname: "/tools/aufnahme-redirect",
-          params: { title: "Porenvolumen & Feldkapazität berechnen" },
-        }}
-        asChild
-      >
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>
-            Porenvolumen & Feldkapazität berechnen
-          </Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link
-        href={{
-          pathname: "/tools/aufnahme-redirect",
-          params: { title: "S-Wert berechnen" },
-        }}
-        asChild
-      >
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>S-Wert berechnen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
+      {TOOL_SECTIONS.map((section, sIdx) => (
+        <Fragment key={sIdx}>
+          {section.title != null && (
+            <>
+              <View style={{ height: 8 }} />
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+            </>
+          )}
+          {section.items.map((item) => (
+            <Link key={item.label} href={item.href} asChild>
+              <TouchableOpacity style={styles.navButton}>
+                <Text style={styles.navButtonLabel}>{item.label}</Text>
+                <Text style={styles.chevron}>›</Text>
+              </TouchableOpacity>
+            </Link>
+          ))}
+        </Fragment>
+      ))}
     </ScrollView>
   );
 }

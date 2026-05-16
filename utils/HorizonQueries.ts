@@ -8,7 +8,6 @@ export type Horizont = {
   nummer: number;
   horizontname: string | null;
   farbe_munsell: string | null;
-  farbe_rgb: string | null;
   bodenart: string | null;
   anteil: string | null;
   notizen: string | null;
@@ -58,21 +57,20 @@ export type Horizont = {
   nfk_lm2: string | null;
   kak: string | null;
   basensaettigung: string | null;
+  tonanteil: string | null;
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
 /** Appends a new empty Horizont to an Aufnahme, numbered after the current last one. */
 export function addHorizont(aufnahmeId: number): void {
-  const row = db.getFirstSync<{ max_nummer: number | null }>(
-    `SELECT MAX(nummer) as max_nummer FROM horizonte WHERE aufnahme_id = ?`,
-    aufnahmeId,
-  );
-  const nextNummer = (row?.max_nummer ?? 0) + 1;
+  // Single statement so concurrent inserts can't produce duplicate nummern.
   db.runSync(
-    `INSERT INTO horizonte (aufnahme_id, nummer, status) VALUES (?, ?, 'leer')`,
+    `INSERT INTO horizonte (aufnahme_id, nummer, status)
+     SELECT ?, COALESCE(MAX(nummer), 0) + 1, 'leer'
+       FROM horizonte WHERE aufnahme_id = ?`,
     aufnahmeId,
-    nextNummer,
+    aufnahmeId,
   );
 }
 
@@ -104,8 +102,27 @@ export function getHorizont(
 }
 
 /**
+ * Fields that all must be filled for a Horizont to be considered `vollstaendig`.
+ * Excludes Erweiterte Bodenaufnahme fields and Automatisch berechnete Werte.
+ */
+export const HORIZONT_REQUIRED_FOR_VOLLSTAENDIG = [
+  "horizontname",
+  "tiefe_oben",
+  "tiefe_unten",
+  "bodenart",
+  "anteil",
+  "ph_cacl2",
+  "farbe_munsell",
+  "humus",
+  "carbonat",
+  "lagerungsdichte",
+  "feinwurzeln",
+  "gefuege",
+] as const satisfies readonly (keyof Horizont)[];
+
+/**
  * Saves form data for a Horizont and updates its status.
- * Status: vollstaendig if farbe_munsell + bodenart both filled, else angefangen.
+ * Status: vollstaendig if every field in HORIZONT_REQUIRED_FOR_VOLLSTAENDIG is filled, else angefangen.
  */
 export function saveHorizont(
   aufnahmeId: number,
@@ -115,7 +132,6 @@ export function saveHorizont(
       Horizont,
       | "horizontname"
       | "farbe_munsell"
-      | "farbe_rgb"
       | "bodenart"
       | "anteil"
       | "notizen"
@@ -163,29 +179,20 @@ export function saveHorizont(
       | "nfk_lm2"
       | "kak"
       | "basensaettigung"
+      | "tonanteil"
     >
   >,
 ) {
-  const isFull =
-    data.horizontname &&
-    data.tiefe_oben != null &&
-    data.tiefe_unten != null &&
-    data.bodenart &&
-    data.anteil != null &&
-    data.ph_cacl2 != null &&
-    data.farbe_munsell &&
-    data.humus &&
-    data.carbonat &&
-    data.lagerungsdichte &&
-    data.feinwurzeln &&
-    data.gefuege;
+  const isFull = HORIZONT_REQUIRED_FOR_VOLLSTAENDIG.every((f) => {
+    const v = data[f];
+    return v !== null && v !== undefined && v !== "";
+  });
   const status = isFull ? "vollstaendig" : "angefangen";
 
   db.runSync(
     `UPDATE horizonte
      SET horizontname       = ?,
          farbe_munsell      = ?,
-         farbe_rgb          = ?,
          bodenart           = ?,
          anteil             = ?,
          notizen            = ?,
@@ -233,11 +240,11 @@ export function saveHorizont(
          nfk_lm2            = ?,
          kak                = ?,
          basensaettigung    = ?,
+         tonanteil          = ?,
          status             = ?
      WHERE aufnahme_id = ? AND nummer = ?`,
     data.horizontname ?? null,
     data.farbe_munsell ?? null,
-    data.farbe_rgb ?? null,
     data.bodenart ?? null,
     data.anteil ?? null,
     data.notizen ?? null,
@@ -285,6 +292,7 @@ export function saveHorizont(
     data.nfk_lm2 ?? null,
     data.kak ?? null,
     data.basensaettigung ?? null,
+    data.tonanteil ?? null,
     status,
     aufnahmeId,
     nummer,

@@ -7,7 +7,6 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
-  StyleSheet,
 } from "react-native";
 import {
   router,
@@ -18,12 +17,12 @@ import {
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import {
-  getAufnahmenForFeldkampagne,
+  getAufnahmenWithHorizontCount,
   getFeldkampagne,
   closeFeldkampagne,
 } from "@/utils/FeldkampagneQueries";
 import StatusBadge from "@/components/StatusBadge";
-import { getHorizonteForAufnahme } from "@/utils/HorizonQueries";
+import { formatDate } from "@/utils/formatDate";
 import { exportAufnahmeAsZip, exportKampagneAsZip } from "@/utils/csvExport";
 import {
   createAufnahme,
@@ -69,11 +68,7 @@ export default function SessionDetailScreen() {
   const reload = useCallback(() => {
     const session = getFeldkampagne(id);
     setSessionName(session?.name ?? "");
-    const rows = getAufnahmenForFeldkampagne(id).map((a) => ({
-      ...a,
-      horizontCount: getHorizonteForAufnahme(a.id).length,
-    }));
-    setAufnahmen(rows);
+    setAufnahmen(getAufnahmenWithHorizontCount(id));
   }, [id]);
 
   useFocusEffect(reload);
@@ -149,7 +144,7 @@ export default function SessionDetailScreen() {
             Noch keine Aufnahmen in dieser Kampagne.
           </Text>
         }
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <View style={styles.listRow}>
             <TouchableOpacity
               style={styles.listRowMain}
@@ -287,10 +282,3 @@ export default function SessionDetailScreen() {
     </View>
   );
 }
-
-/** Formats an ISO datetime string to "YYYY-MM-DD HH:MM" for display. */
-function formatDate(iso: string): string {
-  return iso.replace("T", " ").slice(0, 16);
-}
-
-const localStyles = StyleSheet.create({});

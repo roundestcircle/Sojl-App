@@ -1,7 +1,8 @@
-import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { colors } from "@/styles/colors";
 import { styles } from "@/styles/styles";
 import type { Horizont } from "@/utils/HorizonQueries";
+import Badge from "@/components/Badge";
 
 type Props = {
   horizont: Horizont;
@@ -32,9 +33,7 @@ export default function HorizontButton({
         H{horizont.nummer}
         {horizont.horizontname ? ` – ${horizont.horizontname}` : ""}
       </Text>
-      <View style={[styles.badge, { backgroundColor: badgeBg }]}>
-        <Text style={styles.badgeText}>{label}</Text>
-      </View>
+      <Badge label={label} color={badgeBg} />
       <Text style={styles.chevron}>›</Text>
     </TouchableOpacity>
   );

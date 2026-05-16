@@ -7,8 +7,6 @@ import {
   TouchableOpacity,
   Modal,
   StyleSheet,
-  Keyboard,
-  Animated,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -40,12 +38,13 @@ import {
   rateKAK,
 } from "@/utils/MappingMaths";
 import { calcBasensaettigung } from "@/utils/BasensaettigungLookup";
+import { useNotizenScroll } from "@/utils/useNotizenScroll";
 import {
   bodenartToClay,
   humusKlasse,
   estimateHumus,
   parseMunsell,
-  type ChromaClass,
+  chromaToClass,
 } from "@/utils/renger1987";
 
 // ─── Form shape ────────────────────────────────────────────────────────────────
@@ -76,6 +75,7 @@ export type HorizontFormData = {
   nfk_lm2: string;
   kak: string;
   basensaettigung: string;
+  tonanteil: string;
   // Erweiterte fields
   bodenfeuchte: string;
   konsistenz: string;
@@ -165,6 +165,7 @@ export default function HorizontFormular({
       nfk_lm2: initialData?.nfk_lm2 ?? "",
       kak: initialData?.kak ?? "",
       basensaettigung: initialData?.basensaettigung ?? "",
+      tonanteil: initialData?.tonanteil ?? "",
       bodenfeuchte: initialData?.bodenfeuchte ?? "",
       konsistenz: initialData?.konsistenz ?? "",
       oxidationsmerkmale: initialData?.oxidationsmerkmale ?? "",
@@ -206,50 +207,35 @@ export default function HorizontFormular({
     append: appendProbe,
     remove: removeProbe,
   } = useFieldArray({ control, name: "probennummern" });
-  const scrollViewRef = useRef<ScrollView>(null);
-  const notizenFocused = useRef(false);
-  const currentScrollY = useRef(0);
-  const contentH = useRef(0);
-  const layoutH = useRef(0);
-  const scrollAnim = useRef(new Animated.Value(0)).current;
-
-  const slowScrollToEnd = () => {
-    const target = Math.max(0, contentH.current - layoutH.current);
-    scrollAnim.setValue(currentScrollY.current);
-    const listener = scrollAnim.addListener(({ value }) => {
-      scrollViewRef.current?.scrollTo({ y: value, animated: false });
-    });
-    Animated.timing(scrollAnim, {
-      toValue: target,
-      duration: 600,
-      useNativeDriver: false,
-    }).start(() => scrollAnim.removeListener(listener));
-  };
-
-  useEffect(() => {
-    const sub = Keyboard.addListener("keyboardDidShow", () => {
-      if (notizenFocused.current) setTimeout(slowScrollToEnd, 100);
-    });
-    return () => sub.remove();
-  }, []);
+  const {
+    scrollViewRef,
+    onNotizenFocus,
+    onNotizenBlur,
+    onScroll,
+    onContentSizeChange,
+    onLayout,
+  } = useNotizenScroll();
   // Which tool modal is currently open; null means all modals are closed
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [autoExpanded, setAutoExpanded] = useState(false);
-  const [tonanteil, setTonanteil] = useState("");
   const [erweiterteExpanded, setErweiterteExpanded] = useState(false);
   const isFirstWatch = useRef(true);
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
 
-  // Autosave: subscribe to every form change and call onSave with the full data snapshot
+  // Autosave: subscribe once and dispatch through a ref so the subscription
+  // survives onSave identity changes (would otherwise drop the first tick after resub).
   useEffect(() => {
     const { unsubscribe } = watch((data) => {
       if (isFirstWatch.current) {
         isFirstWatch.current = false;
         return;
       }
-      onSave(data as HorizontFormData);
+      onSaveRef.current(data as HorizontFormData);
     });
     return unsubscribe;
-  }, [onSave]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const watchedFarbe = watch("farbe_munsell");
   const watchedPH = watch("ph_cacl2");
@@ -262,13 +248,14 @@ export default function HorizontFormular({
   const watchedGpvPct = watch("gpv_pct");
   const watchedLkPct = watch("lk_pct");
   const watchedKak = watch("kak");
+  const watchedTonanteil = watch("tonanteil");
 
   useEffect(() => {
     setValue(
       "maechtigk_dm",
       calcMaechtigkeitDm(watchedTiefeOben, watchedTiefeUnten),
     );
-  }, [watchedTiefeOben, watchedTiefeUnten]);
+  }, [watchedTiefeOben, watchedTiefeUnten, setValue]);
 
   useEffect(() => {
     const maechtigkDm = calcMaechtigkeitDm(watchedTiefeOben, watchedTiefeUnten);
@@ -301,6 +288,7 @@ export default function HorizontFormular({
     watchedAnteil,
     watchedTiefeOben,
     watchedTiefeUnten,
+    setValue,
   ]);
 
   useEffect(() => {
@@ -310,19 +298,18 @@ export default function HorizontFormular({
     } else {
       setValue("humus", "");
     }
-  }, [watchedHumusPct]);
+  }, [watchedHumusPct, setValue]);
 
   useEffect(() => {
     const parsed = parseMunsell(watchedFarbe);
     const pH = parseFloat(watchedPH);
-    const clay = parseFloat(tonanteil);
+    const clay = parseFloat(watchedTonanteil);
     if (!parsed || isNaN(pH) || isNaN(clay)) {
       setValue("humus_pct", "");
       return;
     }
     const munsellValue = parsed.value;
-    const chroma: ChromaClass =
-      parsed.chroma > 6 ? "high" : parsed.chroma >= 3.5 ? "mid" : "low";
+    const chroma = chromaToClass(parsed.chroma);
     if (
       munsellValue < 1 ||
       munsellValue > 8 ||
@@ -334,19 +321,22 @@ export default function HorizontFormular({
       setValue("humus_pct", "");
       return;
     }
-    setValue("humus_pct", String(estimateHumus(munsellValue, chroma, pH, clay)));
-  }, [watchedFarbe, watchedPH, tonanteil]);
+    setValue(
+      "humus_pct",
+      String(estimateHumus(munsellValue, chroma, pH, clay)),
+    );
+  }, [watchedFarbe, watchedPH, watchedTonanteil, setValue]);
 
   useEffect(() => {
     setValue("kak", calcKAK(watchedBodenart, humusform ?? "", watchedHumusPct));
-  }, [watchedBodenart, humusform, watchedHumusPct]);
+  }, [watchedBodenart, humusform, watchedHumusPct, setValue]);
 
   useEffect(() => {
     setValue(
       "basensaettigung",
       calcBasensaettigung(watchedPH, watchedHumusPct),
     );
-  }, [watchedPH, watchedHumusPct]);
+  }, [watchedPH, watchedHumusPct, setValue]);
 
   return (
     <>
@@ -356,25 +346,25 @@ export default function HorizontFormular({
           contentContainerStyle={localStyles.scrollContent}
           keyboardShouldPersistTaps="handled"
           scrollEventThrottle={16}
-          onScroll={(e) => {
-            currentScrollY.current = e.nativeEvent.contentOffset.y;
-          }}
-          onContentSizeChange={(_, h) => {
-            contentH.current = h;
-          }}
-          onLayout={(e) => {
-            layoutH.current = e.nativeEvent.layout.height;
-          }}
+          onScroll={onScroll}
+          onContentSizeChange={onContentSizeChange}
+          onLayout={onLayout}
         >
           {/* ── Horizontname ── */}
           <Section title="Horizontname (58)">
             <View style={localStyles.fieldWithTool}>
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="z.B. Ap, Bv, C"
-                placeholderTextColor={colors.primary + "66"}
-                onChangeText={(v) => setValue("horizontname", v)}
-                defaultValue={initialData?.horizontname ?? ""}
+              <Controller
+                control={control}
+                name="horizontname"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    placeholder="z.B. Ap, Bv, C"
+                    placeholderTextColor={colors.primary + "66"}
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                )}
               />
               <TouchableOpacity
                 style={[styles.actionButton, localStyles.toolBtn]}
@@ -390,24 +380,36 @@ export default function HorizontFormular({
             <View style={styles.formRow}>
               <View style={styles.halfField}>
                 <Text style={styles.fieldLabel}>Von</Text>
-                <TextInput
-                  style={styles.input}
-                  keyboardType="number-pad"
-                  placeholder="z.B. 0"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={(v) => setValue("tiefe_oben", v)}
-                  defaultValue={initialData?.tiefe_oben ?? ""}
+                <Controller
+                  control={control}
+                  name="tiefe_oben"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput
+                      style={styles.input}
+                      keyboardType="number-pad"
+                      placeholder="z.B. 0"
+                      placeholderTextColor={colors.primary + "66"}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
                 />
               </View>
               <View style={styles.halfField}>
                 <Text style={styles.fieldLabel}>Bis</Text>
-                <TextInput
-                  style={styles.input}
-                  keyboardType="number-pad"
-                  placeholder="z.B. 30"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={(v) => setValue("tiefe_unten", v)}
-                  defaultValue={initialData?.tiefe_unten ?? ""}
+                <Controller
+                  control={control}
+                  name="tiefe_unten"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput
+                      style={styles.input}
+                      keyboardType="number-pad"
+                      placeholder="z.B. 30"
+                      placeholderTextColor={colors.primary + "66"}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
                 />
               </View>
             </View>
@@ -442,23 +444,44 @@ export default function HorizontFormular({
           <Section title="Bodeneigenschaften">
             <Text style={styles.fieldLabel}>Tonanteil</Text>
             <View style={localStyles.fieldWithTool}>
-              <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 4 }}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="z.B. 17"
-                  keyboardType="decimal-pad"
-                  placeholderTextColor={colors.primary + "66"}
-                  onChangeText={setTonanteil}
-                  value={tonanteil}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  flex: 1,
+                  gap: 4,
+                }}
+              >
+                <Controller
+                  control={control}
+                  name="tonanteil"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      placeholder="z.B. 17"
+                      keyboardType="decimal-pad"
+                      placeholderTextColor={colors.primary + "66"}
+                      onChangeText={onChange}
+                      value={value}
+                    />
+                  )}
                 />
-                <Text style={{ color: colors.primary, fontWeight: "600", fontSize: 18 }}>%</Text>
+                <Text
+                  style={{
+                    color: colors.primary,
+                    fontWeight: "600",
+                    fontSize: 18,
+                  }}
+                >
+                  %
+                </Text>
               </View>
               <TouchableOpacity
                 style={[styles.actionButton, localStyles.toolBtn]}
                 onPress={() => {
                   const clay = bodenartToClay(watchedBodenart);
                   if (clay !== null) {
-                    setTonanteil(String(clay));
+                    setValue("tonanteil", String(clay));
                   } else {
                     Alert.alert(
                       "Bodenart nicht erkannt",
@@ -514,17 +537,19 @@ export default function HorizontFormular({
             </View>
 
             <Text style={styles.fieldLabel}>pH (CaCl₂)</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="decimal-pad"
-              placeholder="z.B. 5.5"
-              placeholderTextColor={colors.primary + "66"}
-              onChangeText={(v) => setValue("ph_cacl2", v)}
-              defaultValue={
-                initialData?.ph_cacl2 != null
-                  ? String(initialData.ph_cacl2)
-                  : ""
-              }
+            <Controller
+              control={control}
+              name="ph_cacl2"
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  style={styles.input}
+                  keyboardType="decimal-pad"
+                  placeholder="z.B. 5.5"
+                  placeholderTextColor={colors.primary + "66"}
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
             />
 
             <Text style={styles.fieldLabel}>Bodenfarbe (28)</Text>
@@ -645,20 +670,22 @@ export default function HorizontFormular({
 
           {/* ── Notizen ── */}
           <Section title="Notizen (57)">
-            <TextInput
-              style={[styles.input, localStyles.multiline]}
-              placeholder="Freitext..."
-              placeholderTextColor={colors.primary + "66"}
-              multiline
-              numberOfLines={4}
-              onChangeText={(v) => setValue("notizen", v)}
-              defaultValue={initialData?.notizen ?? ""}
-              onFocus={() => {
-                notizenFocused.current = true;
-              }}
-              onBlur={() => {
-                notizenFocused.current = false;
-              }}
+            <Controller
+              control={control}
+              name="notizen"
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  style={[styles.input, localStyles.multiline]}
+                  placeholder="Freitext..."
+                  placeholderTextColor={colors.primary + "66"}
+                  multiline
+                  numberOfLines={4}
+                  onChangeText={onChange}
+                  value={value}
+                  onFocus={onNotizenFocus}
+                  onBlur={onNotizenBlur}
+                />
+              )}
             />
           </Section>
 

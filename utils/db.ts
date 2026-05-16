@@ -64,7 +64,8 @@ export function initDatabase() {
       grundnaessestufe           TEXT,
       besond_wasserverh          TEXT,
       stau_haftnaessestufe       TEXT,
-      erosionsgrad               TEXT
+      erosionsgrad               TEXT,
+      effektiver_wurzelraum      REAL
     );
 
     CREATE TABLE IF NOT EXISTS horizonte (
@@ -110,36 +111,20 @@ export function initDatabase() {
       bes_strukturen       TEXT,
       geruch               TEXT,
       substratart          TEXT,
-      probennummern        TEXT
+      probennummern        TEXT,
+      gpv_pct              TEXT,
+      gpv_lm2              TEXT,
+      lk_pct               TEXT,
+      lk_lm2               TEXT,
+      fk_pct               TEXT,
+      fk_lm2               TEXT,
+      nfk_pct              TEXT,
+      nfk_lm2              TEXT,
+      kak                  TEXT,
+      basensaettigung      TEXT,
+      tonanteil            TEXT
     );
   `);
-
-  for (const col of [
-    "gpv_pct",
-    "gpv_lm2",
-    "lk_pct",
-    "lk_lm2",
-    "fk_pct",
-    "fk_lm2",
-    "nfk_pct",
-    "nfk_lm2",
-  ]) {
-    try {
-      db.execSync(`ALTER TABLE horizonte ADD COLUMN ${col} TEXT`);
-    } catch (_) {}
-  }
-  try {
-    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN effektiver_wurzelraum REAL`);
-  } catch (_) {}
-  try {
-    db.execSync(`ALTER TABLE horizonte ADD COLUMN kak TEXT`);
-  } catch (_) {}
-  try {
-    db.execSync(`ALTER TABLE horizonte ADD COLUMN basensaettigung TEXT`);
-  } catch (_) {}
-  try {
-    db.execSync(`ALTER TABLE horizonte ADD COLUMN tonanteil TEXT`);
-  } catch (_) {}
 }
 
 export default db;

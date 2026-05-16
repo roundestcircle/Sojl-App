@@ -4,8 +4,10 @@ import {
   View,
   Text,
   Pressable,
+  StyleSheet,
   TouchableOpacity,
   ViewStyle,
+  StyleProp,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { styles } from "../styles/styles";
@@ -108,7 +110,7 @@ export const InstructionModal: React.FC<InstructionModalProps> = ({
 export const ResetInstructionButton: React.FC<{
   storageKey: string;
   onReset?: () => void;
-  style?: ViewStyle; // custom style overrides
+  style?: StyleProp<ViewStyle>; // custom style overrides
 }> = ({ storageKey, onReset, style }) => {
   const handleReset = async () => {
     try {
@@ -122,7 +124,7 @@ export const ResetInstructionButton: React.FC<{
   // the `style` prop as button/style overrides. Otherwise render the button in
   // a container that pins it to the bottom of the page with 16px horizontal
   // padding and 16px bottom spacing so it matches other full-width buttons.
-  const hasExplicitPosition = !!(style && (style as any).position);
+  const hasExplicitPosition = !!StyleSheet.flatten(style)?.position;
 
   if (hasExplicitPosition) {
     return (

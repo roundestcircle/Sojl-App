@@ -79,9 +79,14 @@ export default function LabeledDropdownField({
       .filter((s) => s.data.length > 0);
   }, [sections, query]);
 
+  const closeSheet = () => {
+    setOpen(false);
+    setQuery("");
+  };
+
   const handleSelect = (code: string) => {
     onChange(code === value ? "" : code);
-    setOpen(false);
+    closeSheet();
   };
 
   const renderItem = ({ item }: { item: LabeledOption }) => (
@@ -135,12 +140,12 @@ export default function LabeledDropdownField({
         visible={open}
         transparent
         animationType="fade"
-        onRequestClose={() => setOpen(false)}
+        onRequestClose={closeSheet}
       >
         <TouchableOpacity
           style={localStyles.overlay}
           activeOpacity={1}
-          onPress={() => setOpen(false)}
+          onPress={closeSheet}
         >
           {/* onStartShouldSetResponder stops taps inside the sheet from closing the modal */}
           <View

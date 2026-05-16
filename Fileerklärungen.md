@@ -52,7 +52,7 @@ Dünner Wrapper, der `PictureTaker` in einem Fullscreen-Container rendert.
 Innerer Stack-Navigator für alle Kartierungs-Routen.
 
 ### `app/mapping/index.tsx`
-Feldkampagnen-Listenscreen mit `FlatList`, Lösch-Modal (langer Druck), "Neue Kampagne"-Modal und `InstructionModal` beim ersten Aufruf. Nutzt `formatDate` aus `utils/formatDate.ts` für die Zeitanzeige.
+Feldkampagnen-Listenscreen mit `FlatList`, Lösch-Modal (langer Druck), "Neue Kampagne"-Modal und `InstructionModal` beim ersten Aufruf. Nutzt `formatDate` aus `utils/formatDate.ts` für die Zeitanzeige. `ResetInstructionButton` wird mit explizitem `position: 'relative', alignSelf: 'stretch'` inline in der `bottomBar` gerendert, damit er nicht absolut über der Schaltfläche "+ Neue Kampagne" liegt.
 
 ### `app/mapping/kampagne/[kampagneId]/index.tsx`
 Kampagnen-Detailscreen. Listet Aufnahmen mit Status-Badge und ZIP-Export. Verwendet `getAufnahmenWithHorizontCount` für eine einzige SQL-Abfrage statt N+1 Lookups. "Kampagne beenden" mit Warn-Modal bei offenen Aufnahmen.
@@ -135,7 +135,7 @@ React-Hook-Form-Formular für einen Horizont. Auto-speichert via `watch` (Abonne
 - **Erweiterte Bodenaufnahme** (CollapsibleSection, eingeklappt): 14 einfache Felder (30–49), Substratkennzeichnung-Unterabschnitt (43, 51, 55, 52a, 52b, 53, 54), Geruch (56), Substratart, Probennummern (59) mit dynamischer Liste via `useFieldArray`.
 - **Automatisch berechnete Werte** (CollapsibleSection, eingeklappt): Mächtigkeit (dm) via `calcMaechtigkeitDm`; GPV, LK, FK, nFK je Vol% + l/m² mit verbaler Bewertung; KAK via `calcKAK` (mit `rateKAK`); Basensättigung via `calcBasensaettigung`. Berechnungen werden in `useEffect`-Hooks getriggert und via `setValue` persistiert.
 
-Alle Felder verwenden `Controller` (keine uncontrolled Inputs mehr). Keyboard-Avoidance über das geteilte `useNotizenScroll`-Hook.
+Alle Felder verwenden `Controller` (keine uncontrolled Inputs mehr). Einheiten (Vol%, l/m², cmol_c/kg, %) werden über den geteilten `localStyles.unit`-Stil (`color: colors.primary`, `fontSize: 13`) neben den jeweiligen Inputs angezeigt — analog zu `AufnahmeForm`. Der `Lagerungsdichte`-Modal-Handler (`onConfirm`) extrahiert beim Übernehmen alle numerischen Teile, normalisiert Komma → Punkt und übernimmt einen einzelnen Wert oder einen Bereich im Format `1.2 - 1.5` (statt die Einheit `kg/dm³` mitzukopieren). Keyboard-Avoidance über das geteilte `useNotizenScroll`-Hook.
 
 ### `components/AufnahmeForm.tsx`
 React-Hook-Form-Formular für Standortdaten einer Aufnahme. Auto-speichert via `watch` (mit `onSaveRef`-Schutz wie bei `HorizonForm`). Dropdown-Optionen kommen aus `utils/aufnahmeOptions.ts`. Felder mit Formblatt-Nummern in Klammern. Sektionen:
@@ -147,7 +147,7 @@ React-Hook-Form-Formular für Standortdaten einer Aufnahme. Auto-speichert via `
 - **Erweiterte Bodenaufnahme** (CollapsibleSection, eingeklappt): 17 Felder (Hangneigung … Erosionsgrad), datengesteuert via `.map()` über `[name, label, placeholder]`-Tupel.
 - **Automatisch berechnete Werte** (CollapsibleSection, eingeklappt): Gründigkeit (cm), readonly, vom Screen befüllt. Effektiver Wurzelraum (cm), editierbar, wird in DB gespeichert. Feldkapazität bis 1 m (l/m² + Bewertung), Nutzbare Feldkapazität (l/m² + Bewertung) und S-Wert (im eff. Wurzelraum, mol_c/m² + Bewertung) — alle readonly, berechnet aus den per Prop übergebenen Horizonten via `calcProfileFKOrNFK` und `calcProfileSWert`.
 
-Props: `initialData`, `onSave`, `calcGrundigkeit?`, `horizonte?`, `onNotizenFocus?`, `onNotizenBlur?`.
+Props: `initialData`, `onSave`, `calcGrundigkeit?`, `horizonte?`, `onNotizenFocus?`, `onNotizenBlur?`. Einheiten (`cm`, `mm`, `°C`, `l/m²`) werden über `localStyles.unit` neben den jeweiligen Inputs angezeigt (Effektiver Wurzelraum, Mittl. Niederschlag, Mittl. Temperatur, Gründigkeit, Feldkapazität, Nutzbare Feldkapazität).
 
 ### `components/PictureTaker.tsx`
 Kamera-Screen für die Bodenfarb-Analyse. Overlay-Rechtecke (Greycard und Bodenprobe) werden aus `utils/cameraOverlay.ts` (`OVERLAY_FRACTIONS.*.display`) berechnet, sodass UI und Extraktor dieselbe Quelle teilen. Akzeptiert optionalen `onConfirm(munsell)`-Prop.
@@ -277,28 +277,3 @@ Lagerungsdichte Ld1–Ld5 per Stechzylinder- und Fingerprobe.
 
 ### `scripts/generateMunsellData.js`
 Erzeugt `utils/munsellData.ts` aus dem RIT Munsell Renotation Dataset (`real.dat`). Wendet eine Bradford-Chromatic-Adaptation (Illuminant C → D65) an und konvertiert xyY → XYZ → sRGB. Wird nur manuell ausgeführt, nicht zur Laufzeit.
-
----
-
-## Änderungen — Sitzung 2026-05-16
-
-Kurzüberblick der im Verlauf dieser Sitzung vorgenommenen Änderungen (UI-, Form- und Hilfslogik):
-
-- **components/HorizonForm.tsx**
-	- `PoreReadout`: Prozent-Unit von `%` auf `Vol%` geändert.
-	- Units (z. B. Vol%, l/m², cmol_c/kg für KAK, %) wurden in mehreren Feldern aus den Überschriften entfernt und als Unit-Labels nach den jeweiligen Eingabefeldern eingefügt (konsistente Platzierung neben Inputs).
-	- Einheit-Style (`localStyles.unit`) vereinheitlicht auf `color: colors.primary` und `fontSize: 13` (keine Font-Weight-Änderung), um mit `AufnahmeForm` übereinzustimmen.
-	- Überschreibungen großer Inline-`%`-Labels bei `Tonanteil` und `Skelettanteil` durch das gemeinsame `localStyles.unit` ersetzt, damit die Unit-Größen konsistent sind.
-	- `Lagerungsdichte`-Modal-Handler: `onConfirm` bereinigt nun die übernommenen Werte — extrahiert alle numerischen Teile, normalisiert Komma → Punkt und übernimmt Zahlen bzw. Zahlenbereiche im Format `1.2 - 1.5` (statt die Einheit `kg/dm³` mitzukopieren).
-
-- **components/AufnahmeForm.tsx**
-	- Units für mehrere Felder verschoben, sodass z. B. `Effektiver Wurzelraum` das Unit-Label `cm`, `Mittl. Niederschlag` → `mm`, `Mittl. Temperatur` → `°C`, `Gründigkeit` → `cm`, sowie `Feldkapazität / Nutzbare Feldkapazität` → `l/m²` nach den Eingaben angezeigt werden.
-	- `localStyles.unit` eingeführt (Farbe + Größe) und Inline-Wrapper verwendet, um das Unit-Label neben Inputs konsistent darzustellen.
-
-- **app/mapping/index.tsx**
-	- `ResetInstructionButton` wird jetzt mit einem expliziten `style`-Prop (`position: 'relative', alignSelf: 'stretch'`) gerendert, damit es inline in der `bottomBar` sitzt und nicht absolut über der Schaltfläche `+ Neue Kampagne` liegt (vermeidet Überlappung).
-
-- **components/LagerungsdichteTool.tsx / Interaktion**
-	- Keine Änderung an `LagerungsdichteTool` selbst (Wrapper um `DecisionTree`), aber die `HorizonForm`-Seite wertet nun die vom Tool zurückgelieferten Strings robust aus und übernimmt nur die numerischen Teile (Unterstützung für Einzelwert und numerische Bereiche).
-
-Hinweis: Die Änderungen zielen auf konsistente Unit-Platzierung, verbesserte Übernahme-Logik von Tool-Ergebnissen und einheitliche Unit-Styling ab. Wenn du möchtest, kann ich die Unit-Komponenten weiter vereinfachen (z. B. gemeinsames `InputWithUnit`-Component, zentrale Unit-Constants in `utils/`) — sag Bescheid, welche Priorität das haben soll.

@@ -9,13 +9,14 @@ import {
   Modal,
 } from "react-native";
 import ValidatedField from "@/components/ValidatedField";
-import { validateBodenart, validateTonanteil } from "@/utils/fieldValidation";
+import { validateBodenart, validateHumusgehalt } from "@/utils/fieldValidation";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import { calcKAK, rateKAK } from "@/utils/MappingMaths";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TexTree from "@/components/TexTree";
 import HumusgehaltTool from "@/components/HumusgehaltTool";
+import HumusformLexikonContent from "@/components/HumusformLexikonContent";
 
 const HUMUSFORM_OPTIONS = ["Mull", "Moder", "Rohhumus"] as const;
 type Humusform = (typeof HUMUSFORM_OPTIONS)[number];
@@ -24,7 +25,9 @@ export default function KAKTool() {
   const [bodenart, setBodenart] = useState("");
   const [humusform, setHumusform] = useState<Humusform | null>(null);
   const [humusPct, setHumusPct] = useState("");
-  const [activeModal, setActiveModal] = useState<"bodenart" | "humus" | null>(null);
+  const [activeModal, setActiveModal] = useState<
+    "bodenart" | "humus" | "humusform" | null
+  >(null);
 
   const allFilled =
     bodenart.trim() !== "" &&
@@ -88,6 +91,12 @@ export default function KAKTool() {
             </TouchableOpacity>
           ))}
         </View>
+        <TouchableOpacity
+          style={[styles.actionButton, localStyles.toolBtn, { marginTop: 8 }]}
+          onPress={() => setActiveModal("humusform")}
+        >
+          <Text style={styles.actionButtonText}>Humusformlexikon</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={localStyles.fieldGroup}>
@@ -100,7 +109,7 @@ export default function KAKTool() {
             keyboardType="decimal-pad"
             onChangeText={setHumusPct}
             value={humusPct}
-            validate={validateTonanteil}
+            validate={validateHumusgehalt}
             fieldLabel="Humusgehalt (%)"
           />
           <Text style={localStyles.unit}>%</Text>
@@ -166,6 +175,21 @@ export default function KAKTool() {
             setActiveModal(null);
           }}
         />
+      </SafeAreaView>
+    </Modal>
+
+    <Modal
+      visible={activeModal === "humusform"}
+      animationType="slide"
+      onRequestClose={() => setActiveModal(null)}
+    >
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+        <View style={localStyles.modalHeader}>
+          <TouchableOpacity onPress={() => setActiveModal(null)}>
+            <Text style={localStyles.modalClose}>✕ Schließen</Text>
+          </TouchableOpacity>
+        </View>
+        <HumusformLexikonContent />
       </SafeAreaView>
     </Modal>
     </>

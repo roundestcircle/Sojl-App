@@ -139,13 +139,13 @@ function canonicalizeMunsell(input: string): string | null {
 // ─── Lagerungsdichte ──────────────────────────────────────────────────────────
 
 const LAGERUNGSDICHTE_TOOL_STRINGS: ListItem[] = [
-  { value: "0,9–1,2 kg/dm³", label: "leichte Böden, sehr locker" },
-  { value: "1,0–1,2 kg/dm³", label: "schwere Böden, sehr locker" },
-  { value: "1,2–1,4 kg/dm³", label: "locker" },
-  { value: "1,4–1,6 kg/dm³", label: "mittel" },
-  { value: "1,6–1,8 kg/dm³", label: "dicht (leichte Böden)" },
-  { value: "1,6–1,7 kg/dm³", label: "sehr dicht (schwere Böden)" },
-  { value: "1,8–1,9 kg/dm³", label: "sehr dicht (leichte Böden)" },
+  { value: "0,9–1,2", label: "leichte Böden, sehr locker" },
+  { value: "1,0–1,2", label: "schwere Böden, sehr locker" },
+  { value: "1,2–1,4", label: "locker" },
+  { value: "1,4–1,6", label: "mittel" },
+  { value: "1,6–1,8", label: "dicht (leichte Böden)" },
+  { value: "1,6–1,7", label: "sehr dicht (schwere Böden)" },
+  { value: "1,8–1,9", label: "sehr dicht (leichte Böden)" },
 ];
 
 const LD_MIN = 0.5;
@@ -189,7 +189,7 @@ function validateRange(
     description: string;
   },
 ): ValidationResult {
-  const cleaned = raw.trim().replace(",", ".");
+  const cleaned = raw.trim().replace(/,/g, ".");
   if (cleaned === "") return { valid: true };
   const n = Number(cleaned);
   const fail: ValidationResult = {
@@ -228,6 +228,15 @@ export function validateTonanteil(raw: string): ValidationResult {
     max: 100,
     unit: "%",
     description: "Tonanteil in Prozent (0–100).",
+  });
+}
+
+export function validateHumusgehalt(raw: string): ValidationResult {
+  return validateRange(raw, {
+    min: 0,
+    max: 100,
+    unit: "%",
+    description: "Humusgehalt in Massenprozent (0–100).",
   });
 }
 

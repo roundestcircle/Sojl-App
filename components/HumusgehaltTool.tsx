@@ -102,9 +102,11 @@ export default function HumusgehaltTool({
         contentContainerStyle={localStyles.container}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ── Chroma ── */}
+        {/* ── Munsell Farbe ── */}
         <View style={localStyles.fieldGroup}>
-          <Text style={localStyles.label}>Munsell Chroma (feucht)</Text>
+          <Text style={localStyles.label}>Munsell Farbe (feucht)</Text>
+
+          <Text style={localStyles.subLabel}>Chroma</Text>
           <View style={localStyles.chromaRow}>
             {CHROMA_OPTIONS.map((opt) => (
               <TouchableOpacity
@@ -134,11 +136,8 @@ export default function HumusgehaltTool({
               </TouchableOpacity>
             ))}
           </View>
-        </View>
 
-        {/* ── Value ── */}
-        <View style={localStyles.fieldGroup}>
-          <Text style={localStyles.label}>Munsell Value (feucht)</Text>
+          <Text style={[localStyles.subLabel, { marginTop: 8 }]}>Value</Text>
           <Text style={localStyles.hint}>Helligkeit 1 (dunkel) – 8 (hell)</Text>
           <ValidatedField
             style={styles.input}
@@ -174,7 +173,7 @@ export default function HumusgehaltTool({
               fieldLabel="Bodenart"
             />
             <TouchableOpacity
-              style={[styles.actionButton, localStyles.toolBtn]}
+              style={[styles.actionButton, localStyles.halfRowBtn]}
               onPress={() => setActiveModal("bodenart")}
             >
               <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
@@ -197,10 +196,10 @@ export default function HumusgehaltTool({
               fieldLabel="Tongehalt (%)"
             />
             <TouchableOpacity
-              style={[styles.actionButton, localStyles.estimateBtn]}
+              style={[styles.actionButton, localStyles.halfRowBtn]}
               onPress={estimateClayFromBodenart}
             >
-              <Text style={styles.actionButtonText}>Ton abschätzen</Text>
+              <Text style={styles.actionButtonText}>Aus BA abschätzen</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -348,6 +347,11 @@ const localStyles = StyleSheet.create({
     fontWeight: "600",
     color: colors.primary,
   },
+  subLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.primary,
+  },
   hint: {
     fontSize: 12,
     color: "#888",
@@ -387,10 +391,7 @@ const localStyles = StyleSheet.create({
     gap: 8,
     alignItems: "center",
   },
-  estimateBtn: {
-    paddingHorizontal: 10,
-  },
-  modalOverlay: {
+modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
@@ -425,6 +426,12 @@ const localStyles = StyleSheet.create({
   toolBtn: {
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  halfRowBtn: {
+    width: 150,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    alignItems: "center",
   },
   modalHeader: {
     flexDirection: "row",

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, Modal, TouchableOpacity } from "react-native";
 import ValidatedField from "@/components/ValidatedField";
-import { validatePh, validateTonanteil } from "@/utils/fieldValidation";
+import { validatePh, validateHumusgehalt } from "@/utils/fieldValidation";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import {
@@ -54,7 +54,7 @@ export default function BasensaettigungTool() {
             keyboardType="decimal-pad"
             onChangeText={setHumusPct}
             value={humusPct}
-            validate={validateTonanteil}
+            validate={validateHumusgehalt}
             fieldLabel="Humusgehalt (%)"
           />
           <Text style={localStyles.unit}>%</Text>

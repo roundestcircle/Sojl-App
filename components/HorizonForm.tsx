@@ -381,7 +381,7 @@ export default function HorizontFormular({
                 )}
               />
               <TouchableOpacity
-                style={[styles.actionButton, localStyles.toolBtn]}
+                style={[styles.actionButton, localStyles.halfRowBtn]}
                 onPress={() => setActiveModal("lexikon")}
               >
                 <Text style={styles.actionButtonText}>Lexikon</Text>
@@ -459,7 +459,7 @@ export default function HorizontFormular({
                 )}
               />
               <TouchableOpacity
-                style={[styles.actionButton, localStyles.toolBtn]}
+                style={[styles.actionButton, localStyles.halfRowBtn]}
                 onPress={() => setActiveModal("bodenart")}
               >
                 <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
@@ -497,7 +497,7 @@ export default function HorizontFormular({
                 <Text style={localStyles.unit}>%</Text>
               </View>
               <TouchableOpacity
-                style={[styles.actionButton, localStyles.toolBtn]}
+                style={[styles.actionButton, localStyles.halfRowBtn]}
                 onPress={() => {
                   const clay = bodenartToClay(watchedBodenart);
                   if (clay !== null) {
@@ -542,7 +542,7 @@ export default function HorizontFormular({
                 <Text style={localStyles.unit}>%</Text>
               </View>
               <TouchableOpacity
-                style={[styles.actionButton, localStyles.toolBtn]}
+                style={[styles.actionButton, localStyles.halfRowBtn]}
                 onPress={() => setActiveModal("anteil")}
               >
                 <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
@@ -583,7 +583,7 @@ export default function HorizontFormular({
                 )}
               />
               <TouchableOpacity
-                style={[styles.actionButton, localStyles.toolBtn]}
+                style={[styles.actionButton, localStyles.halfRowBtn]}
                 onPress={() => setActiveModal("farbe")}
               >
                 <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
@@ -607,7 +607,7 @@ export default function HorizontFormular({
                 />
               </View>
               <TouchableOpacity
-                style={[styles.actionButton, localStyles.toolBtn]}
+                style={[styles.actionButton, localStyles.halfRowBtn]}
                 onPress={() => setActiveModal("carbonat")}
               >
                 <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
@@ -633,7 +633,7 @@ export default function HorizontFormular({
               />
               <Text style={localStyles.unit}>kg/dm³</Text>
               <TouchableOpacity
-                style={[styles.actionButton, localStyles.toolBtn]}
+                style={[styles.actionButton, localStyles.halfRowBtn]}
                 onPress={() => setActiveModal("lagerungsdichte")}
               >
                 <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
@@ -657,7 +657,7 @@ export default function HorizontFormular({
                 />
               </View>
               <TouchableOpacity
-                style={[styles.actionButton, localStyles.toolBtn]}
+                style={[styles.actionButton, localStyles.halfRowBtn]}
                 onPress={() => setActiveModal("feinwurzeln")}
               >
                 <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
@@ -680,7 +680,7 @@ export default function HorizontFormular({
                 )}
               />
               <TouchableOpacity
-                style={[styles.actionButton, localStyles.toolBtn]}
+                style={[styles.actionButton, localStyles.halfRowBtn]}
                 onPress={() => setActiveModal("gefuege")}
               >
                 <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
@@ -1290,6 +1290,12 @@ const localStyles = StyleSheet.create({
   toolBtn: {
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  halfRowBtn: {
+    width: 150,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    alignItems: "center",
   },
   multiline: {
     minHeight: 100,

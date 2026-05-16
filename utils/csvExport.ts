@@ -27,18 +27,18 @@ type AufnahmeCSVRow = {
   effektiver_wurzelraum: string;
   reliefpos: string;
   expos: string;
+  hangneigung: string;
+  reliefformtyp: string;
+  mikrorelief: string;
   nutzung: string;
   vegetation: string;
   witterung: string;
   mittl_n: string;
   mittl_temp: string;
-  notizen: string;
-  hangneigung: string;
-  reliefformtyp: string;
-  mikrorelief: string;
   nat_bodenabtrag: string;
   kuenstl_bodenabtrag: string;
   anthropogene_veraend: string;
+  erosionsgrad: string;
   bodenoberflaeche: string;
   versiegelungsart: string;
   regenwuermer: string;
@@ -49,18 +49,20 @@ type AufnahmeCSVRow = {
   grundnaessestufe: string;
   besond_wasserverh: string;
   stau_haftnaessestufe: string;
-  erosionsgrad: string;
+  notizen: string;
 };
 
 type HorizontCSVRow = {
   aufnahme_id: number;
   horizont_nr: number;
+  status: string;
   horizontname: string;
   tiefe_oben: string;
   tiefe_unten: string;
   maechtigk_dm: string;
   farbe_munsell: string;
   bodenart: string;
+  tonanteil: string;
   anteil: string;
   ph_cacl2: string;
   humus: string;
@@ -69,8 +71,6 @@ type HorizontCSVRow = {
   lagerungsdichte: string;
   feinwurzeln: string;
   gefuege: string;
-  notizen: string;
-  status: string;
   bodenfeuchte: string;
   konsistenz: string;
   oxidationsmerkmale: string;
@@ -94,7 +94,6 @@ type HorizontCSVRow = {
   bes_strukturen: string;
   geruch: string;
   substratart: string;
-  probennummern: string;
   gpv_pct: string;
   gpv_lm2: string;
   lk_pct: string;
@@ -105,7 +104,8 @@ type HorizontCSVRow = {
   nfk_lm2: string;
   kak: string;
   basensaettigung: string;
-  tonanteil: string;
+  notizen: string;
+  probennummern: string;
 };
 
 // ─── Shared internals ─────────────────────────────────────────────────────────
@@ -134,18 +134,18 @@ function buildRows(aufnahmen: Aufnahme[]): {
       a.effektiver_wurzelraum != null ? String(a.effektiver_wurzelraum) : "",
     reliefpos: a.reliefpos ?? "",
     expos: a.expos ?? "",
+    hangneigung: a.hangneigung ?? "",
+    reliefformtyp: a.reliefformtyp ?? "",
+    mikrorelief: a.mikrorelief ?? "",
     nutzung: a.nutzung ?? "",
     vegetation: a.vegetation ?? "",
     witterung: a.witterung ?? "",
     mittl_n: a.mittl_n != null ? String(a.mittl_n) : "",
     mittl_temp: a.mittl_temp != null ? String(a.mittl_temp) : "",
-    notizen: a.notizen ?? "",
-    hangneigung: a.hangneigung ?? "",
-    reliefformtyp: a.reliefformtyp ?? "",
-    mikrorelief: a.mikrorelief ?? "",
     nat_bodenabtrag: a.nat_bodenabtrag ?? "",
     kuenstl_bodenabtrag: a.kuenstl_bodenabtrag ?? "",
     anthropogene_veraend: a.anthropogene_veraend ?? "",
+    erosionsgrad: a.erosionsgrad ?? "",
     bodenoberflaeche: a.bodenoberflaeche ?? "",
     versiegelungsart: a.versiegelungsart ?? "",
     regenwuermer: a.regenwuermer ?? "",
@@ -156,7 +156,7 @@ function buildRows(aufnahmen: Aufnahme[]): {
     grundnaessestufe: a.grundnaessestufe ?? "",
     besond_wasserverh: a.besond_wasserverh ?? "",
     stau_haftnaessestufe: a.stau_haftnaessestufe ?? "",
-    erosionsgrad: a.erosionsgrad ?? "",
+    notizen: a.notizen ?? "",
   }));
 
   const horizonteRows: HorizontCSVRow[] = [];
@@ -165,12 +165,14 @@ function buildRows(aufnahmen: Aufnahme[]): {
       horizonteRows.push({
         aufnahme_id: aufnahme.id,
         horizont_nr: h.nummer,
+        status: h.status,
         horizontname: h.horizontname ?? "",
         tiefe_oben: h.tiefe_oben ?? "",
         tiefe_unten: h.tiefe_unten ?? "",
         maechtigk_dm: h.maechtigk_dm ?? "",
         farbe_munsell: h.farbe_munsell ?? "",
         bodenart: h.bodenart ?? "",
+        tonanteil: h.tonanteil ?? "",
         anteil: h.anteil ?? "",
         ph_cacl2: h.ph_cacl2 != null ? String(h.ph_cacl2) : "",
         humus: h.humus ?? "",
@@ -179,8 +181,6 @@ function buildRows(aufnahmen: Aufnahme[]): {
         lagerungsdichte: h.lagerungsdichte ?? "",
         feinwurzeln: h.feinwurzeln ?? "",
         gefuege: h.gefuege ?? "",
-        notizen: h.notizen ?? "",
-        status: h.status,
         bodenfeuchte: h.bodenfeuchte ?? "",
         konsistenz: h.konsistenz ?? "",
         oxidationsmerkmale: h.oxidationsmerkmale ?? "",
@@ -204,7 +204,6 @@ function buildRows(aufnahmen: Aufnahme[]): {
         bes_strukturen: h.bes_strukturen ?? "",
         geruch: h.geruch ?? "",
         substratart: h.substratart ?? "",
-        probennummern: h.probennummern ?? "",
         gpv_pct: h.gpv_pct ?? "",
         gpv_lm2: h.gpv_lm2 ?? "",
         lk_pct: h.lk_pct ?? "",
@@ -215,7 +214,8 @@ function buildRows(aufnahmen: Aufnahme[]): {
         nfk_lm2: h.nfk_lm2 ?? "",
         kak: h.kak ?? "",
         basensaettigung: h.basensaettigung ?? "",
-        tonanteil: h.tonanteil ?? "",
+        notizen: h.notizen ?? "",
+        probennummern: h.probennummern ?? "",
       });
     }
   }

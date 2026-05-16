@@ -903,7 +903,7 @@ export default function AufnahmeForm({
           <View style={localStyles.poreBlock}>
             <View style={localStyles.headingRow}>
               <Text style={styles.sectionTitle}>Feldkapazität bis 1 m</Text>
-              <InfoButton text="Profilsumme der Feldkapazität über alle Horizonte bis 1 m Tiefe in l/m². Benötigt Bodenart, Lagerungsdichte und Mächtigkeit in den Horizonten." />
+              <InfoButton text="Profilsumme der Feldkapazität über alle Horizonte bis 1 m Tiefe in l/m². Benötigt Bodenart, Packungsdichte (für die Trockenrohdichte) und Mächtigkeit in den Horizonten." />
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <TextInput
@@ -920,7 +920,7 @@ export default function AufnahmeForm({
               style={[styles.input, styles.readonlyInput]}
               placeholder="Wird berechnet…"
               placeholderTextColor={colors.primary + "66"}
-              value={profileFK != null ? rateFK(profileFK) : ""}
+              value={profileFK != null ? `${rateFK(profileFK)} (KA5)` : ""}
               editable={false}
             />
           </View>
@@ -928,7 +928,7 @@ export default function AufnahmeForm({
           <View style={localStyles.poreBlock}>
             <View style={localStyles.headingRow}>
               <Text style={styles.sectionTitle}>Nutzbare Feldkapazität</Text>
-              <InfoButton text="Profilsumme der nutzbaren Feldkapazität über alle Horizonte bis zum effektiven Wurzelraum in l/m². Benötigt Bodenart, Lagerungsdichte, Mächtigkeit und den eingetragenen effektiven Wurzelraum." />
+              <InfoButton text="Profilsumme der nutzbaren Feldkapazität über alle Horizonte bis zum effektiven Wurzelraum in l/m². Benötigt Bodenart, Packungsdichte (für die Trockenrohdichte), Mächtigkeit und den eingetragenen effektiven Wurzelraum." />
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <TextInput
@@ -945,7 +945,7 @@ export default function AufnahmeForm({
               style={[styles.input, styles.readonlyInput]}
               placeholder="Wird berechnet…"
               placeholderTextColor={colors.primary + "66"}
-              value={profileNFK != null ? rateNFK(profileNFK) : ""}
+              value={profileNFK != null ? `${rateNFK(profileNFK)} (KA5)` : ""}
               editable={false}
             />
           </View>
@@ -955,7 +955,7 @@ export default function AufnahmeForm({
               <Text style={styles.sectionTitle}>
                 S-Wert (im eff. Wurzelraum)
               </Text>
-              <InfoButton text="Sorptionssumme im effektiven Wurzelraum in mol&#x2c;/m². Berechnet als KAK × (Basensättigung/100) × Lagerungsdichte × Mächtigkeit je Horizont. A-Horizonte gehen vollständig ein, alle anderen zur Hälfte. Benötigt KAK, Basensättigung und Lagerungsdichte in den Horizonten." />
+              <InfoButton text="Sorptionssumme im effektiven Wurzelraum in mol&#x2c;/m². Berechnet als KAK × (Basensättigung/100) × Trockenrohdichte × Mächtigkeit je Horizont. A-Horizonte gehen vollständig ein, alle anderen zur Hälfte. Benötigt KAK, Basensättigung und Trockenrohdichte (aus Packungsdichte abgeleitet) in den Horizonten." />
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <TextInput

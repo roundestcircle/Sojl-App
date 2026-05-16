@@ -68,7 +68,8 @@ type HorizontCSVRow = {
   humus: string;
   humus_pct: string;
   carbonat: string;
-  lagerungsdichte: string;
+  packungsdichte: string;
+  trockenrohdichte: string;
   feinwurzeln: string;
   gefuege: string;
   bodenfeuchte: string;
@@ -178,7 +179,8 @@ function buildRows(aufnahmen: Aufnahme[]): {
         humus: h.humus ?? "",
         humus_pct: h.humus_pct ?? "",
         carbonat: h.carbonat ?? "",
-        lagerungsdichte: h.lagerungsdichte ?? "",
+        packungsdichte: h.packungsdichte ?? "",
+        trockenrohdichte: h.trockenrohdichte ?? "",
         feinwurzeln: h.feinwurzeln ?? "",
         gefuege: h.gefuege ?? "",
         bodenfeuchte: h.bodenfeuchte ?? "",

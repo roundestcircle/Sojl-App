@@ -1,7 +1,6 @@
 import {
   lookupPoreValues,
-  soilGroupFromBodenart,
-  getHumusAdjustmentInterpolated,
+  applyHumusCorrection,
   parseDensityMidpoint,
 } from "./PoreLookUp";
 import type { Horizont } from "./HorizonQueries";
@@ -39,27 +38,44 @@ export type Rating =
   | "hoch"
   | "sehr hoch";
 
-// ─── GPV (Gesamtporenvolumen) in Vol% ───────────────────────────────────────
-// Thresholds: <30, 30–40, 40–50, 50–60, >60
+// ─── KA6 Tabelle B9 — Vol-%-Schwellen (Bezug pF 1,8) ────────────────────────
+
 export function rateGPV(value: number): Rating {
-  if (value < 30) return "sehr gering";
+  if (value < 35) return "sehr gering";
   if (value < 40) return "gering";
-  if (value < 50) return "mittel";
-  if (value < 60) return "hoch";
+  if (value < 47) return "mittel";
+  if (value < 56) return "hoch";
   return "sehr hoch";
 }
 
-// ─── LK (Luftkapazität) in Vol% ─────────────────────────────────────────────
 export function rateLK(value: number): Rating {
-  if (value < 2) return "sehr gering";
-  if (value < 4) return "gering";
-  if (value < 12) return "mittel";
-  if (value < 20) return "hoch";
+  if (value < 4) return "sehr gering";
+  if (value < 8) return "gering";
+  if (value < 14) return "mittel";
+  if (value < 22) return "hoch";
   return "sehr hoch";
 }
 
-// ─── FK (Feldkapazität) in Ltr./m²·We ────────────────────────────────────────
-// Thresholds: <130, 130–260, 260–390, 390–520, >520
+export function rateFK_pct(value: number): Rating {
+  if (value < 22) return "sehr gering";
+  if (value < 30) return "gering";
+  if (value < 38) return "mittel";
+  if (value < 46) return "hoch";
+  return "sehr hoch";
+}
+
+export function rateNFK_pct(value: number): Rating {
+  if (value < 11) return "sehr gering";
+  if (value < 15) return "gering";
+  if (value < 20) return "mittel";
+  if (value < 26) return "hoch";
+  return "sehr hoch";
+}
+
+// ─── KA5-Profilsummen-Schwellen in Ltr./m²·We ───────────────────────────────
+// Werden auf die Profilsummen (`calcProfileFKOrNFK`) angewandt; AufnahmeForm
+// kennzeichnet die Anzeige zusätzlich mit "(KA5)".
+
 export function rateFK(value: number): Rating {
   if (value < 130) return "sehr gering";
   if (value < 260) return "gering";
@@ -68,36 +84,12 @@ export function rateFK(value: number): Rating {
   return "sehr hoch";
 }
 
-// ─── nFK (nutzbare Feldkapazität) in Ltr./m²·We ─────────────────────────────
-// Thresholds: <50, 50–90, 90–140, 140–200, >200
 export function rateNFK(value: number): Rating {
   if (value < 50) return "sehr gering";
   if (value < 90) return "gering";
   if (value < 140) return "mittel";
   if (value < 200) return "hoch";
   return "sehr hoch";
-}
-
-// ─── Helper: get all ratings for a set of values ───────────────────────────
-export interface SoilRatings {
-  gpv: Rating;
-  lk: Rating;
-  fk: Rating;
-  nfk: Rating;
-}
-
-export function rateAll(
-  gpv: number,
-  lk: number,
-  fk: number,
-  nfk: number,
-): SoilRatings {
-  return {
-    gpv: rateGPV(gpv),
-    lk: rateLK(lk),
-    fk: rateFK(fk),
-    nfk: rateNFK(nfk),
-  };
 }
 
 // ─── Pore capacity calculation ──────────────────────────────────────────────
@@ -115,42 +107,35 @@ export interface PoreResult {
 
 /**
  * Calculates all four pore capacity values (Vol%, l/m²) for a horizon.
- * Returns null if bodenart or lagerungsdichte cannot be resolved to a lookup entry.
+ * Returns null if bodenart or trockenrohdichte cannot be resolved to a lookup entry.
  *
  * Pipeline: lookup base values → apply humus adjustment → apply skeleton correction → scale to l/m².
  */
 export function calcPoreCapacities(
   bodenart: string,
-  lagerungsdichte: string,
+  trockenrohdichte: string,
   humusPct: string,
   skelettPct: string,
   maechtigkDm: string,
 ): PoreResult | null {
-  const base = lookupPoreValues(bodenart, lagerungsdichte);
+  const base = lookupPoreValues(bodenart, trockenrohdichte);
   if (!base) return null;
 
-  let gpv = base.totalPorosity;
-  let lk = base.airCapacity;
-  let fk = base.fieldCapacity;
-  let nfk = base.availableWater;
-
   const humusNum = parseFloat(humusPct);
-  if (!isNaN(humusNum) && humusNum > 0) {
-    const group = soilGroupFromBodenart(bodenart);
-    gpv += getHumusAdjustmentInterpolated(group, "total", humusNum);
-    lk += getHumusAdjustmentInterpolated(group, "air", humusNum);
-    fk += getHumusAdjustmentInterpolated(group, "field", humusNum);
-    if (!isNaN(nfk))
-      nfk += getHumusAdjustmentInterpolated(group, "available", humusNum);
-  }
+  const corrected =
+    !isNaN(humusNum) && humusNum > 0
+      ? applyHumusCorrection(bodenart, base, humusNum)
+      : base;
 
   const skelett = parseFloat(skelettPct);
   const skelFactor =
     !isNaN(skelett) && skelett >= 0 ? (100 - skelett) / 100 : 1;
-  gpv = Math.max(0, gpv * skelFactor);
-  lk = Math.max(0, lk * skelFactor);
-  fk = Math.max(0, fk * skelFactor);
-  nfk = isNaN(nfk) ? NaN : Math.max(0, nfk * skelFactor);
+  const gpv = Math.max(0, corrected.totalPorosity * skelFactor);
+  const lk = Math.max(0, corrected.airCapacity * skelFactor);
+  const fk = Math.max(0, corrected.fieldCapacity * skelFactor);
+  const nfk = isNaN(corrected.availableWater)
+    ? NaN
+    : Math.max(0, corrected.availableWater * skelFactor);
 
   const fmt = (v: number): string => (isNaN(v) ? "" : v.toFixed(1));
   const maechtigk = parseFloat(maechtigkDm);
@@ -256,7 +241,7 @@ export function rateSWert(value: number): Rating {
 }
 
 /**
- * Sums the S-Wert (KAK × BS/100 × LD × Mächtigkeit) over all horizons up to depthLimitCm.
+ * Sums the S-Wert (KAK × BS/100 × TRD × Mächtigkeit) over all horizons up to depthLimitCm.
  * Horizons with an uppercase 'A' in their name contribute fully (×1); all others ×0.5.
  * Depth-clipping follows the same proportional logic as calcProfileFKOrNFK.
  * Result is in mol_c/m²·We. Returns null if no horizon had all required values.
@@ -273,13 +258,13 @@ export function calcProfileSWert(
     const bot = parseFloat(h.tiefe_unten ?? "");
     const kak = parseFloat(h.kak ?? "");
     const bs = parseFloat(h.basensaettigung ?? "");
-    const ld = parseDensityMidpoint(h.lagerungsdichte ?? "");
+    const trd = parseDensityMidpoint(h.trockenrohdichte ?? "");
     if (
       isNaN(top) ||
       isNaN(bot) ||
       isNaN(kak) ||
       isNaN(bs) ||
-      ld === null ||
+      trd === null ||
       bot <= top
     )
       continue;
@@ -288,7 +273,7 @@ export function calcProfileSWert(
     const maechtigkDm = (clippedBot - top) / 10;
     // A-Horizonte (Ah, Ap, fAh, rAp, …): optional lowercase prefix(es) then capital A.
     const weight = /^[a-z]*A/.test(h.horizontname ?? "") ? 1 : 0.5;
-    total += kak * (bs / 100) * ld * maechtigkDm * weight;
+    total += kak * (bs / 100) * trd * maechtigkDm * weight;
     hasAny = true;
   }
   return hasAny ? total : null;

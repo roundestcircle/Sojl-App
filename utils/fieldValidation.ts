@@ -136,45 +136,11 @@ function canonicalizeMunsell(input: string): string | null {
   return `${hue} ${m[2]}/${m[3]}`;
 }
 
-// ─── Lagerungsdichte ──────────────────────────────────────────────────────────
+// ─── "nicht bestimmt" sentinel ────────────────────────────────────────────────
 
-const LAGERUNGSDICHTE_TOOL_STRINGS: ListItem[] = [
-  { value: "0,9–1,2", label: "leichte Böden, sehr locker" },
-  { value: "1,0–1,2", label: "schwere Böden, sehr locker" },
-  { value: "1,2–1,4", label: "locker" },
-  { value: "1,4–1,6", label: "mittel" },
-  { value: "1,6–1,8", label: "dicht (leichte Böden)" },
-  { value: "1,6–1,7", label: "sehr dicht (schwere Böden)" },
-  { value: "1,8–1,9", label: "sehr dicht (leichte Böden)" },
-];
-
-const LD_MIN = 0.5;
-const LD_MAX = 3.5;
-
-/** Parse "1,4" / "1.4" / "1,4–1,6" / "1.4 - 1.6 kg/dm³" → [lo, hi]. */
-function parseLagerungsdichte(input: string): [number, number] | null {
-  const cleaned = input
-    .trim()
-    .replace(/kg\/dm[³3]?/gi, "")
-    .replace(/,/g, ".")
-    .trim();
-  if (!cleaned) return null;
-  // Range form: "1.4 - 1.6" with any dash/en-dash
-  const rangeMatch = cleaned.match(/^([\d.]+)\s*[–\-]\s*([\d.]+)$/);
-  if (rangeMatch) {
-    const lo = parseFloat(rangeMatch[1]);
-    const hi = parseFloat(rangeMatch[2]);
-    if (isNaN(lo) || isNaN(hi)) return null;
-    return [Math.min(lo, hi), Math.max(lo, hi)];
-  }
-  // Single number
-  const singleMatch = cleaned.match(/^([\d.]+)$/);
-  if (singleMatch) {
-    const v = parseFloat(singleMatch[1]);
-    if (isNaN(v)) return null;
-    return [v, v];
-  }
-  return null;
+/** Accepts "nb" (any case) as a valid sentinel meaning "nicht bestimmt". */
+function isNb(raw: string): boolean {
+  return raw.trim().toLowerCase() === "nb";
 }
 
 // ─── Generic numeric range validator ──────────────────────────────────────────
@@ -189,6 +155,7 @@ function validateRange(
     description: string;
   },
 ): ValidationResult {
+  if (isNb(raw)) return { valid: true, normalized: "nb" };
   const cleaned = raw.trim().replace(/,/g, ".");
   if (cleaned === "") return { valid: true };
   const n = Number(cleaned);
@@ -270,6 +237,7 @@ export function validateEffektiverWurzelraum(raw: string): ValidationResult {
 }
 
 export function validateBodenart(raw: string): ValidationResult {
+  if (isNb(raw)) return { valid: true, normalized: "nb" };
   const trimmed = raw.trim();
   if (trimmed === "") return { valid: true };
   const canonical = BODENART_CANONICAL.get(trimmed.toLowerCase());
@@ -288,6 +256,7 @@ export function validateBodenart(raw: string): ValidationResult {
 }
 
 export function validateMunsell(raw: string): ValidationResult {
+  if (isNb(raw)) return { valid: true, normalized: "nb" };
   const trimmed = raw.trim();
   if (trimmed === "") return { valid: true };
   const canonical = canonicalizeMunsell(trimmed);
@@ -337,24 +306,6 @@ export function validateMunsellValue(raw: string): ValidationResult {
     max: 8,
     description: "Munsell Value (feucht), Helligkeit zwischen 1 (dunkel) und 8 (hell).",
   });
-}
-
-export function validateLagerungsdichte(raw: string): ValidationResult {
-  const trimmed = raw.trim();
-  if (trimmed === "") return { valid: true };
-  const parsed = parseLagerungsdichte(trimmed);
-  const fail: ValidationResult = {
-    valid: false,
-    suggestion: {
-      kind: "list",
-      description: `Lagerungsdichte in kg/dm³, sinnvoller Bereich ${LD_MIN.toLocaleString("de-DE")}–${LD_MAX.toLocaleString("de-DE")}. Häufige Werte aus der Bestimmungshilfe:`,
-      items: LAGERUNGSDICHTE_TOOL_STRINGS,
-    },
-  };
-  if (!parsed) return fail;
-  const [lo, hi] = parsed;
-  if (lo < LD_MIN || hi > LD_MAX) return fail;
-  return { valid: true };
 }
 
 // ─── Cross-field check ────────────────────────────────────────────────────────

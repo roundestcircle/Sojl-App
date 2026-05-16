@@ -34,7 +34,11 @@ export default function ToolsLayout() {
       <Stack.Screen name="carbonat" options={{ title: "Carbonatgehalt" }} />
       <Stack.Screen
         name="lagerungsdichte"
-        options={{ title: "Lagerungsdichte" }}
+        options={{ title: "Lagerungsdichte (KA5)" }}
+      />
+      <Stack.Screen
+        name="packungsdichte"
+        options={{ title: "Packungsdichte (KA6)" }}
       />
       <Stack.Screen name="feinwurzeln" options={{ title: "Feinwurzeln" }} />
       <Stack.Screen name="gefuege" options={{ title: "Gefüge" }} />

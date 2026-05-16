@@ -9,6 +9,17 @@ export const CARBONAT_OPTIONS: LabeledOption[] = [
   { code: "c4", label: "karbonatreich (10–<25 Gew.%)" },
   { code: "c5", label: "karbonatreich (25–<50 Gew.%)" },
   { code: "c6", label: "extrem karbonatreich (≥50 Gew.%)" },
+  { code: "nb", label: "nicht bestimmt" },
+];
+
+/** KA6 Packungsdichte-Klassen (Pd1–Pd5) per Tabelle C47. */
+export const PACKUNGSDICHTE_OPTIONS: LabeledOption[] = [
+  { code: "Pd1", label: "sehr gering" },
+  { code: "Pd2", label: "gering" },
+  { code: "Pd3", label: "mittel" },
+  { code: "Pd4", label: "hoch" },
+  { code: "Pd5", label: "sehr hoch" },
+  { code: "nb", label: "nicht bestimmt" },
 ];
 
 /** KA6 Feinwurzelintensität codes (Wf0–Wf6). */
@@ -20,4 +31,5 @@ export const FEINWURZELN_OPTIONS: LabeledOption[] = [
   { code: "Wf4", label: "stark (11–20/dm²)" },
   { code: "Wf5", label: "sehr stark (21–50/dm²)" },
   { code: "Wf6", label: "extrem stark bis Wurzelfilz (>50/dm²)" },
+  { code: "nb", label: "nicht bestimmt" },
 ];

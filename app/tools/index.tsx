@@ -28,7 +28,14 @@ const TOOL_SECTIONS: ToolSection[] = [
       { label: "Bodentyp bestimmen", href: "/tools/bodentyp" },
       { label: "Anteil schätzen", href: "/tools/anteil" },
       { label: "Carbonatgehalt bestimmen", href: "/tools/carbonat" },
-      { label: "Lagerungsdichte bestimmen", href: "/tools/lagerungsdichte" },
+      {
+        label: "Lagerungsdichte bestimmen (KA5)",
+        href: "/tools/lagerungsdichte",
+      },
+      {
+        label: "Packungsdichte bestimmen (KA6)",
+        href: "/tools/packungsdichte",
+      },
       { label: "Feinwurzeln bestimmen", href: "/tools/feinwurzeln" },
       { label: "Gefüge bestimmen", href: "/tools/gefuege" },
     ],

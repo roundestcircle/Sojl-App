@@ -18,7 +18,8 @@ export type Horizont = {
   humus: string | null;
   humus_pct: string | null;
   carbonat: string | null;
-  lagerungsdichte: string | null;
+  packungsdichte: string | null;
+  trockenrohdichte: string | null;
   feinwurzeln: string | null;
   gefuege: string | null;
   maechtigk_dm: string | null;
@@ -115,7 +116,7 @@ export const HORIZONT_REQUIRED_FOR_VOLLSTAENDIG = [
   "farbe_munsell",
   "humus",
   "carbonat",
-  "lagerungsdichte",
+  "packungsdichte",
   "feinwurzeln",
   "gefuege",
 ] as const satisfies readonly (keyof Horizont)[];
@@ -141,7 +142,8 @@ export function saveHorizont(
       | "humus"
       | "humus_pct"
       | "carbonat"
-      | "lagerungsdichte"
+      | "packungsdichte"
+      | "trockenrohdichte"
       | "feinwurzeln"
       | "gefuege"
       | "maechtigk_dm"
@@ -202,7 +204,8 @@ export function saveHorizont(
          humus              = ?,
          humus_pct          = ?,
          carbonat           = ?,
-         lagerungsdichte    = ?,
+         packungsdichte     = ?,
+         trockenrohdichte   = ?,
          feinwurzeln        = ?,
          gefuege            = ?,
          maechtigk_dm       = ?,
@@ -254,7 +257,8 @@ export function saveHorizont(
     data.humus ?? null,
     data.humus_pct ?? null,
     data.carbonat ?? null,
-    data.lagerungsdichte ?? null,
+    data.packungsdichte ?? null,
+    data.trockenrohdichte ?? null,
     data.feinwurzeln ?? null,
     data.gefuege ?? null,
     data.maechtigk_dm ?? null,

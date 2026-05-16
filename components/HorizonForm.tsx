@@ -23,14 +23,18 @@ import HorizontLexikonContent from "@/components/HorizontLexikonContent";
 import TexTree from "@/components/TexTree";
 import SoilShareScroll from "@/components/SoilShareScroll";
 import CarbonatTool from "@/components/CarbonatTool";
-import LagerungsdichteTool from "@/components/LagerungsdichteTool";
+import PackungsdichteTool from "@/components/PackungsdichteTool";
 import FeinwurzelnTool from "@/components/FeinwurzelnTool";
 import GefuegeTool from "@/components/GefuegeTool";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import InfoButton from "@/components/InfoButton";
 import ValidatedField from "@/components/ValidatedField";
 import LabeledDropdownField from "@/components/LabeledDropdownField";
-import { CARBONAT_OPTIONS, FEINWURZELN_OPTIONS } from "@/utils/horizonOptions";
+import {
+  CARBONAT_OPTIONS,
+  FEINWURZELN_OPTIONS,
+  PACKUNGSDICHTE_OPTIONS,
+} from "@/utils/horizonOptions";
 import {
   validateTiefe,
   validateBodenart,
@@ -38,7 +42,6 @@ import {
   validateAnteil,
   validatePh,
   validateMunsell,
-  validateLagerungsdichte,
   tiefeOrderInvalid,
   TIEFE_ORDER_SUGGESTION,
 } from "@/utils/fieldValidation";
@@ -48,9 +51,12 @@ import {
   calcKAK,
   rateGPV,
   rateLK,
+  rateFK_pct,
+  rateNFK_pct,
   rateKAK,
 } from "@/utils/MappingMaths";
 import { calcBasensaettigung } from "@/utils/BasensaettigungLookup";
+import { lookupTrockenrohdichte } from "@/utils/TrockenrohdichteLookup";
 import {
   bodenartToClay,
   humusKlasse,
@@ -73,7 +79,8 @@ export type HorizontFormData = {
   humus: string;
   humus_pct: string;
   carbonat: string;
-  lagerungsdichte: string;
+  packungsdichte: string;
+  trockenrohdichte: string;
   feinwurzeln: string;
   gefuege: string;
   maechtigk_dm: string;
@@ -128,7 +135,7 @@ type ActiveModal =
   | "bodenart"
   | "anteil"
   | "carbonat"
-  | "lagerungsdichte"
+  | "packungsdichte"
   | "feinwurzeln"
   | "gefuege"
   | "lexikon"
@@ -163,7 +170,8 @@ export default function HorizontFormular({
       humus: initialData?.humus ?? "",
       humus_pct: initialData?.humus_pct ?? "",
       carbonat: initialData?.carbonat ?? "",
-      lagerungsdichte: initialData?.lagerungsdichte ?? "",
+      packungsdichte: initialData?.packungsdichte ?? "",
+      trockenrohdichte: initialData?.trockenrohdichte ?? "",
       feinwurzeln: initialData?.feinwurzeln ?? "",
       gefuege: initialData?.gefuege ?? "",
       maechtigk_dm: initialData?.maechtigk_dm ?? "",
@@ -246,11 +254,14 @@ export default function HorizontFormular({
   const watchedBodenart = watch("bodenart");
   const watchedTiefeOben = watch("tiefe_oben");
   const watchedTiefeUnten = watch("tiefe_unten");
-  const watchedLagerungsdichte = watch("lagerungsdichte");
+  const watchedPackungsdichte = watch("packungsdichte");
+  const watchedTrockenrohdichte = watch("trockenrohdichte");
   const watchedHumusPct = watch("humus_pct");
   const watchedAnteil = watch("anteil");
   const watchedGpvPct = watch("gpv_pct");
   const watchedLkPct = watch("lk_pct");
+  const watchedFkPct = watch("fk_pct");
+  const watchedNfkPct = watch("nfk_pct");
   const watchedKak = watch("kak");
   const watchedTonanteil = watch("tonanteil");
 
@@ -261,11 +272,21 @@ export default function HorizontFormular({
     );
   }, [watchedTiefeOben, watchedTiefeUnten, setValue]);
 
+  // Recompute Trockenrohdichte (TRD) whenever the inputs to the B2 lookup change.
+  // TRD = f(bodenart, packungsdichte-class) per KA6 Tabelle B2. Empty when either
+  // is missing or the bodenart isn't in the reference table.
+  useEffect(() => {
+    setValue(
+      "trockenrohdichte",
+      lookupTrockenrohdichte(watchedBodenart, watchedPackungsdichte),
+    );
+  }, [watchedBodenart, watchedPackungsdichte, setValue]);
+
   useEffect(() => {
     const maechtigkDm = calcMaechtigkeitDm(watchedTiefeOben, watchedTiefeUnten);
     const result = calcPoreCapacities(
       watchedBodenart,
-      watchedLagerungsdichte,
+      watchedTrockenrohdichte,
       watchedHumusPct,
       watchedAnteil,
       maechtigkDm,
@@ -287,7 +308,7 @@ export default function HorizontFormular({
     }
   }, [
     watchedBodenart,
-    watchedLagerungsdichte,
+    watchedTrockenrohdichte,
     watchedHumusPct,
     watchedAnteil,
     watchedTiefeOben,
@@ -596,27 +617,25 @@ export default function HorizontFormular({
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.fieldLabel}>Lagerungsdichte (42)</Text>
+            <Text style={styles.fieldLabel}>Packungsdichte (42)</Text>
             <View style={localStyles.fieldWithTool}>
-              <Controller
-                control={control}
-                name="lagerungsdichte"
-                render={({ field: { onChange, value } }) => (
-                  <ValidatedField
-                    style={[styles.input, { flex: 1 }]}
-                    placeholder="z.B. 1,5 oder 1,4–1,6"
-                    placeholderTextColor={colors.primary + "66"}
-                    onChangeText={onChange}
-                    value={value}
-                    validate={validateLagerungsdichte}
-                    fieldLabel="Lagerungsdichte"
-                  />
-                )}
-              />
-              <Text style={localStyles.unit}>kg/dm³</Text>
+              <View style={{ flex: 1 }}>
+                <Controller
+                  control={control}
+                  name="packungsdichte"
+                  render={({ field: { onChange, value } }) => (
+                    <LabeledDropdownField
+                      value={value}
+                      options={PACKUNGSDICHTE_OPTIONS}
+                      placeholder="Auswählen…"
+                      onChange={onChange}
+                    />
+                  )}
+                />
+              </View>
               <TouchableOpacity
                 style={[styles.actionButton, localStyles.halfRowBtn]}
-                onPress={() => setActiveModal("lagerungsdichte")}
+                onPress={() => setActiveModal("packungsdichte")}
               >
                 <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
               </TouchableOpacity>
@@ -903,13 +922,36 @@ export default function HorizontFormular({
               </View>
             </View>
 
+            <View style={localStyles.poreBlock}>
+              <View style={localStyles.headingRow}>
+                <Text style={styles.sectionTitle}>Trockenrohdichte (TRD)</Text>
+                <InfoButton text="Mittlere Trockenrohdichte (TRD) nach KA6 Tabelle B2 (Renger et al. 2009) in g/cm³ bzw. kg/dm³, abgeleitet aus Bodenart und Packungsdichteklasse (Pd). Die Tabelle gilt für Mineralböden mit Humusgehalt <1%. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr Bodenart und Packungsdichte ausgefüllt habt und die Bodenart in der Tabelle vorkommt." />
+              </View>
+              <Controller
+                control={control}
+                name="trockenrohdichte"
+                render={({ field: { value } }) => (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <TextInput
+                      style={[styles.input, styles.readonlyInput, { flex: 1 }]}
+                      placeholder="Wird berechnet…"
+                      placeholderTextColor={colors.primary + "66"}
+                      value={value}
+                      editable={false}
+                    />
+                    <Text style={localStyles.unit}>g/cm³</Text>
+                  </View>
+                )}
+              />
+            </View>
+
             <PoreReadout
               title="Gesamte Porenkapazität (GPV)"
               pctField="gpv_pct"
               lm2Field="gpv_lm2"
               rating={watchedGpvPct ? rateGPV(parseFloat(watchedGpvPct)) : ""}
               control={control}
-              info="Gesamtvolumen aller Bodenporen in Vol% und l/m²; benötigt Bodenart, Lagerungsdichte, Humusgehalt, Skelettanteil und Mächtigkeit (Tiefe oben + Tiefe unten). Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
+              info="Gesamtvolumen aller Bodenporen in Vol% und l/m²; benötigt Bodenart, Trockenrohdichte (aus Packungsdichte abgeleitet), Humusgehalt, Skelettanteil und Mächtigkeit (Tiefe oben + Tiefe unten). Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
             />
             <PoreReadout
               title="Luftkapazität (LK)"
@@ -917,21 +959,23 @@ export default function HorizontFormular({
               lm2Field="lk_lm2"
               rating={watchedLkPct ? rateLK(parseFloat(watchedLkPct)) : ""}
               control={control}
-              info="Anteil grober Poren (Luftporen) in Vol% und l/m²; benötigt Bodenart, Lagerungsdichte, Humusgehalt, Skelettanteil und Mächtigkeit (Tiefe oben + Tiefe unten). Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
+              info="Anteil grober Poren (Luftporen) in Vol% und l/m²; benötigt Bodenart, Trockenrohdichte (aus Packungsdichte abgeleitet), Humusgehalt, Skelettanteil und Mächtigkeit (Tiefe oben + Tiefe unten). Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
             />
             <PoreReadout
               title="Feldkapazität (FK)"
               pctField="fk_pct"
               lm2Field="fk_lm2"
+              rating={watchedFkPct ? rateFK_pct(parseFloat(watchedFkPct)) : ""}
               control={control}
-              info="Wassergehalt nach Ablauf des Schwerkraftwassers in l/m²; benötigt Bodenart, Lagerungsdichte, Humusgehalt, Skelettanteil und Mächtigkeit. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
+              info="Wassergehalt nach Ablauf des Schwerkraftwassers in l/m²; benötigt Bodenart, Trockenrohdichte (aus Packungsdichte abgeleitet), Humusgehalt, Skelettanteil und Mächtigkeit. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
             />
             <PoreReadout
               title="Nutzbare Feldkapazität (nFK)"
               pctField="nfk_pct"
               lm2Field="nfk_lm2"
+              rating={watchedNfkPct ? rateNFK_pct(parseFloat(watchedNfkPct)) : ""}
               control={control}
-              info="Pflanzenverfügbares Wasser zwischen Feldkapazität und permanentem Welkepunkt in l/m²; benötigt Bodenart, Lagerungsdichte, Humusgehalt, Skelettanteil und Mächtigkeit. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
+              info="Pflanzenverfügbares Wasser zwischen Feldkapazität und permanentem Welkepunkt in l/m²; benötigt Bodenart, Trockenrohdichte (aus Packungsdichte abgeleitet), Humusgehalt, Skelettanteil und Mächtigkeit. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
             />
 
               <View style={localStyles.poreBlock}>
@@ -1063,29 +1107,17 @@ export default function HorizontFormular({
         </SafeAreaView>
       </Modal>
 
-      {/* ── Lagerungsdichte modal ── */}
+      {/* ── Packungsdichte modal ── */}
       <Modal
-        visible={activeModal === "lagerungsdichte"}
+        visible={activeModal === "packungsdichte"}
         animationType="slide"
         onRequestClose={() => setActiveModal(null)}
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
           <ModalHeader onClose={() => setActiveModal(null)} />
-          <LagerungsdichteTool
-            onConfirm={(v) => {
-              if (typeof v === "string") {
-                // Extract all numeric parts (e.g. "1,2 - 1,5 kg/dm³" -> ["1,2","1,5"]) and
-                // join them with ' - ' while normalizing commas to dots.
-                const matches = v.match(/[-+]?\d*[.,]?\d+/g);
-                if (matches && matches.length > 0) {
-                  const cleaned = matches.map((m) => m.replace(',', '.')).join(' - ');
-                  setValue("lagerungsdichte", cleaned);
-                } else {
-                  setValue("lagerungsdichte", v);
-                }
-              } else {
-                setValue("lagerungsdichte", String(v));
-              }
+          <PackungsdichteTool
+            onConfirm={(code) => {
+              setValue("packungsdichte", code);
               setActiveModal(null);
             }}
           />

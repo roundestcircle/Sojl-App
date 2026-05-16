@@ -1,590 +1,285 @@
-// Type definition for a single soil entry
-interface SoilHydraulics {
-  bulkDensityClass: string; // e.g. "<1.45", "1.45-1.65", ">1.65", for clay also "<1.2", "1.2-1.45"
-  totalPorosity: number; // Vol%
-  airCapacity: number;
-  fieldCapacity: number;
-  availableWater: number;
+// KA6 Tabelle B (Bodenphysikalische Kennwerte) — Vol-%-Werte für LK/FK/nFK
+// in Abhängigkeit von Bodenart und Trockenrohdichte (TRD in g/cm³).
+// Bezugswert Feldkapazität pF 1,8. TW (Poren ≤0,2 µm) wird hier nicht
+// gespeichert; ein TW-bezogener Wert taucht nur in den Humuszuschlägen auf,
+// um den nFK-Zuschlag aus FK_adj − TW_adj abzuleiten.
+
+export interface SoilHydraulics {
+  totalPorosity: number; // GPV = LK + FK (Vol-%)
+  airCapacity: number; // LK (Vol-%)
+  fieldCapacity: number; // FK (Vol-%)
+  availableWater: number; // nFK (Vol-%)
 }
 
-// Full lookup table
-export const soilLookup: Record<string, SoilHydraulics[]> = {
-  // Sande (Sands)
+interface TrdRow {
+  trd: number; // g/cm³
+  lk: number;
+  fk: number;
+  nfk: number;
+}
+
+// Each entry only lists TRD columns with values in the source table; rows
+// outside the range are clamped during lookup.
+export const SOIL_TABLE: Record<string, TrdRow[]> = {
+  // ── Sande ──
   Ss: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 50,
-      airCapacity: 36,
-      fieldCapacity: 14,
-      availableWater: 9,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 32,
-      fieldCapacity: 11,
-      availableWater: 7,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 37,
-      airCapacity: 27,
-      fieldCapacity: 10,
-      availableWater: 7,
-    },
+    { trd: 1.3, lk: 39, fk: 12, nfk: 10 },
+    { trd: 1.5, lk: 31, fk: 13, nfk: 11 },
+    { trd: 1.7, lk: 23, fk: 14, nfk: 12 },
   ],
-  Sl: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 52,
-      airCapacity: 20,
-      fieldCapacity: 33,
-      availableWater: 21,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 42,
-      airCapacity: 15,
-      fieldCapacity: 27,
-      availableWater: 18,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 35,
-      airCapacity: 10,
-      fieldCapacity: 25,
-      availableWater: 16,
-    },
+  Sl2: [
+    { trd: 1.3, lk: 29, fk: 22, nfk: 16 },
+    { trd: 1.5, lk: 23, fk: 21, nfk: 15 },
+    { trd: 1.7, lk: 17, fk: 20, nfk: 14 },
+    { trd: 1.9, lk: 11, fk: 19, nfk: 13 },
   ],
-  Su: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 52,
-      airCapacity: 18,
-      fieldCapacity: 33,
-      availableWater: 24,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 15,
-      fieldCapacity: 28,
-      availableWater: 21,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 36,
-      airCapacity: 11,
-      fieldCapacity: 25,
-      availableWater: 19,
-    },
+  Sl3: [
+    { trd: 1.3, lk: 24, fk: 27, nfk: 18 },
+    { trd: 1.5, lk: 19, fk: 25, nfk: 16 },
+    { trd: 1.7, lk: 13, fk: 24, nfk: 14 },
+    { trd: 1.9, lk: 8, fk: 22, nfk: 12 },
+  ],
+  Sl4: [
+    { trd: 1.3, lk: 22, fk: 29, nfk: 18 },
+    { trd: 1.5, lk: 17, fk: 27, nfk: 16 },
+    { trd: 1.7, lk: 12, fk: 25, nfk: 14 },
+    { trd: 1.9, lk: 6, fk: 23, nfk: 12 },
   ],
   Slu: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 52,
-      airCapacity: 14,
-      fieldCapacity: 38,
-      availableWater: 23,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 10,
-      fieldCapacity: 33,
-      availableWater: 21,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 37,
-      airCapacity: 7,
-      fieldCapacity: 30,
-      availableWater: 19,
-    },
+    { trd: 1.3, lk: 17, fk: 34, nfk: 23 },
+    { trd: 1.5, lk: 12, fk: 32, nfk: 21 },
+    { trd: 1.7, lk: 7, fk: 30, nfk: 18 },
+    { trd: 1.9, lk: 2, fk: 28, nfk: 16 },
   ],
-  St: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 52,
-      airCapacity: 21,
-      fieldCapacity: 31,
-      availableWater: 18,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 17,
-      fieldCapacity: 26,
-      availableWater: 16,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 34,
-      airCapacity: 12,
-      fieldCapacity: 22,
-      availableWater: 13,
-    },
+  St2: [
+    { trd: 1.3, lk: 33, fk: 18, nfk: 12 },
+    { trd: 1.5, lk: 26, fk: 18, nfk: 12 },
+    { trd: 1.7, lk: 19, fk: 18, nfk: 12 },
+    { trd: 1.9, lk: 12, fk: 18, nfk: 11 },
+  ],
+  St3: [
+    { trd: 1.3, lk: 27, fk: 24, nfk: 13 },
+    { trd: 1.5, lk: 22, fk: 22, nfk: 11 },
+    { trd: 1.7, lk: 15, fk: 22, nfk: 11 },
+    { trd: 1.9, lk: 9, fk: 21, nfk: 11 },
+  ],
+  Su2: [
+    { trd: 1.3, lk: 30, fk: 21, nfk: 16 },
+    { trd: 1.5, lk: 24, fk: 20, nfk: 15 },
+    { trd: 1.7, lk: 18, fk: 19, nfk: 14 },
+    { trd: 1.9, lk: 12, fk: 18, nfk: 13 },
+  ],
+  Su3: [
+    { trd: 1.3, lk: 23, fk: 28, nfk: 21 },
+    { trd: 1.5, lk: 18, fk: 26, nfk: 18 },
+    { trd: 1.7, lk: 13, fk: 24, nfk: 16 },
+    { trd: 1.9, lk: 8, fk: 22, nfk: 14 },
+  ],
+  Su4: [
+    { trd: 1.3, lk: 19, fk: 32, nfk: 24 },
+    { trd: 1.5, lk: 14, fk: 30, nfk: 22 },
+    { trd: 1.7, lk: 9, fk: 28, nfk: 19 },
+    { trd: 1.9, lk: 4, fk: 26, nfk: 17 },
   ],
 
-  // Schluffe (Silts)
-  Uu: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 53,
-      airCapacity: 10,
-      fieldCapacity: 43,
-      availableWater: 30,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 45,
-      airCapacity: 7,
-      fieldCapacity: 38,
-      availableWater: 26,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 38,
-      airCapacity: 3,
-      fieldCapacity: 35,
-      availableWater: 23,
-    },
+  // ── Lehme ──
+  Ls2: [
+    { trd: 1.1, lk: 20, fk: 39, nfk: 23 },
+    { trd: 1.3, lk: 14, fk: 37, nfk: 21 },
+    { trd: 1.5, lk: 9, fk: 35, nfk: 19 },
+    { trd: 1.7, lk: 5, fk: 32, nfk: 16 },
+    { trd: 1.9, lk: 1, fk: 29, nfk: 13 },
   ],
-  Us: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 52,
-      airCapacity: 11,
-      fieldCapacity: 41,
-      availableWater: 28,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 44,
-      airCapacity: 9,
-      fieldCapacity: 35,
-      availableWater: 25,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 36,
-      airCapacity: 4,
-      fieldCapacity: 32,
-      availableWater: 22,
-    },
+  Ls3: [
+    { trd: 1.1, lk: 23, fk: 36, nfk: 21 },
+    { trd: 1.3, lk: 17, fk: 34, nfk: 19 },
+    { trd: 1.5, lk: 12, fk: 32, nfk: 17 },
+    { trd: 1.7, lk: 8, fk: 29, nfk: 14 },
+    { trd: 1.9, lk: 3, fk: 27, nfk: 12 },
   ],
-  Ul: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 52,
-      airCapacity: 13,
-      fieldCapacity: 39,
-      availableWater: 24,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 8,
-      fieldCapacity: 35,
-      availableWater: 22,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 38,
-      airCapacity: 5,
-      fieldCapacity: 33,
-      availableWater: 21,
-    },
+  Ls4: [
+    { trd: 1.1, lk: 27, fk: 32, nfk: 19 },
+    { trd: 1.3, lk: 21, fk: 30, nfk: 17 },
+    { trd: 1.5, lk: 16, fk: 28, nfk: 15 },
+    { trd: 1.7, lk: 11, fk: 26, nfk: 13 },
+    { trd: 1.9, lk: 6, fk: 24, nfk: 11 },
   ],
-  Ut: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 50,
-      airCapacity: 11,
-      fieldCapacity: 39,
-      availableWater: 26,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 6,
-      fieldCapacity: 37,
-      availableWater: 24,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 38,
-      airCapacity: 3,
-      fieldCapacity: 35,
-      availableWater: 22,
-    },
+  Lt2: [
+    { trd: 1.1, lk: 18, fk: 41, nfk: 21 },
+    { trd: 1.3, lk: 13, fk: 38, nfk: 18 },
+    { trd: 1.5, lk: 9, fk: 35, nfk: 15 },
+    { trd: 1.7, lk: 5, fk: 32, nfk: 12 },
   ],
-
-  // Lehme (Loams)
-  Ls: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 54,
-      airCapacity: 14,
-      fieldCapacity: 39,
-      availableWater: 21,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 10,
-      fieldCapacity: 33,
-      availableWater: 16,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 36,
-      airCapacity: 6,
-      fieldCapacity: 30,
-      availableWater: 14,
-    },
-  ],
-  Lt: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 53,
-      airCapacity: 10,
-      fieldCapacity: 44,
-      availableWater: 18,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 44,
-      airCapacity: 6,
-      fieldCapacity: 38,
-      availableWater: 13,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 38,
-      airCapacity: 4,
-      fieldCapacity: 34,
-      availableWater: 11,
-    },
+  Lt3: [
+    { trd: 1.1, lk: 14, fk: 45, nfk: 20 },
+    { trd: 1.3, lk: 9, fk: 42, nfk: 17 },
+    { trd: 1.5, lk: 6, fk: 38, nfk: 13 },
+    { trd: 1.7, lk: 3, fk: 34, nfk: 10 },
   ],
   Lts: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 54,
-      airCapacity: 10,
-      fieldCapacity: 44,
-      availableWater: 17,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 6,
-      fieldCapacity: 37,
-      availableWater: 14,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 36,
-      airCapacity: 5,
-      fieldCapacity: 31,
-      availableWater: 11,
-    },
+    { trd: 1.1, lk: 20, fk: 39, nfk: 19 },
+    { trd: 1.3, lk: 15, fk: 36, nfk: 16 },
+    { trd: 1.5, lk: 11, fk: 33, nfk: 13 },
+    { trd: 1.7, lk: 7, fk: 30, nfk: 10 },
   ],
   Lu: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 53,
-      airCapacity: 12,
-      fieldCapacity: 41,
-      availableWater: 21,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 7,
-      fieldCapacity: 36,
-      availableWater: 17,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 37,
-      airCapacity: 4,
-      fieldCapacity: 33,
-      availableWater: 15,
-    },
+    { trd: 1.1, lk: 17, fk: 42, nfk: 24 },
+    { trd: 1.3, lk: 12, fk: 39, nfk: 21 },
+    { trd: 1.5, lk: 8, fk: 36, nfk: 18 },
+    { trd: 1.7, lk: 4, fk: 33, nfk: 15 },
   ],
 
-  // Tone (Clays) – correct density classes: <1.2, 1.2-1.45, 1.45-1.65, >1.65
-  // Air capacities for >1.65 provided by user
+  // ── Schluffe ──
+  Uu: [
+    { trd: 1.1, lk: 20, fk: 39, nfk: 30 },
+    { trd: 1.3, lk: 14, fk: 37, nfk: 28 },
+    { trd: 1.5, lk: 8, fk: 36, nfk: 27 },
+    { trd: 1.7, lk: 3, fk: 34, nfk: 24 },
+  ],
+  Uls: [
+    { trd: 1.1, lk: 21, fk: 38, nfk: 26 },
+    { trd: 1.3, lk: 15, fk: 36, nfk: 24 },
+    { trd: 1.5, lk: 10, fk: 34, nfk: 22 },
+    { trd: 1.7, lk: 5, fk: 32, nfk: 19 },
+  ],
+  Us: [
+    { trd: 1.1, lk: 22, fk: 37, nfk: 29 },
+    { trd: 1.3, lk: 16, fk: 35, nfk: 27 },
+    { trd: 1.5, lk: 11, fk: 33, nfk: 24 },
+    { trd: 1.7, lk: 6, fk: 31, nfk: 21 },
+  ],
+  Ut2: [
+    { trd: 1.1, lk: 20, fk: 39, nfk: 28 },
+    { trd: 1.3, lk: 14, fk: 37, nfk: 26 },
+    { trd: 1.5, lk: 8, fk: 36, nfk: 25 },
+    { trd: 1.7, lk: 3, fk: 34, nfk: 23 },
+  ],
+  Ut3: [
+    { trd: 1.1, lk: 19, fk: 40, nfk: 27 },
+    { trd: 1.3, lk: 13, fk: 38, nfk: 26 },
+    { trd: 1.5, lk: 7, fk: 37, nfk: 24 },
+    { trd: 1.7, lk: 2, fk: 35, nfk: 22 },
+  ],
+  Ut4: [
+    { trd: 1.1, lk: 18, fk: 41, nfk: 25 },
+    { trd: 1.3, lk: 12, fk: 39, nfk: 23 },
+    { trd: 1.5, lk: 7, fk: 37, nfk: 21 },
+    { trd: 1.7, lk: 2, fk: 35, nfk: 19 },
+  ],
+
+  // ── Tone ──
   Tt: [
-    {
-      bulkDensityClass: "<1.2",
-      totalPorosity: 64,
-      airCapacity: 8,
-      fieldCapacity: 56,
-      availableWater: 20,
-    },
-    {
-      bulkDensityClass: "1.2-1.45",
-      totalPorosity: 52,
-      airCapacity: 4,
-      fieldCapacity: 48,
-      availableWater: 15,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 46,
-      airCapacity: 3,
-      fieldCapacity: 43,
-      availableWater: 13,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 37,
-      airCapacity: 2,
-      fieldCapacity: 35,
-      availableWater: 12,
-    },
+    { trd: 1.1, lk: 6, fk: 53, nfk: 17 },
+    { trd: 1.3, lk: 4, fk: 48, nfk: 15 },
+    { trd: 1.5, lk: 2, fk: 42, nfk: 10 },
   ],
   Tl: [
-    {
-      bulkDensityClass: "<1.2",
-      totalPorosity: 63,
-      airCapacity: 9,
-      fieldCapacity: 53,
-      availableWater: 19,
-    },
-    {
-      bulkDensityClass: "1.2-1.45",
-      totalPorosity: 52,
-      airCapacity: 5,
-      fieldCapacity: 47,
-      availableWater: 14,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 45,
-      airCapacity: 4,
-      fieldCapacity: 41,
-      availableWater: 13,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 38,
-      airCapacity: 3,
-      fieldCapacity: 35,
-      availableWater: 11,
-    },
+    { trd: 1.1, lk: 11, fk: 48, nfk: 18 },
+    { trd: 1.3, lk: 7, fk: 44, nfk: 15 },
+    { trd: 1.5, lk: 4, fk: 40, nfk: 11 },
+    { trd: 1.7, lk: 2, fk: 35, nfk: 9 },
   ],
   Tu2: [
-    {
-      bulkDensityClass: "<1.2",
-      totalPorosity: 60,
-      airCapacity: 7,
-      fieldCapacity: 53,
-      availableWater: 20,
-    },
-    {
-      bulkDensityClass: "1.2-1.45",
-      totalPorosity: 51,
-      airCapacity: 5,
-      fieldCapacity: 46,
-      availableWater: 15,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 46,
-      airCapacity: 4,
-      fieldCapacity: 42,
-      availableWater: 12,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 39,
-      airCapacity: 3,
-      fieldCapacity: 36,
-      availableWater: 10,
-    },
+    { trd: 1.1, lk: 9, fk: 50, nfk: 19 },
+    { trd: 1.3, lk: 6, fk: 46, nfk: 16 },
+    { trd: 1.5, lk: 3, fk: 41, nfk: 12 },
+    { trd: 1.7, lk: 1, fk: 36, nfk: 9 },
   ],
-  Tu3_4: [
-    {
-      bulkDensityClass: "<1.2",
-      totalPorosity: 60,
-      airCapacity: 11,
-      fieldCapacity: 49,
-      availableWater: 22,
-    },
-    {
-      bulkDensityClass: "1.2-1.45",
-      totalPorosity: 50,
-      airCapacity: 9,
-      fieldCapacity: 41,
-      availableWater: 17,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 44,
-      airCapacity: 6,
-      fieldCapacity: 38,
-      availableWater: 15,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 38,
-      airCapacity: 3,
-      fieldCapacity: 35,
-      availableWater: 13,
-    },
+  Tu3: [
+    { trd: 1.1, lk: 12, fk: 47, nfk: 21 },
+    { trd: 1.3, lk: 8, fk: 43, nfk: 18 },
+    { trd: 1.5, lk: 5, fk: 39, nfk: 14 },
+    { trd: 1.7, lk: 2, fk: 35, nfk: 10 },
+  ],
+  Tu4: [
+    { trd: 1.1, lk: 14, fk: 45, nfk: 25 },
+    { trd: 1.3, lk: 10, fk: 41, nfk: 21 },
+    { trd: 1.5, lk: 6, fk: 38, nfk: 18 },
+    { trd: 1.7, lk: 2, fk: 35, nfk: 15 },
   ],
   Ts2: [
-    {
-      bulkDensityClass: "<1.2",
-      totalPorosity: 61,
-      airCapacity: 10,
-      fieldCapacity: 51,
-      availableWater: 18,
-    },
-    {
-      bulkDensityClass: "1.2-1.45",
-      totalPorosity: 51,
-      airCapacity: 5,
-      fieldCapacity: 46,
-      availableWater: 15,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 4,
-      fieldCapacity: 39,
-      availableWater: 13,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 37,
-      airCapacity: 3,
-      fieldCapacity: 34,
-      availableWater: 12,
-    },
+    { trd: 1.3, lk: 13, fk: 38, nfk: 14 },
+    { trd: 1.5, lk: 9, fk: 35, nfk: 11 },
+    { trd: 1.7, lk: 6, fk: 31, nfk: 9 },
   ],
-  Ts3_4: [
-    {
-      bulkDensityClass: "<1.2",
-      totalPorosity: 59,
-      airCapacity: 13,
-      fieldCapacity: 46,
-      availableWater: 17,
-    },
-    {
-      bulkDensityClass: "1.2-1.45",
-      totalPorosity: 54,
-      airCapacity: 10,
-      fieldCapacity: 44,
-      availableWater: 17,
-    },
-    {
-      bulkDensityClass: "1.45-1.65",
-      totalPorosity: 43,
-      airCapacity: 8,
-      fieldCapacity: 35,
-      availableWater: 14,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 37,
-      airCapacity: 6,
-      fieldCapacity: 31,
-      availableWater: 11,
-    },
+  Ts3: [
+    { trd: 1.3, lk: 17, fk: 34, nfk: 14 },
+    { trd: 1.5, lk: 13, fk: 31, nfk: 11 },
+    { trd: 1.7, lk: 9, fk: 28, nfk: 9 },
+  ],
+  Ts4: [
+    { trd: 1.3, lk: 21, fk: 30, nfk: 15 },
+    { trd: 1.5, lk: 16, fk: 28, nfk: 13 },
+    { trd: 1.7, lk: 11, fk: 26, nfk: 11 },
   ],
 
-  // anmoorige Horizonte (Aa) – 15–30% organic matter
-  // The original table shows two bulk density classes, only <1.45 and >1.65 are given
-  // TODO: currently unreachable — bodenartToLookupKey() does not route any input here.
-  // Wire up via Aa-horizonname detection when anmoorig support is needed.
-  anmoorig_sand: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 67,
-      airCapacity: 11,
-      fieldCapacity: 56,
-      availableWater: NaN,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 73,
-      airCapacity: 11,
-      fieldCapacity: 57,
-      availableWater: NaN,
-    },
+  // ── Reine Sandfraktionen ──
+  fS: [
+    { trd: 1.3, lk: 34, fk: 17, nfk: 14 },
+    { trd: 1.5, lk: 26, fk: 18, nfk: 15 },
+    { trd: 1.7, lk: 18, fk: 19, nfk: 16 },
   ],
-  anmoorig_loam_clay: [
-    {
-      bulkDensityClass: "<1.45",
-      totalPorosity: 71,
-      airCapacity: 6,
-      fieldCapacity: 67,
-      availableWater: NaN,
-    },
-    {
-      bulkDensityClass: ">1.65",
-      totalPorosity: 66,
-      airCapacity: 6,
-      fieldCapacity: 67,
-      availableWater: NaN,
-    },
+  mS: [
+    { trd: 1.3, lk: 39, fk: 12, nfk: 10 },
+    { trd: 1.5, lk: 31, fk: 13, nfk: 11 },
+    { trd: 1.7, lk: 23, fk: 14, nfk: 12 },
+  ],
+  gS: [
+    { trd: 1.3, lk: 42, fk: 9, nfk: 7 },
+    { trd: 1.5, lk: 34, fk: 10, nfk: 8 },
+    { trd: 1.7, lk: 26, fk: 11, nfk: 9 },
   ],
 };
 
-// Soil group keys (matching the original table)
-export type SoilGroup = "Ss" | "S_other" | "U_L_except_Lt" | "Lt_Tone";
+// ─── Humuszuschläge (KA6 Tabelle B6) ──────────────────────────────────────
+// Vol-%-Zuschläge pro Bodenart × Humusgehaltsstufe. Aus den drei Quellspalten
+// GPV, FK (Poren ≤50 µm) und TW (Poren ≤0,2 µm) lassen sich LK und nFK
+// volumenerhaltend ableiten:
+//   LK_adj  = GPV_adj − FK_adj    (LK = GPV − FK)
+//   nFK_adj = FK_adj  − TW_adj    (nFK = FK − TW)
+// Bei Ss ist TW nicht angegeben; in dem Fall nehmen wir nFK_adj = FK_adj.
 
-// Humus classes (only h2 to h5 appear in the adjustment table)
-export type HumusClass = "h2" | "h3" | "h4" | "h5";
-
-// Property types
-export type SoilProperty = "total" | "air" | "field" | "available";
-
-// Adjustment values: [soilGroup][property][humusClass] -> delta (%)
-export const HUMUS_ADJUSTMENTS: Record<
-  SoilGroup,
-  Record<SoilProperty, Record<HumusClass, number>>
-> = {
-  Ss: {
-    total: { h2: 3, h3: 5, h4: 7, h5: 9 },
-    air: { h2: 0, h3: -1, h4: -2, h5: -3 },
-    field: { h2: 3, h3: 6, h4: 9, h5: 12 },
-    available: { h2: 1, h3: 3, h4: 4, h5: 5 },
-  },
-  S_other: {
-    total: { h2: 4, h3: 7, h4: 12, h5: 16 },
-    air: { h2: 1, h3: 2, h4: 3, h5: 4 },
-    field: { h2: 3, h3: 6, h4: 9, h5: 13 },
-    available: { h2: 2, h3: 3, h4: 4, h5: 6 },
-  },
-  U_L_except_Lt: {
-    total: { h2: 5, h3: 9, h4: 15, h5: 20 },
-    air: { h2: 2, h3: 3, h4: 5, h5: 7 },
-    field: { h2: 3, h3: 6, h4: 10, h5: 13 },
-    available: { h2: 2, h3: 3, h4: 5, h5: 6 },
-  },
-  Lt_Tone: {
-    total: { h2: 6, h3: 9, h4: 15, h5: 20 },
-    air: { h2: 1, h3: 2, h4: 4, h5: 7 },
-    field: { h2: 5, h3: 7, h4: 11, h5: 14 },
-    available: { h2: 2, h3: 4, h4: 6, h5: 8 },
-  },
-};
-
-/**
- * Get adjustment delta for a given soil group, property, and humus class.
- */
-export function getHumusAdjustment(
-  soilGroup: SoilGroup,
-  property: SoilProperty,
-  humusClass: HumusClass,
-): number {
-  return HUMUS_ADJUSTMENTS[soilGroup][property][humusClass];
+interface HumusAdjRow {
+  gpv: [number, number, number, number]; // h2, h3, h4, h5
+  fk: [number, number, number, number];
+  tw: [number, number, number, number] | null;
 }
+
+export const HUMUS_ADJ_TABLE: Record<string, HumusAdjRow> = {
+  Ss: { gpv: [2, 4, 7, 15], fk: [3, 5, 10, 20], tw: null },
+  Sl2: { gpv: [2, 4, 7, 14], fk: [2, 5, 9, 17], tw: [1, 2, 4, 7] },
+  Sl3: { gpv: [2, 4, 8, 15], fk: [2, 4, 9, 16], tw: [1, 2, 3, 6] },
+  Sl4: { gpv: [3, 5, 9, 15], fk: [2, 4, 8, 15], tw: [1, 1, 3, 5] },
+  Slu: { gpv: [3, 5, 9, 16], fk: [2, 4, 7, 14], tw: [1, 1, 3, 5] },
+  St2: { gpv: [2, 4, 8, 14], fk: [2, 5, 10, 17], tw: [1, 1, 2, 4] },
+  St3: { gpv: [2, 5, 9, 15], fk: [2, 5, 9, 16], tw: [1, 2, 3, 7] },
+  Su2: { gpv: [2, 4, 8, 15], fk: [2, 5, 10, 18], tw: [1, 2, 3, 6] },
+  Su3: { gpv: [2, 5, 9, 15], fk: [2, 5, 9, 16], tw: [1, 2, 3, 6] },
+  Su4: { gpv: [2, 5, 8, 15], fk: [2, 5, 8, 15], tw: [1, 2, 3, 5] },
+  Ls2: { gpv: [3, 6, 9, 16], fk: [2, 4, 7, 13], tw: [1, 1, 2, 5] },
+  Ls3: { gpv: [3, 5, 9, 16], fk: [2, 4, 7, 14], tw: [1, 1, 2, 4] },
+  Ls4: { gpv: [3, 5, 9, 15], fk: [2, 4, 8, 14], tw: [1, 1, 2, 4] },
+  Lt2: { gpv: [3, 5, 9, 16], fk: [2, 3, 6, 11], tw: [0, 1, 2, 3] },
+  Lt3: { gpv: [3, 6, 10, 17], fk: [1, 3, 6, 11], tw: [0, 1, 2, 3] },
+  Lts: { gpv: [3, 6, 10, 17], fk: [2, 4, 7, 13], tw: [1, 1, 2, 3] },
+  Lu: { gpv: [3, 5, 9, 16], fk: [1, 3, 6, 11], tw: [0, 1, 1, 3] },
+  Uu: { gpv: [1, 4, 7, 14], fk: [1, 3, 5, 10], tw: [0, 1, 2, 3] },
+  Uls: { gpv: [3, 6, 9, 16], fk: [2, 4, 6, 12], tw: [0, 1, 2, 3] },
+  Us: { gpv: [2, 5, 8, 15], fk: [2, 4, 6, 12], tw: [0, 1, 2, 4] },
+  Ut2: { gpv: [3, 6, 10, 16], fk: [2, 4, 7, 11], tw: [0, 1, 2, 3] },
+  Ut3: { gpv: [3, 6, 11, 17], fk: [2, 4, 7, 11], tw: [0, 1, 2, 3] },
+  Ut4: { gpv: [4, 7, 11, 16], fk: [2, 4, 7, 10], tw: [0, 1, 2, 3] },
+  Tt: { gpv: [4, 6, 9, 15], fk: [1, 2, 4, 8], tw: [0, 1, 1, 2] },
+  Tl: { gpv: [3, 6, 9, 14], fk: [1, 2, 4, 8], tw: [0, 1, 1, 2] },
+  Tu2: { gpv: [3, 6, 9, 15], fk: [1, 2, 4, 8], tw: [0, 1, 1, 2] },
+  Tu3: { gpv: [3, 4, 9, 15], fk: [1, 2, 5, 8], tw: [0, 1, 1, 2] },
+  Tu4: { gpv: [3, 5, 9, 16], fk: [1, 2, 5, 9], tw: [0, 1, 1, 2] },
+  Ts2: { gpv: [4, 6, 11, 18], fk: [2, 3, 7, 13], tw: [1, 1, 2, 4] },
+  Ts3: { gpv: [3, 6, 11, 18], fk: [2, 4, 8, 14], tw: [1, 1, 2, 4] },
+  Ts4: { gpv: [3, 6, 10, 17], fk: [2, 4, 8, 14], tw: [1, 1, 2, 4] },
+};
+
+export type HumusClass = "h2" | "h3" | "h4" | "h5";
 
 const HUMUS_MIDPOINTS: Record<HumusClass, number> = {
   h2: 1.5,
@@ -597,74 +292,99 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
-export function getHumusAdjustmentInterpolated(
-  soilGroup: SoilGroup,
-  property: SoilProperty,
-  humusPercent: number,
+/** Linear interpolation among the 4 humus midpoints (1.5 / 3.5 / 7.5 / 12.5 %). */
+function interpHumus(
+  values: [number, number, number, number],
+  humusPct: number,
 ): number {
-  const classes: HumusClass[] = ["h2", "h3", "h4", "h5"];
-  let lower: HumusClass | null = null;
-  let upper: HumusClass | null = null;
-
-  for (let i = 0; i < classes.length; i++) {
-    const mid = HUMUS_MIDPOINTS[classes[i]];
-    if (humusPercent <= mid) {
-      upper = classes[i];
-      lower = i > 0 ? classes[i - 1] : classes[i];
-      break;
+  const mids = [
+    HUMUS_MIDPOINTS.h2,
+    HUMUS_MIDPOINTS.h3,
+    HUMUS_MIDPOINTS.h4,
+    HUMUS_MIDPOINTS.h5,
+  ];
+  if (humusPct <= mids[0]) return values[0];
+  if (humusPct >= mids[3]) return values[3];
+  for (let i = 0; i < 3; i++) {
+    if (humusPct <= mids[i + 1]) {
+      const t = (humusPct - mids[i]) / (mids[i + 1] - mids[i]);
+      return lerp(values[i], values[i + 1], t);
     }
   }
-  if (!upper) {
-    lower = classes[classes.length - 1];
-    upper = lower;
-  }
-  if (!lower) lower = upper;
-
-  if (lower === upper) {
-    return HUMUS_ADJUSTMENTS[soilGroup][property][lower];
-  }
-
-  const lowerMid = HUMUS_MIDPOINTS[lower];
-  const upperMid = HUMUS_MIDPOINTS[upper];
-  const t = (humusPercent - lowerMid) / (upperMid - lowerMid);
-  const lowerVal = HUMUS_ADJUSTMENTS[soilGroup][property][lower];
-  const upperVal = HUMUS_ADJUSTMENTS[soilGroup][property][upper];
-  return lerp(lowerVal, upperVal, t);
-}
-
-/** Maps a KA6 bodenart string (with or without numeric suffix) to a soilLookup key. */
-export function bodenartToLookupKey(bodenart: string): string | null {
-  const s = bodenart.trim();
-  if (s === "Tu2") return "Tu2";
-  if (s === "Tu3" || s === "Tu4") return "Tu3_4";
-  if (s === "Ts2") return "Ts2";
-  if (s === "Ts3" || s === "Ts4") return "Ts3_4";
-  const base = s.replace(/\d+$/, "");
-  return base in soilLookup ? base : null;
-}
-
-const CLAY_KEYS = new Set(["Tt", "Tl", "Tu2", "Tu3_4", "Ts2", "Ts3_4"]);
-
-export function soilGroupFromBodenart(bodenart: string): SoilGroup {
-  const key = bodenartToLookupKey(bodenart) ?? bodenart.replace(/\d+$/, "");
-  if (key === "Ss") return "Ss";
-  if (["Su", "Slu", "Sl", "St"].includes(key)) return "S_other";
-  if (CLAY_KEYS.has(key) || key === "Lt") return "Lt_Tone";
-  return "U_L_except_Lt";
+  return values[3];
 }
 
 /**
- * Parses a representative bulk-density value (kg/dm³) from a free-form string
- * like "1,2–1,4 kg/dm³", ">1.65", "<1.45", or plain "1.6".
+ * Korrigiert die Basis-Porenkennwerte um den Humuszuschlag (KA6 Tabelle B6).
+ * Volumenkonsistent: GPV und FK (sowie TW) werden additiv korrigiert,
+ * LK und nFK werden **nachträglich** aus den korrigierten Werten abgeleitet:
+ *   LK_corr  = GPV_corr − FK_corr
+ *   nFK_corr = FK_corr  − TW_corr      (bei fehlender TW-Spalte: nFK_corr = FK_corr − TW_base)
  *
- * For ranges, returns the arithmetic midpoint (true midpoint).
- * For bounded forms (`>x` / `<x`), returns a heuristic ±0.15 offset from the
- * bound — NOT a real midpoint, just a representative point inside the implied
- * class so that `getDensityClass()` lands on the right bucket. Adjust the
- * offset only if you also retune the density class boundaries.
+ * Liefert die Basiswerte unverändert zurück, wenn die Bodenart nicht in
+ * `HUMUS_ADJ_TABLE` steht oder `humusPct <= 0` ist.
  */
-export function parseDensityMidpoint(lagerungsdichte: string): number | null {
-  const s = lagerungsdichte.replace(/,/g, ".").replace(/[–−]/g, "-");
+export function applyHumusCorrection(
+  bodenart: string,
+  base: SoilHydraulics,
+  humusPct: number,
+): SoilHydraulics {
+  if (!(humusPct > 0)) return base;
+  const key = bodenartToHumusKey(bodenart);
+  if (!key) return base;
+  const row = HUMUS_ADJ_TABLE[key];
+
+  const twBase = base.fieldCapacity - base.availableWater;
+  const gpvCorr = base.totalPorosity + interpHumus(row.gpv, humusPct);
+  const fkCorr = base.fieldCapacity + interpHumus(row.fk, humusPct);
+  const twCorr = row.tw ? twBase + interpHumus(row.tw, humusPct) : twBase;
+
+  const lkCorr = gpvCorr - fkCorr;
+  const nfkCorr = fkCorr - twCorr;
+
+  return {
+    totalPorosity: gpvCorr,
+    fieldCapacity: fkCorr,
+    airCapacity: lkCorr,
+    availableWater: nfkCorr,
+  };
+}
+
+/**
+ * Mappt eine KA5/KA6-Bodenart auf einen Schlüssel in `SOIL_TABLE`.
+ * Akzeptiert exakte Codes sowie nackte Sammelnamen (`Sl`, `Su`, …) als
+ * Rückfallpfad — die werden auf die erste vorhandene Subdivision abgebildet.
+ */
+export function bodenartToLookupKey(bodenart: string): string | null {
+  const s = bodenart.trim();
+  if (s in SOIL_TABLE) return s;
+  const bareFallback: Record<string, string[]> = {
+    Sl: ["Sl2", "Sl3", "Sl4"],
+    Su: ["Su2", "Su3", "Su4"],
+    St: ["St2", "St3"],
+    Ls: ["Ls2", "Ls3", "Ls4"],
+    Lt: ["Lt2", "Lt3"],
+    Ts: ["Ts2", "Ts3", "Ts4"],
+    Tu: ["Tu2", "Tu3", "Tu4"],
+    Ut: ["Ut2", "Ut3", "Ut4"],
+  };
+  return bareFallback[s]?.[0] ?? null;
+}
+
+/** Wie `bodenartToLookupKey`, aber gegen `HUMUS_ADJ_TABLE` (gleiche Keys). */
+function bodenartToHumusKey(bodenart: string): string | null {
+  const key = bodenartToLookupKey(bodenart);
+  return key && key in HUMUS_ADJ_TABLE ? key : null;
+}
+
+/**
+ * Parst einen freien Trockenrohdichte-String (z. B. "1,2–1,4 kg/dm³",
+ * ">1.65", "<1.45", "1.6") zu einem repräsentativen Wert in g/cm³.
+ * Für Bereiche der arithmetische Mittelwert; für `>x` / `<x` ein Heuristik-
+ * Punkt mit ±0.15 Offset.
+ */
+export function parseDensityMidpoint(density: string): number | null {
+  const s = density.replace(/,/g, ".").replace(/[–−]/g, "-");
   const rangeMatch = s.match(/(\d+\.?\d*)\s*-\s*(\d+\.?\d*)/);
   if (rangeMatch)
     return (parseFloat(rangeMatch[1]) + parseFloat(rangeMatch[2])) / 2;
@@ -677,29 +397,48 @@ export function parseDensityMidpoint(lagerungsdichte: string): number | null {
   return null;
 }
 
-function getDensityClass(midpoint: number, lookupKey: string): string {
-  if (CLAY_KEYS.has(lookupKey)) {
-    if (midpoint < 1.2) return "<1.2";
-    if (midpoint < 1.45) return "1.2-1.45";
-    if (midpoint <= 1.65) return "1.45-1.65";
-    return ">1.65";
+/** Linearer Interpolations-Helper über die TRD-Stützstellen einer Bodenart. */
+function interpTrd(
+  rows: TrdRow[],
+  trd: number,
+  pick: (r: TrdRow) => number,
+): number {
+  if (trd <= rows[0].trd) return pick(rows[0]);
+  if (trd >= rows[rows.length - 1].trd) return pick(rows[rows.length - 1]);
+  for (let i = 0; i < rows.length - 1; i++) {
+    const a = rows[i];
+    const b = rows[i + 1];
+    if (trd <= b.trd) {
+      const t = (trd - a.trd) / (b.trd - a.trd);
+      return lerp(pick(a), pick(b), t);
+    }
   }
-  if (midpoint < 1.45) return "<1.45";
-  if (midpoint <= 1.65) return "1.45-1.65";
-  return ">1.65";
+  return pick(rows[rows.length - 1]);
 }
 
-/** Returns base pore values for a bodenart + lagerungsdichte string, or null if unresolvable. */
+/**
+ * Liefert die Basis-Porenkennwerte (Vol-%) für eine Bodenart und einen
+ * Trockenrohdichte-String. Zwischen den TRD-Spalten (1.1 / 1.3 / 1.5 / 1.7 /
+ * 1.9 g/cm³) wird linear interpoliert; Werte außerhalb des Stützbereichs
+ * werden auf den nächsten Eckwert geklemmt.
+ */
 export function lookupPoreValues(
   bodenart: string,
-  lagerungsdichte: string,
+  density: string,
 ): SoilHydraulics | null {
   const key = bodenartToLookupKey(bodenart);
   if (!key) return null;
-  const midpoint = parseDensityMidpoint(lagerungsdichte);
-  if (midpoint === null || isNaN(midpoint)) return null;
-  const densityClass = getDensityClass(midpoint, key);
-  return (
-    soilLookup[key]?.find((e) => e.bulkDensityClass === densityClass) ?? null
-  );
+  const rows = SOIL_TABLE[key];
+  if (!rows || rows.length === 0) return null;
+  const trd = parseDensityMidpoint(density);
+  if (trd === null || isNaN(trd)) return null;
+  const lk = interpTrd(rows, trd, (r) => r.lk);
+  const fk = interpTrd(rows, trd, (r) => r.fk);
+  const nfk = interpTrd(rows, trd, (r) => r.nfk);
+  return {
+    airCapacity: lk,
+    fieldCapacity: fk,
+    availableWater: nfk,
+    totalPorosity: lk + fk,
+  };
 }

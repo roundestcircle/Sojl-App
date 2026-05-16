@@ -84,7 +84,8 @@ export function initDatabase() {
       humus         TEXT,
       humus_pct     TEXT,
       carbonat      TEXT,
-      lagerungsdichte TEXT,
+      packungsdichte   TEXT,
+      trockenrohdichte TEXT,
       feinwurzeln   TEXT,
       gefuege       TEXT,
       notizen       TEXT,
@@ -125,6 +126,20 @@ export function initDatabase() {
       tonanteil            TEXT
     );
   `);
+
+  // Migrate older installs: add the new Pd/TRD columns and drop the obsolete
+  // `lagerungsdichte` column. ALTER statements are wrapped in try/catch because
+  // ADD COLUMN throws on a second startup ("duplicate column"), and DROP COLUMN
+  // throws if it has already been removed (or if the SQLite build is too old).
+  try {
+    db.execSync(`ALTER TABLE horizonte ADD COLUMN packungsdichte TEXT;`);
+  } catch {}
+  try {
+    db.execSync(`ALTER TABLE horizonte ADD COLUMN trockenrohdichte TEXT;`);
+  } catch {}
+  try {
+    db.execSync(`ALTER TABLE horizonte DROP COLUMN lagerungsdichte;`);
+  } catch {}
 }
 
 export default db;

@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
@@ -73,7 +80,7 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
       <ScrollView
         contentContainerStyle={{
           padding: 20,
-          paddingBottom: 100,
+          paddingBottom: 24,
           alignItems: "center",
           gap: 10,
         }}
@@ -217,22 +224,21 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
             </TouchableOpacity>
           </>
         )}
+      </ScrollView>
 
-        {/* Back button (available on every step except the first question) */}
+      {/* ── Pinned bottom bar: Zurück + Anleitung (scrolling content sits behind) ── */}
+      <View style={styles.bottomBar}>
         {step > 0 && (
-          <TouchableOpacity
-            style={[styles.button, { marginTop: 12 }]}
-            onPress={goBack}
-          >
+          <TouchableOpacity style={styles.button} onPress={goBack}>
             <Text style={styles.maintext}>Zurück</Text>
           </TouchableOpacity>
         )}
-
         <ResetInstructionButton
           storageKey="packungsdichteDontShowAgain"
           onReset={() => setModalKey((prev) => prev + 1)}
+          style={{ position: "relative", alignSelf: "stretch" }}
         />
-      </ScrollView>
+      </View>
 
       {/* Fullscreen SoilShareScroll estimator for the Makroporen step. */}
       <Modal
@@ -241,23 +247,12 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
         onRequestClose={() => setShareModalOpen(false)}
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "flex-end",
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-            }}
-          >
+          <View style={localStyles.modalHeader}>
             <TouchableOpacity onPress={() => setShareModalOpen(false)}>
-              <Text
-                style={{ color: colors.primary, fontSize: 16, fontWeight: "600" }}
-              >
-                ✕ Schließen
-              </Text>
+              <Text style={localStyles.modalClose}>✕ Schließen</Text>
             </TouchableOpacity>
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, padding: 20 }}>
             <SoilShareScroll
               onConfirm={(percent) => {
                 const pct = parseFloat(percent);
@@ -273,3 +268,19 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#ccc",
+  },
+  modalClose: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});

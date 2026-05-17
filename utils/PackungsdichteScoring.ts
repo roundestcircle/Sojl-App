@@ -22,6 +22,13 @@ export type PackungsdichteOption = {
   /** Pd-classes this descriptor matches in C47. Most options match a single class;
    * "gleichmäßig" matches Pd1 and Pd2 because both rows list it. */
   pdClasses: readonly PdClass[];
+  /**
+   * Default scoring splits the question's weight equally across `pdClasses`.
+   * When `unsplit` is true, every matching Pd-class instead receives the full
+   * weight — used where the descriptor unambiguously covers multiple rows
+   * (e.g. "gleichmäßig" giving the full 5 points to both Pd1 and Pd2).
+   */
+  unsplit?: boolean;
 };
 
 export type PackungsdichteQuestion = {
@@ -47,6 +54,7 @@ export const PACKUNGSDICHTE_QUESTIONS: readonly PackungsdichteQuestion[] = [
         description:
           "Die Wurzeln verteilen sich gleichmäßig/regelmäßig über den ganzen Horizont.",
         pdClasses: [1, 2],
+        unsplit: true,
       },
       {
         label: "ungleichmäßig",
@@ -230,7 +238,7 @@ export function scorePackungsdichte(
     if (!a || a.optionIndex === null) return;
     const opt = q.options[a.optionIndex];
     if (!opt) return;
-    const share = q.weight / opt.pdClasses.length;
+    const share = opt.unsplit ? q.weight : q.weight / opt.pdClasses.length;
     for (const pd of opt.pdClasses) {
       scores[pd - 1] += share;
     }

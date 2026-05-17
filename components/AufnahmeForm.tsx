@@ -632,12 +632,16 @@ export default function AufnahmeForm({
           )}
         />
 
-        <Text style={[styles.fieldLabel, { marginTop: 8 }]}>Effektiver Wurzelraum</Text>
+        <Text style={[styles.fieldLabel, { marginTop: 8 }]}>
+          Effektiver Wurzelraum
+        </Text>
         <Controller
           control={control}
           name="effektiver_wurzelraum"
           render={({ field: { onChange, value } }) => (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
               <ValidatedField
                 keyboardType="number-pad"
                 placeholder="z.B. 80"
@@ -751,7 +755,9 @@ export default function AufnahmeForm({
               control={control}
               name="mittl_n"
               render={({ field: { onChange, value } }) => (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+                >
                   <TextInput
                     style={[styles.input, { flex: 1 }]}
                     keyboardType="number-pad"
@@ -774,7 +780,9 @@ export default function AufnahmeForm({
               control={control}
               name="mittl_temp"
               render={({ field: { onChange, value } }) => (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+                >
                   <TextInput
                     style={[styles.input, { flex: 1 }]}
                     keyboardType="decimal-pad"
@@ -887,7 +895,9 @@ export default function AufnahmeForm({
             control={control}
             name="grundigkeit"
             render={({ field: { value } }) => (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
                 <TextInput
                   style={[styles.input, styles.readonlyInput, { flex: 1 }]}
                   placeholder="Wird automatisch berechnet"
@@ -905,7 +915,9 @@ export default function AufnahmeForm({
               <Text style={styles.sectionTitle}>Feldkapazität bis 1 m</Text>
               <InfoButton text="Profilsumme der Feldkapazität über alle Horizonte bis 1 m Tiefe in l/m². Benötigt Bodenart, Packungsdichte (für die Trockenrohdichte) und Mächtigkeit in den Horizonten." />
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
               <TextInput
                 style={[styles.input, styles.readonlyInput, { flex: 1 }]}
                 placeholder="Wird berechnet…"
@@ -930,7 +942,9 @@ export default function AufnahmeForm({
               <Text style={styles.sectionTitle}>Nutzbare Feldkapazität</Text>
               <InfoButton text="Profilsumme der nutzbaren Feldkapazität über alle Horizonte bis zum effektiven Wurzelraum in l/m². Benötigt Bodenart, Packungsdichte (für die Trockenrohdichte), Mächtigkeit und den eingetragenen effektiven Wurzelraum." />
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
               <TextInput
                 style={[styles.input, styles.readonlyInput, { flex: 1 }]}
                 placeholder="Wird berechnet…"
@@ -957,7 +971,9 @@ export default function AufnahmeForm({
               </Text>
               <InfoButton text="Sorptionssumme im effektiven Wurzelraum in mol&#x2c;/m². Berechnet als KAK × (Basensättigung/100) × Trockenrohdichte × Mächtigkeit je Horizont. A-Horizonte gehen vollständig ein, alle anderen zur Hälfte. Benötigt KAK, Basensättigung und Trockenrohdichte (aus Packungsdichte abgeleitet) in den Horizonten." />
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
               <TextInput
                 style={[styles.input, styles.readonlyInput, { flex: 1 }]}
                 placeholder="Wird berechnet…"

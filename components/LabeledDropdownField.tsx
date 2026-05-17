@@ -152,35 +152,39 @@ export default function LabeledDropdownField({
             style={localStyles.sheet}
             onStartShouldSetResponder={() => true}
           >
-              <View>
-                <TextInput
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholder="Suchen..."
-                  style={localStyles.search}
-                  clearButtonMode="while-editing"
-                />
+            <View>
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Suchen..."
+                style={localStyles.search}
+                clearButtonMode="while-editing"
+              />
 
-                {filteredSections ? (
-                  <SectionList
-                    sections={filteredSections}
-                    keyExtractor={(item) => item.code}
-                    renderItem={renderItem}
-                    renderSectionHeader={renderSectionHeader}
-                    stickySectionHeadersEnabled={false}
-                    ListEmptyComponent={<Text style={localStyles.empty}>Keine Ergebnisse</Text>}
-                    keyboardShouldPersistTaps="handled"
-                  />
-                ) : (
-                  <FlatList
-                    data={filteredFlat}
-                    keyExtractor={(item) => item.code}
-                    renderItem={renderItem}
-                    ListEmptyComponent={<Text style={localStyles.empty}>Keine Ergebnisse</Text>}
-                    keyboardShouldPersistTaps="handled"
-                  />
-                )}
-              </View>
+              {filteredSections ? (
+                <SectionList
+                  sections={filteredSections}
+                  keyExtractor={(item) => item.code}
+                  renderItem={renderItem}
+                  renderSectionHeader={renderSectionHeader}
+                  stickySectionHeadersEnabled={false}
+                  ListEmptyComponent={
+                    <Text style={localStyles.empty}>Keine Ergebnisse</Text>
+                  }
+                  keyboardShouldPersistTaps="handled"
+                />
+              ) : (
+                <FlatList
+                  data={filteredFlat}
+                  keyExtractor={(item) => item.code}
+                  renderItem={renderItem}
+                  ListEmptyComponent={
+                    <Text style={localStyles.empty}>Keine Ergebnisse</Text>
+                  }
+                  keyboardShouldPersistTaps="handled"
+                />
+              )}
+            </View>
           </View>
         </TouchableOpacity>
       </Modal>

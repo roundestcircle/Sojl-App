@@ -884,25 +884,35 @@ export default function HorizontFormular({
                 <InfoButton text="Geschätzter Humusgehalt nach Renger (1987) in %; benötigt Bodenfarbe (Munsell), pH (CaCl₂) und Tonanteil. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt." />
               </View>
               <View style={{ flexDirection: "row", gap: 8 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.fieldLabel}>Humusgehalt</Text>
-                    <Controller
-                      control={control}
-                      name="humus_pct"
-                      render={({ field: { value } }) => (
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                          <TextInput
-                            style={[styles.input, styles.readonlyInput, { flex: 1 }]}
-                            placeholder="Wird berechnet…"
-                            placeholderTextColor={colors.primary + "66"}
-                            value={value}
-                            editable={false}
-                          />
-                          <Text style={localStyles.unit}>%</Text>
-                        </View>
-                      )}
-                    />
-                  </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fieldLabel}>Humusgehalt</Text>
+                  <Controller
+                    control={control}
+                    name="humus_pct"
+                    render={({ field: { value } }) => (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <TextInput
+                          style={[
+                            styles.input,
+                            styles.readonlyInput,
+                            { flex: 1 },
+                          ]}
+                          placeholder="Wird berechnet…"
+                          placeholderTextColor={colors.primary + "66"}
+                          value={value}
+                          editable={false}
+                        />
+                        <Text style={localStyles.unit}>%</Text>
+                      </View>
+                    )}
+                  />
+                </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.fieldLabel}>Humusklasse</Text>
                   <Controller
@@ -931,7 +941,13 @@ export default function HorizontFormular({
                 control={control}
                 name="trockenrohdichte"
                 render={({ field: { value } }) => (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
                     <TextInput
                       style={[styles.input, styles.readonlyInput, { flex: 1 }]}
                       placeholder="Wird berechnet…"
@@ -973,12 +989,14 @@ export default function HorizontFormular({
               title="Nutzbare Feldkapazität (nFK)"
               pctField="nfk_pct"
               lm2Field="nfk_lm2"
-              rating={watchedNfkPct ? rateNFK_pct(parseFloat(watchedNfkPct)) : ""}
+              rating={
+                watchedNfkPct ? rateNFK_pct(parseFloat(watchedNfkPct)) : ""
+              }
               control={control}
               info="Pflanzenverfügbares Wasser zwischen Feldkapazität und permanentem Welkepunkt in l/m²; benötigt Bodenart, Trockenrohdichte (aus Packungsdichte abgeleitet), Humusgehalt, Skelettanteil und Mächtigkeit. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt."
             />
 
-              <View style={localStyles.poreBlock}>
+            <View style={localStyles.poreBlock}>
               <View style={localStyles.headingRow}>
                 <Text style={styles.sectionTitle}>KAK</Text>
                 <InfoButton text="Kationenaustauschkapazität nach Bodenart-Nachschlagetabelle mit Humuskorrektur; benötigt Bodenart, Humusform (Aufnahme) und Humusgehalt. Falls euch nichts angezeigt wird, guckt nochmal nach ob ihr alles benötigte ausgefüllt habt." />
@@ -987,7 +1005,13 @@ export default function HorizontFormular({
                 control={control}
                 name="kak"
                 render={({ field: { value } }) => (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
                     <TextInput
                       style={[styles.input, styles.readonlyInput, { flex: 1 }]}
                       placeholder="Wird berechnet…"
@@ -1018,7 +1042,13 @@ export default function HorizontFormular({
                 control={control}
                 name="basensaettigung"
                 render={({ field: { value } }) => (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
                     <TextInput
                       style={[styles.input, styles.readonlyInput, { flex: 1 }]}
                       placeholder="Wird berechnet…"
@@ -1233,7 +1263,9 @@ function PoreReadout({
             control={control}
             name={pctField}
             render={({ field: { value } }) => (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
                 <TextInput
                   style={[styles.input, styles.readonlyInput, { flex: 1 }]}
                   placeholder={placeholder}
@@ -1251,7 +1283,9 @@ function PoreReadout({
             control={control}
             name={lm2Field}
             render={({ field: { value } }) => (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
                 <TextInput
                   style={[styles.input, styles.readonlyInput, { flex: 1 }]}
                   placeholder={placeholder}

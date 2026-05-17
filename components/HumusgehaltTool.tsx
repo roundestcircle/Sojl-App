@@ -73,7 +73,9 @@ export default function HumusgehaltTool({
   const [clayStr, setClayStr] = useState("");
   const [phStr, setPhStr] = useState(initialPH ?? "");
   const [bodenartError, setBodenartError] = useState(false);
-  const [activeModal, setActiveModal] = useState<"farbe" | "bodenart" | null>(null);
+  const [activeModal, setActiveModal] = useState<"farbe" | "bodenart" | null>(
+    null,
+  );
 
   function estimateClayFromBodenart() {
     const clay = bodenartToClay(bodenart);
@@ -391,7 +393,7 @@ const localStyles = StyleSheet.create({
     gap: 8,
     alignItems: "center",
   },
-modalOverlay: {
+  modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",

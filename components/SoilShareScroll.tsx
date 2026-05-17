@@ -128,7 +128,13 @@ export default function SoilShareScroll({ onConfirm }: Props) {
       <ResetInstructionButton
         storageKey="soilShareDontShowAgain"
         onReset={handleReset}
-        style={{ position: "absolute", left: 0, right: 0, bottom: 16, paddingHorizontal: 0 }}
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 16,
+          paddingHorizontal: 0,
+        }}
       />
     </View>
   );

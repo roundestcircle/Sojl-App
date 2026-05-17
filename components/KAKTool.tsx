@@ -41,157 +41,159 @@ export default function KAKTool() {
   return (
     <>
       <ScrollView
-      contentContainerStyle={localStyles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={localStyles.fieldGroup}>
-        <Text style={localStyles.label}>Bodenart</Text>
-        <View style={localStyles.fieldWithTool}>
-          <ValidatedField
-            style={[styles.input, { flex: 1 }]}
-            placeholder="z.B. Su2, Lt3, Tt"
-            placeholderTextColor={colors.primary + "66"}
-            autoCapitalize="none"
-            onChangeText={setBodenart}
-            value={bodenart}
-            validate={validateBodenart}
-            fieldLabel="Bodenart"
-          />
-          <TouchableOpacity
-            style={[styles.actionButton, localStyles.toolBtn]}
-            onPress={() => setActiveModal("bodenart")}
-          >
-            <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={localStyles.fieldGroup}>
-        <Text style={localStyles.label}>Humusform</Text>
-        <View style={localStyles.btnRow}>
-          {HUMUSFORM_OPTIONS.map((opt) => (
+        contentContainerStyle={localStyles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={localStyles.fieldGroup}>
+          <Text style={localStyles.label}>Bodenart</Text>
+          <View style={localStyles.fieldWithTool}>
+            <ValidatedField
+              style={[styles.input, { flex: 1 }]}
+              placeholder="z.B. Su2, Lt3, Tt"
+              placeholderTextColor={colors.primary + "66"}
+              autoCapitalize="none"
+              onChangeText={setBodenart}
+              value={bodenart}
+              validate={validateBodenart}
+              fieldLabel="Bodenart"
+            />
             <TouchableOpacity
-              key={opt}
-              style={[
-                localStyles.optionBtn,
-                humusform === opt && localStyles.optionBtnActive,
-              ]}
-              onPress={() =>
-                setHumusform((prev) => (prev === opt ? null : opt))
-              }
+              style={[styles.actionButton, localStyles.toolBtn]}
+              onPress={() => setActiveModal("bodenart")}
             >
-              <Text
-                style={[
-                  localStyles.optionBtnText,
-                  humusform === opt && localStyles.optionBtnTextActive,
-                ]}
-              >
-                {opt}
-              </Text>
+              <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
             </TouchableOpacity>
-          ))}
+          </View>
         </View>
-        <TouchableOpacity
-          style={[styles.actionButton, localStyles.toolBtn, { marginTop: 8 }]}
-          onPress={() => setActiveModal("humusform")}
-        >
-          <Text style={styles.actionButtonText}>Humusformlexikon</Text>
-        </TouchableOpacity>
-      </View>
 
-      <View style={localStyles.fieldGroup}>
-        <Text style={localStyles.label}>Humusgehalt</Text>
-        <View style={localStyles.inputRow}>
-          <ValidatedField
-            style={[styles.input, { flex: 1 }]}
-            placeholder="z.B. 2.5"
-            placeholderTextColor={colors.primary + "66"}
-            keyboardType="decimal-pad"
-            onChangeText={setHumusPct}
-            value={humusPct}
-            validate={validateHumusgehalt}
-            fieldLabel="Humusgehalt (%)"
-          />
-          <Text style={localStyles.unit}>%</Text>
+        <View style={localStyles.fieldGroup}>
+          <Text style={localStyles.label}>Humusform</Text>
+          <View style={localStyles.btnRow}>
+            {HUMUSFORM_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt}
+                style={[
+                  localStyles.optionBtn,
+                  humusform === opt && localStyles.optionBtnActive,
+                ]}
+                onPress={() =>
+                  setHumusform((prev) => (prev === opt ? null : opt))
+                }
+              >
+                <Text
+                  style={[
+                    localStyles.optionBtnText,
+                    humusform === opt && localStyles.optionBtnTextActive,
+                  ]}
+                >
+                  {opt}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <TouchableOpacity
-            style={[styles.actionButton, localStyles.toolBtn]}
-            onPress={() => setActiveModal("humus")}
+            style={[styles.actionButton, localStyles.toolBtn, { marginTop: 8 }]}
+            onPress={() => setActiveModal("humusform")}
           >
-            <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
+            <Text style={styles.actionButtonText}>Humusformlexikon</Text>
           </TouchableOpacity>
         </View>
-      </View>
 
-      {result !== "" ? (
-        <View style={styles.resultBox}>
-          <Text style={styles.resultValue}>{result} cmol_c/kg</Text>
-          <Text style={styles.resultLabel}>{rateKAK(parseFloat(result))}</Text>
-          <Text style={styles.resultLabel}>
-            inkl. Humuskorrektur ({humusform})
-          </Text>
+        <View style={localStyles.fieldGroup}>
+          <Text style={localStyles.label}>Humusgehalt</Text>
+          <View style={localStyles.inputRow}>
+            <ValidatedField
+              style={[styles.input, { flex: 1 }]}
+              placeholder="z.B. 2.5"
+              placeholderTextColor={colors.primary + "66"}
+              keyboardType="decimal-pad"
+              onChangeText={setHumusPct}
+              value={humusPct}
+              validate={validateHumusgehalt}
+              fieldLabel="Humusgehalt (%)"
+            />
+            <Text style={localStyles.unit}>%</Text>
+            <TouchableOpacity
+              style={[styles.actionButton, localStyles.toolBtn]}
+              onPress={() => setActiveModal("humus")}
+            >
+              <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      ) : (
-        <View style={styles.resultBox}>
-          <Text style={styles.resultPlaceholder}>Alle Felder ausfüllen</Text>
-        </View>
-      )}
+
+        {result !== "" ? (
+          <View style={styles.resultBox}>
+            <Text style={styles.resultValue}>{result} cmol_c/kg</Text>
+            <Text style={styles.resultLabel}>
+              {rateKAK(parseFloat(result))}
+            </Text>
+            <Text style={styles.resultLabel}>
+              inkl. Humuskorrektur ({humusform})
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.resultBox}>
+            <Text style={styles.resultPlaceholder}>Alle Felder ausfüllen</Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Farbe / Bodenart modals */}
-    <Modal
-      visible={activeModal === "bodenart"}
-      animationType="slide"
-      onRequestClose={() => setActiveModal(null)}
-    >
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-        <View style={localStyles.modalHeader}>
-          <TouchableOpacity onPress={() => setActiveModal(null)}>
-            <Text style={localStyles.modalClose}>✕ Schließen</Text>
-          </TouchableOpacity>
-        </View>
-        <TexTree
-          onConfirm={(result) => {
-            setBodenart(result);
-            setActiveModal(null);
-          }}
-        />
-      </SafeAreaView>
-    </Modal>
+      <Modal
+        visible={activeModal === "bodenart"}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+          <View style={localStyles.modalHeader}>
+            <TouchableOpacity onPress={() => setActiveModal(null)}>
+              <Text style={localStyles.modalClose}>✕ Schließen</Text>
+            </TouchableOpacity>
+          </View>
+          <TexTree
+            onConfirm={(result) => {
+              setBodenart(result);
+              setActiveModal(null);
+            }}
+          />
+        </SafeAreaView>
+      </Modal>
 
-    <Modal
-      visible={activeModal === "humus"}
-      animationType="slide"
-      onRequestClose={() => setActiveModal(null)}
-    >
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-        <View style={localStyles.modalHeader}>
-          <TouchableOpacity onPress={() => setActiveModal(null)}>
-            <Text style={localStyles.modalClose}>✕ Schließen</Text>
-          </TouchableOpacity>
-        </View>
-        <HumusgehaltTool
-          onConfirm={(klasse, pct) => {
-            setHumusPct(pct);
-            setActiveModal(null);
-          }}
-        />
-      </SafeAreaView>
-    </Modal>
+      <Modal
+        visible={activeModal === "humus"}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+          <View style={localStyles.modalHeader}>
+            <TouchableOpacity onPress={() => setActiveModal(null)}>
+              <Text style={localStyles.modalClose}>✕ Schließen</Text>
+            </TouchableOpacity>
+          </View>
+          <HumusgehaltTool
+            onConfirm={(klasse, pct) => {
+              setHumusPct(pct);
+              setActiveModal(null);
+            }}
+          />
+        </SafeAreaView>
+      </Modal>
 
-    <Modal
-      visible={activeModal === "humusform"}
-      animationType="slide"
-      onRequestClose={() => setActiveModal(null)}
-    >
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-        <View style={localStyles.modalHeader}>
-          <TouchableOpacity onPress={() => setActiveModal(null)}>
-            <Text style={localStyles.modalClose}>✕ Schließen</Text>
-          </TouchableOpacity>
-        </View>
-        <HumusformLexikonContent />
-      </SafeAreaView>
-    </Modal>
+      <Modal
+        visible={activeModal === "humusform"}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+          <View style={localStyles.modalHeader}>
+            <TouchableOpacity onPress={() => setActiveModal(null)}>
+              <Text style={localStyles.modalClose}>✕ Schließen</Text>
+            </TouchableOpacity>
+          </View>
+          <HumusformLexikonContent />
+        </SafeAreaView>
+      </Modal>
     </>
   );
 }

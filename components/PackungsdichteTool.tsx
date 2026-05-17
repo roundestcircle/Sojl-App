@@ -176,7 +176,8 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
                 </>
               ) : (
                 <Text style={styles.resultLabel}>
-                  Keine Frage beantwortet – bitte mindestens eine Antwort wählen.
+                  Keine Frage beantwortet – bitte mindestens eine Antwort
+                  wählen.
                 </Text>
               )}
             </View>
@@ -193,7 +194,9 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
                   gap: 4,
                 }}
               >
-                <Text style={{ fontSize: 13, color: "#555", fontWeight: "600" }}>
+                <Text
+                  style={{ fontSize: 13, color: "#555", fontWeight: "600" }}
+                >
                   Punkte je Klasse:
                 </Text>
                 {result.scores.map((s, i) => (

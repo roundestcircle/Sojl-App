@@ -128,7 +128,10 @@ export const ResetInstructionButton: React.FC<{
 
   if (hasExplicitPosition) {
     return (
-      <TouchableOpacity style={[styles.resetButton, style]} onPress={handleReset}>
+      <TouchableOpacity
+        style={[styles.resetButton, style]}
+        onPress={handleReset}
+      >
         <Text style={styles.resetButtonText}>Anleitung erneut zeigen</Text>
       </TouchableOpacity>
     );
@@ -143,7 +146,10 @@ export const ResetInstructionButton: React.FC<{
 
   return (
     <View style={containerStyle}>
-      <TouchableOpacity style={[styles.resetButton, { alignSelf: "stretch" }]} onPress={handleReset}>
+      <TouchableOpacity
+        style={[styles.resetButton, { alignSelf: "stretch" }]}
+        onPress={handleReset}
+      >
         <Text style={styles.resetButtonText}>Anleitung erneut zeigen</Text>
       </TouchableOpacity>
     </View>

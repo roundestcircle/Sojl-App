@@ -173,7 +173,6 @@ export default function DecisionTree({
         storageKey={storageKey}
         onReset={() => setModalKey((prev) => prev + 1)}
       />
-      
     </View>
   );
 }

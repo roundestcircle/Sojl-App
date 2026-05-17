@@ -126,7 +126,8 @@ const MUNSELL_SET: Set<string> = new Set(
   MUNSELL_DATA.map((e) => e.munsell.toUpperCase().replace(/\s+/g, " ").trim()),
 );
 
-const MUNSELL_RE = /^([\d.]+\s*[A-Z]{1,3})\s+(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/i;
+const MUNSELL_RE =
+  /^([\d.]+\s*[A-Z]{1,3})\s+(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/i;
 
 /** "10yr 4/3" → "10YR 4/3". Returns null when the structure is wrong. */
 function canonicalizeMunsell(input: string): string | null {
@@ -221,7 +222,8 @@ export function validatePh(raw: string): ValidationResult {
   return validateRange(raw, {
     min: 2.0,
     max: 9.0,
-    description: "pH (CaCl₂), sinnvoller Bereich für mineralische Böden 2,0–9,0.",
+    description:
+      "pH (CaCl₂), sinnvoller Bereich für mineralische Böden 2,0–9,0.",
   });
 }
 
@@ -269,7 +271,7 @@ export function validateMunsell(raw: string): ValidationResult {
         min: 0,
         max: 0,
         description:
-          "Format: \"<HUE> <Value>/<Chroma>\", z.B. 10YR 4/3. HUE z.B. 10YR, 7.5YR, 2.5Y, 10Y, 5GY ...",
+          'Format: "<HUE> <Value>/<Chroma>", z.B. 10YR 4/3. HUE z.B. 10YR, 7.5YR, 2.5Y, 10Y, 5GY ...',
       },
     };
   }
@@ -285,8 +287,7 @@ export function validateMunsell(raw: string): ValidationResult {
     valid: false,
     suggestion: {
       kind: "list",
-      description:
-        `Diese Munsell-Farbe (${canonical}) ist nicht im RIT-Datensatz enthalten. Bekannte Farben für ${hue}:`,
+      description: `Diese Munsell-Farbe (${canonical}) ist nicht im RIT-Datensatz enthalten. Bekannte Farben für ${hue}:`,
       items:
         matches.length > 0
           ? matches
@@ -304,7 +305,8 @@ export function validateMunsellValue(raw: string): ValidationResult {
   return validateRange(raw, {
     min: 1,
     max: 8,
-    description: "Munsell Value (feucht), Helligkeit zwischen 1 (dunkel) und 8 (hell).",
+    description:
+      "Munsell Value (feucht), Helligkeit zwischen 1 (dunkel) und 8 (hell).",
   });
 }
 

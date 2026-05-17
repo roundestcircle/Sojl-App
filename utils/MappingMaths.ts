@@ -120,6 +120,7 @@ export function calcPoreCapacities(
 ): PoreResult | null {
   const base = lookupPoreValues(bodenart, trockenrohdichte);
   if (!base) return null;
+  if (!humusPct.trim()) return null;
 
   const humusNum = parseFloat(humusPct);
   const corrected =

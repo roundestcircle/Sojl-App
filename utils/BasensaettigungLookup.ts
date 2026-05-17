@@ -112,6 +112,7 @@ export function calcBasensaettigung(
 ): string {
   const pH = parseFloat(pHStr);
   if (isNaN(pH)) return "";
+  if (!humusPctStr.trim()) return "";
   const humus = parseFloat(humusPctStr);
 
   let curve: CurvePoint[];

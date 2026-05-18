@@ -202,33 +202,6 @@ export function estimateHumus(
   return Math.round(v0 * 10) / 10;
 }
 
-// ─── Bodenart → clay % ───────────────────────────────────────────────────────
-
-const BODENART_CLAY: Record<string, number> = {
-  S: 3,
-  Su: 4,
-  U: 4,
-  Sl: 4,
-  Slu: 4,
-  Us: 6,
-  Ut: 6,
-  St: 12,
-  Ls: 20,
-  Lu: 20,
-  Ts: 35,
-  Lts: 35,
-  Lt: 35,
-  Tl: 55,
-  Tu: 55,
-  T: 72,
-};
-
-/** Strips trailing digits (e.g. "Su2" → "Su") then looks up clay %. Returns null if unknown. */
-export function bodenartToClay(bodenart: string): number | null {
-  const key = bodenart.trim().replace(/\d+$/, "");
-  return BODENART_CLAY[key] ?? null;
-}
-
 // ─── Munsell parser ───────────────────────────────────────────────────────────
 
 /** Parses "10YR 4/3" → { value: 4, chroma: 3 }. Returns null if unparseable. */

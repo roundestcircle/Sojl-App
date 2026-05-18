@@ -58,12 +58,12 @@ import {
 import { calcBasensaettigung } from "@/utils/BasensaettigungLookup";
 import { lookupTrockenrohdichte } from "@/utils/TrockenrohdichteLookup";
 import {
-  bodenartToClay,
   humusKlasse,
   estimateHumus,
   parseMunsell,
   chromaToClass,
 } from "@/utils/renger1987";
+import { bodenartToClay } from "@/utils/bodenartClay";
 
 // ─── Form shape ────────────────────────────────────────────────────────────────
 
@@ -231,6 +231,7 @@ export default function HorizontFormular({
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [autoExpanded, setAutoExpanded] = useState(false);
   const [erweiterteExpanded, setErweiterteExpanded] = useState(false);
+  const [tonanteilRange, setTonanteilRange] = useState<{ min: number; max: number } | null>(null);
   const isFirstWatch = useRef(true);
   const onSaveRef = useRef(onSave);
   onSaveRef.current = onSave;
@@ -502,9 +503,10 @@ export default function HorizontFormular({
               <TouchableOpacity
                 style={[styles.actionButton, localStyles.halfRowBtn]}
                 onPress={() => {
-                  const clay = bodenartToClay(watchedBodenart);
-                  if (clay !== null) {
-                    setValue("tonanteil", String(clay));
+                  const range = bodenartToClay(watchedBodenart);
+                  if (range !== null) {
+                    setValue("tonanteil", String(Math.round((range.min + range.max) / 2)));
+                    setTonanteilRange(range);
                   } else {
                     Alert.alert(
                       "Bodenart nicht erkannt",
@@ -516,6 +518,11 @@ export default function HorizontFormular({
                 <Text style={styles.actionButtonText}>Abschätzen</Text>
               </TouchableOpacity>
             </View>
+            {tonanteilRange && (
+              <Text style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+                KA6-Bereich: {tonanteilRange.min}–{tonanteilRange.max} %
+              </Text>
+            )}
 
             <Text style={styles.fieldLabel}>Skelettanteil (45)</Text>
             <View style={localStyles.fieldWithTool}>

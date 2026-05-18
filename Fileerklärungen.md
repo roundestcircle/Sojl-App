@@ -117,7 +117,7 @@ Generische Entscheidungsbaum-Komponente mit History-Stack, Zurück, Neu starten,
 Dünne Wrapper um `DecisionTree` mit den jeweiligen Baumdaten aus `utils/trees/`. Alle akzeptieren optionalen `onConfirm`-Prop.
 
 ### `components/HumusgehaltTool.tsx`
-Berechnungstool für Humusgehalt nach Renger et al. (1987). Eingaben: Munsell-Chroma (3 Buttons), Value, Bodenart + "Ton abschätzen"-Button, Tongehalt (%), pH. Bei unbekannter Bodenart zeigt "Ton abschätzen" ein Modal mit allen gültigen KA5-Kürzeln. Nutzt `chromaToClass` aus `utils/renger1987`. Props: `onConfirm(klasse, pct)`, `initialFarbeMunsell`, `initialPH`, `initialBodenart`.
+Berechnungstool für Humusgehalt nach Renger et al. (1987). Eingaben: Munsell-Chroma (3 Buttons), Value, Bodenart + "Aus BA abschätzen"-Button, Tongehalt (%), pH. "Aus BA abschätzen" setzt den Tongehalt auf den KA6-Mittelpunkt und zeigt darunter den KA6-Bereich (z.B. "KA6-Bereich: 17–25 %") via `clayRange`-State. Bei unbekannter Bodenart wird ein Fehler angezeigt. Nutzt `bodenartToClay` aus `utils/bodenartClay` und `chromaToClass` aus `utils/renger1987`. Props: `onConfirm(klasse, pct)`, `initialFarbeMunsell`, `initialPH`, `initialBodenart`.
 
 ### `components/KAKTool.tsx`
 Standalone-Tool zur KAK-Berechnung (Kationenaustauschkapazität). Eingaben: Bodenart, Humusform (Mull/Moder/Rohhumus als Buttons), Humusgehalt (%). Ruft `calcKAK` aus `MappingMaths` und zeigt das Ergebnis inkl. KA6-Bewertung via `rateKAK`.
@@ -130,7 +130,7 @@ React-Hook-Form-Formular für einen Horizont. Auto-speichert via `watch` (Abonne
 - **Horizontname (58)**: Freitext + Lexikon-Button.
 - **Tiefe (cm) (26)**: Von / Bis.
 - **Bodenart / Textur (44)**: + Bestimmungshilfe (TexTree).
-- **Bodeneigenschaften**: Tonanteil (mit "Abschätzen"-Button aus Bodenart, persistiert), Skelettanteil (45), pH, Bodenfarbe (28) + Bestimmungshilfe (PictureTaker), Humusgehalt (29) + Bestimmungshilfe, Carbonatgehalt (48), Lagerungsdichte (42), Feinwurzeln (41a), Gefüge (35).
+- **Bodeneigenschaften**: Tonanteil (mit "Abschätzen"-Button aus Bodenart — setzt Mittelpunkt des KA6-Bereichs, zeigt Bereich als Hinweistext via `tonanteilRange`-State, persistiert), Skelettanteil (45), pH, Bodenfarbe (28) + Bestimmungshilfe (PictureTaker), Humusgehalt (29) + Bestimmungshilfe, Carbonatgehalt (48), Lagerungsdichte (42), Feinwurzeln (41a), Gefüge (35).
 - **Notizen (57)**.
 - **Erweiterte Bodenaufnahme** (CollapsibleSection, eingeklappt): 14 einfache Felder (30–49), Substratkennzeichnung-Unterabschnitt (43, 51, 55, 52a, 52b, 53, 54), Geruch (56), Substratart, Probennummern (59) mit dynamischer Liste via `useFieldArray`.
 - **Automatisch berechnete Werte** (CollapsibleSection, eingeklappt): Mächtigkeit (dm) via `calcMaechtigkeitDm`; GPV, LK, FK, nFK je Vol% + l/m² mit verbaler Bewertung; KAK via `calcKAK` (mit `rateKAK`); Basensättigung via `calcBasensaettigung`. Berechnungen werden in `useEffect`-Hooks getriggert und via `setValue` persistiert.
@@ -210,8 +210,11 @@ Nachschlagetabelle und Hilfsfunktionen für Porenkennwerte nach KA6:
 ### `utils/BasensaettigungLookup.ts`
 Digitisierte Kurven (drei Humusgruppen) für die Berechnung der Basensättigung aus pH (CaCl₂). API: `calcBasensaettigung(pH, humusPct)` → BS in % oder leer; `humusGroupLabel(humusPct)` → menschenlesbares Gruppen-Label. Linearer Interpolations-Helper `interpBS`.
 
+### `utils/bodenartClay.ts`
+KA6-Tabelle C51: Bodenart-Kürzel → Ton-Bereich in Masse-%. Typ `ClayRange = { min, max }`. `bodenartToClay(bodenart)` → `ClayRange | null` (versucht zuerst exakten Treffer, dann Strip trailing digits als Fallback). `bodenartToClayMidpoint(bodenart)` → `number | null` (gerundeter Mittelpunkt). 32 Einträge von Ss bis Tt.
+
 ### `utils/renger1987.ts`
-Humusgehalt-Schätzung nach Renger et al. (1987) via trilineare Interpolation (Achsen: Value 1/3/5/7 × pH 3/5/7 × clay 2/8/25/65 %, jeweils für die Chroma-Klassen high/mid/low). API: `estimateHumus`, `humusKlasse`, `bodenartToClay`, `parseMunsell`, `chromaToClass`. ⚠️ Tabellenwerte sind Näherungen.
+Humusgehalt-Schätzung nach Renger et al. (1987) via trilineare Interpolation (Achsen: Value 1/3/5/7 × pH 3/5/7 × clay 2/8/25/65 %, jeweils für die Chroma-Klassen high/mid/low). API: `estimateHumus`, `humusKlasse`, `parseMunsell`, `chromaToClass`. Bodenart→Ton-Lookup wurde in `utils/bodenartClay.ts` ausgelagert. ⚠️ Tabellenwerte sind Näherungen.
 
 ### `utils/utmConversion.ts`
 Bidirektionale WGS84 ↔ UTM-Konvertierung: `latLonToUTM` (gültig für lat ∈ [-80°, +84°], normale UTM-Zonen — Sonderzonen N/Svalbard nicht behandelt), `utmToLatLon`.

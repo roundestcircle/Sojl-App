@@ -33,7 +33,7 @@ export const styles = StyleSheet.create({
 
   maintext: {
     fontSize: 18,
-    color: "#333",
+    color: colors.primary,
     fontWeight: "bold",
   },
 

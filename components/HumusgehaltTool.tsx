@@ -23,11 +23,11 @@ import TexTree from "@/components/TexTree";
 import {
   estimateHumus,
   humusKlasse,
-  bodenartToClay,
   parseMunsell,
   chromaToClass,
   type ChromaClass,
 } from "@/utils/renger1987";
+import { bodenartToClay } from "@/utils/bodenartClay";
 
 type Props = {
   onConfirm?: (klasse: string, pct: string) => void;
@@ -71,6 +71,7 @@ export default function HumusgehaltTool({
   const [valueStr, setValueStr] = useState(initValue);
   const [bodenart, setBodenart] = useState(initialBodenart ?? "");
   const [clayStr, setClayStr] = useState("");
+  const [clayRange, setClayRange] = useState<{ min: number; max: number } | null>(null);
   const [phStr, setPhStr] = useState(initialPH ?? "");
   const [bodenartError, setBodenartError] = useState(false);
   const [activeModal, setActiveModal] = useState<"farbe" | "bodenart" | null>(
@@ -78,9 +79,10 @@ export default function HumusgehaltTool({
   );
 
   function estimateClayFromBodenart() {
-    const clay = bodenartToClay(bodenart);
-    if (clay !== null) {
-      setClayStr(String(clay));
+    const range = bodenartToClay(bodenart);
+    if (range !== null) {
+      setClayStr(String(Math.round((range.min + range.max) / 2)));
+      setClayRange(range);
     } else {
       setBodenartError(true);
     }
@@ -204,6 +206,11 @@ export default function HumusgehaltTool({
               <Text style={styles.actionButtonText}>Aus BA abschätzen</Text>
             </TouchableOpacity>
           </View>
+          {clayRange && (
+            <Text style={localStyles.hint}>
+              KA6-Bereich: {clayRange.min}–{clayRange.max} %
+            </Text>
+          )}
         </View>
 
         {/* ── pH ── */}

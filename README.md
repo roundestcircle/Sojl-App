@@ -2,7 +2,7 @@
 
 Diese App ist ein Freizeitprojekt von mir. Sie dient der Bodenaufnahme im Feld nach der deutschen KA6. Mich hat aber das nasse Papier, die viel zu teure Farbtafel und die nervige Excelübetragung der Bodenaufnahmen in der Praxis genervt. Diese Problem will ich mit einer App lösen. 
 
-Ich studiere irgendwas mit Boden im Bachelor, bin aber kein Experte und bestimmt kein Programmierer. Die App ist noch ein Prototyp und kann noch Fehler enthalten, die ich übersehen habe. Vielleicht hilft sie euch trotzdem schon in der Praxis. Sie ist kostenlos und Open Source, und soll das auch bleiben.  
+Ich studiere irgendwas mit Boden im Bachelor, bin aber kein Experte und bestimmt kein Programmierer. Ich habe für die App viel Claude Code verwendet, aber so gut es geht überprüft dass der Code sinnvoll und die Ergebnisse korrekt sind. Dennnoch ist die App ein Prototyp und kann noch Fehler enthalten, die ich übersehen habe. Vielleicht hilft sie euch trotzdem schon in der Praxis. Sie ist kostenlos und Open Source, und soll das auch bleiben.  
 
 ## Download
 

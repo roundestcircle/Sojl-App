@@ -32,10 +32,12 @@ export default function AboutScreen() {
           </Text>
           <Text style={styles.text}>
             Ich studiere irgendwas mit Boden im Bachelor, bin aber kein Experte
-            und bestimmt kein Programmierer. Die App ist noch ein Prototyp und
-            kann noch Fehler enthalten, die ich übersehen habe. Vielleicht hilft
-            sie euch trotzdem schon in der Praxis. Sie ist kostenlos und Open
-            Source, und soll das auch bleiben.
+            und bestimmt kein Programmierer. Ich habe für die App viel Claude
+            Code verwendet, aber so gut es geht überprüft dass der Code sinnvoll
+            und die Ergebnisse korrekt sind. Dennnoch ist die App noch ein
+            Prototyp und kann noch Fehler enthalten, die ich übersehen habe.
+            Vielleicht hilft sie euch trotzdem schon in der Praxis. Sie ist
+            kostenlos und Open Source, und soll das auch bleiben.
           </Text>
           <Text style={styles.text}>
             Schaut euch gerne den Quellcode{" "}

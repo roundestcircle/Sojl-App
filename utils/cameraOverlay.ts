@@ -29,17 +29,50 @@ export const OVERLAY_FRACTIONS = {
   },
 } as const;
 
-/** Returns absolute pixel coordinates for an extractor-sample rectangle. */
+/**
+ * Returns absolute pixel coordinates for an extractor-sample rectangle.
+ *
+ * The camera preview fills the screen with a center-crop ("cover"): only the
+ * portion of the sensor frame matching the preview's aspect ratio is visible,
+ * yet the captured photo keeps the full frame. The overlay fractions are
+ * defined relative to what the user sees, so we first derive the visible
+ * (center-cropped) region of the photo for the given preview aspect ratio and
+ * place the fractional rectangle inside it. This makes the sampled pixels line
+ * up with the guide boxes the user aimed with.
+ *
+ * `previewAspect` (width / height of the on-screen preview) is optional; when
+ * omitted the fractions apply to the full photo (legacy behavior).
+ */
 export function getSamplingRect(
   type: "greyCard" | "soilSample",
   imageWidth: number,
   imageHeight: number,
+  previewAspect?: number,
 ): OverlayRect {
+  // Determine the visible (center-cropped) region of the photo.
+  let visWidth = imageWidth;
+  let visHeight = imageHeight;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  if (previewAspect && previewAspect > 0) {
+    const photoAspect = imageWidth / imageHeight;
+    if (photoAspect > previewAspect) {
+      // Photo is wider than the preview -> sides are cropped off.
+      visWidth = imageHeight * previewAspect;
+      offsetX = (imageWidth - visWidth) / 2;
+    } else {
+      // Photo is taller than the preview -> top/bottom are cropped off.
+      visHeight = imageWidth / previewAspect;
+      offsetY = (imageHeight - visHeight) / 2;
+    }
+  }
+
   const f = OVERLAY_FRACTIONS[type].sample;
   return {
-    top: Math.floor(imageHeight * f.top),
-    left: Math.floor(imageWidth * f.left),
-    width: Math.floor(imageWidth * f.width),
-    height: Math.floor(imageHeight * f.height),
+    top: Math.floor(offsetY + visHeight * f.top),
+    left: Math.floor(offsetX + visWidth * f.left),
+    width: Math.floor(visWidth * f.width),
+    height: Math.floor(visHeight * f.height),
   };
 }

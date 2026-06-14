@@ -80,22 +80,30 @@ function computeAdaptationMatrix() {
 
 const ADAPT_C_TO_D65 = computeAdaptationMatrix();
 
+// D65 reference white (XYZ, Y normalized to 1) used for the CIE-Lab transform.
+const D65_WHITE = [0.95047, 1.0, 1.08883];
+
 /**
- * Convert CIE xyY (illuminant C) to sRGB (0-255)
- * Returns null if the color is outside the sRGB gamut.
+ * Convert CIE xyY (illuminant C) to XYZ already chromatically adapted to D65.
+ * Y is normalized to the 0..~1 range. Returns null for degenerate y === 0.
  */
-function xyYtoSRGB(x, y, Y_val) {
+function xyYtoXYZ_D65(x, y, Y_val) {
   if (y === 0) return null;
 
-  // xyY -> XYZ (normalized so Y is in 0..~100 range from the dataset)
-  // The renotation data Y is already in the 0-100 scale
+  // xyY -> XYZ. The renotation data Y is in the 0-100 scale; normalize to 0..1.
   const Y_norm = Y_val / 100;
   const X = (x * Y_norm) / y;
   const Z = ((1 - x - y) * Y_norm) / y;
 
   // Chromatic adaptation: illuminant C -> D65
-  const [Xd, Yd, Zd] = matMul3(ADAPT_C_TO_D65, [X, Y_norm, Z]);
+  return matMul3(ADAPT_C_TO_D65, [X, Y_norm, Z]);
+}
 
+/**
+ * Convert XYZ (D65, Y in 0..1) to sRGB (0-255).
+ * Returns null if the color is outside the sRGB gamut.
+ */
+function xyzD65toSRGB([Xd, Yd, Zd]) {
   // XYZ (D65) -> linear sRGB
   const rLin = 3.2406 * Xd - 1.5372 * Yd - 0.4986 * Zd;
   const gLin = -0.9689 * Xd + 1.8758 * Yd + 0.0415 * Zd;
@@ -121,6 +129,30 @@ function xyYtoSRGB(x, y, Y_val) {
     b: Math.max(0, Math.min(255, b)),
   };
 }
+
+/**
+ * Convert XYZ (D65, Y in 0..1) to CIE-Lab.
+ * Computed directly from XYZ so the stored Lab carries full precision rather
+ * than being round-tripped through gamut-clipped, 8-bit sRGB.
+ */
+function xyzD65toLab([X, Y, Z]) {
+  const xr = X / D65_WHITE[0];
+  const yr = Y / D65_WHITE[1];
+  const zr = Z / D65_WHITE[2];
+
+  const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  const fx = f(xr);
+  const fy = f(yr);
+  const fz = f(zr);
+
+  return {
+    L: 116 * fy - 16,
+    a: 500 * (fx - fy),
+    b: 200 * (fy - fz),
+  };
+}
+
+const round3 = (n) => Math.round(n * 1000) / 1000;
 
 /**
  * Parse a Munsell hue string like "2.5YR", "10R", "5GY" etc.
@@ -204,14 +236,30 @@ function main() {
       continue;
     }
 
-    const rgb = xyYtoSRGB(x, y, Y_val);
+    const xyz = xyYtoXYZ_D65(x, y, Y_val);
+    if (!xyz) {
+      skippedParsing++;
+      continue;
+    }
+
+    // Keep only the same in-gamut chip set as before (gated on sRGB).
+    const rgb = xyzD65toSRGB(xyz);
     if (!rgb) {
       skippedOutOfGamut++;
       continue;
     }
 
+    // Lab comes straight from XYZ(D65) — full precision, not from the 8-bit RGB.
+    const lab = xyzD65toLab(xyz);
+
     const munsell = formatMunsell(parseHue(hue), value, chroma);
-    entries.push({ munsell, r: rgb.r, g: rgb.g, b: rgb.b });
+    entries.push({
+      munsell,
+      r: rgb.r,
+      g: rgb.g,
+      b: rgb.b,
+      lab: { L: round3(lab.L), a: round3(lab.a), b: round3(lab.b) },
+    });
   }
 
   // Generate TypeScript file
@@ -224,7 +272,9 @@ function main() {
  * Skipped (out of sRGB gamut): ${skippedOutOfGamut}
  * Skipped (parse errors): ${skippedParsing}
  *
- * Conversion: CIE xyY (illuminant C) -> XYZ -> Bradford adaptation to D65 -> sRGB
+ * Conversion: CIE xyY (illuminant C) -> XYZ -> Bradford adaptation to D65.
+ *   - r,g,b: sRGB (0-255) for display, gated on the sRGB gamut.
+ *   - lab:   CIE-Lab (D65) computed directly from XYZ for precise matching.
  * DO NOT EDIT MANUALLY. Re-run: node scripts/generateMunsellData.js
  */
 
@@ -233,12 +283,14 @@ export interface MunsellEntry {
   r: number;
   g: number;
   b: number;
+  lab: { L: number; a: number; b: number };
 }
 
 export const MUNSELL_DATA: MunsellEntry[] = [\n`;
 
   for (const entry of entries) {
-    ts += `  { munsell: '${entry.munsell}', r: ${entry.r}, g: ${entry.g}, b: ${entry.b} },\n`;
+    const { L, a, b } = entry.lab;
+    ts += `  { munsell: "${entry.munsell}", r: ${entry.r}, g: ${entry.g}, b: ${entry.b}, lab: { L: ${L}, a: ${a}, b: ${b} } },\n`;
   }
 
   ts += `];\n`;

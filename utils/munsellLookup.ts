@@ -1,7 +1,8 @@
 /**
  * Munsell Color Lookup and RGB to Munsell Conversion
- * Uses the official RIT Munsell Renotation Dataset with Delta-E color distance matching.
- * The dataset is stored in munsellData.ts as an array of objects with RGB and Munsell values.
+ * Uses the official RIT Munsell Renotation Dataset with CIEDE2000 color-distance matching.
+ * The dataset is stored in munsellData.ts as an array of objects with RGB, Munsell, and
+ * precomputed CIE-Lab values.
  */
 
 import { MUNSELL_DATA } from "./munsellData";
@@ -12,17 +13,23 @@ interface RGBColor {
   b: number;
 }
 
+interface LabColor {
+  L: number;
+  a: number;
+  b: number;
+}
+
 /**
- * Convert RGB to Lab color space for more accurate color distance calculation
- * Lab color space is more perceptually uniform than RGB
+ * Convert an sRGB color (0-255) to CIE-Lab (D65). Used only for the input
+ * color; reference chips carry their own precise Lab from the dataset.
  */
-function rgbToLab(rgb: RGBColor): { L: number; a: number; b: number } {
+function rgbToLab(rgb: RGBColor): LabColor {
   // Normalize RGB to 0-1
   let r = rgb.r / 255;
   let g = rgb.g / 255;
   let b = rgb.b / 255;
 
-  // Apply gamma correction
+  // Apply gamma correction (sRGB -> linear)
   r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
   g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
   b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
@@ -49,14 +56,89 @@ function rgbToLab(rgb: RGBColor): { L: number; a: number; b: number } {
   return { L, a, b: labB };
 }
 
-// Precomputed Lab values for every MUNSELL_DATA entry. Built once at module load
-// so each lookup only converts the input color rather than 2N entries per call.
-const MUNSELL_LAB = MUNSELL_DATA.map((e) =>
-  rgbToLab({ r: e.r, g: e.g, b: e.b }),
-);
+const DEG = Math.PI / 180;
+const POW25_7 = Math.pow(25, 7);
 
 /**
- * Find the closest Munsell color for a given RGB color via CIE76 Delta-E in Lab space.
+ * CIEDE2000 color difference between two Lab colors (kL = kC = kH = 1).
+ * More perceptually accurate than the Euclidean CIE76 distance, especially in
+ * the low-chroma region where soil colors sit — this reduces neighbouring
+ * chips being picked over the true closest one.
+ */
+function ciede2000(lab1: LabColor, lab2: LabColor): number {
+  const { L: L1, a: a1, b: b1 } = lab1;
+  const { L: L2, a: a2, b: b2 } = lab2;
+
+  const C1 = Math.sqrt(a1 * a1 + b1 * b1);
+  const C2 = Math.sqrt(a2 * a2 + b2 * b2);
+  const Cbar = (C1 + C2) / 2;
+  const Cbar7 = Math.pow(Cbar, 7);
+  const G = 0.5 * (1 - Math.sqrt(Cbar7 / (Cbar7 + POW25_7)));
+
+  const a1p = (1 + G) * a1;
+  const a2p = (1 + G) * a2;
+  const C1p = Math.sqrt(a1p * a1p + b1 * b1);
+  const C2p = Math.sqrt(a2p * a2p + b2 * b2);
+
+  let h1p = Math.atan2(b1, a1p);
+  if (h1p < 0) h1p += 2 * Math.PI;
+  let h2p = Math.atan2(b2, a2p);
+  if (h2p < 0) h2p += 2 * Math.PI;
+
+  const dLp = L2 - L1;
+  const dCp = C2p - C1p;
+
+  let dhp = 0;
+  if (C1p * C2p !== 0) {
+    dhp = h2p - h1p;
+    if (dhp > Math.PI) dhp -= 2 * Math.PI;
+    else if (dhp < -Math.PI) dhp += 2 * Math.PI;
+  }
+  const dHp = 2 * Math.sqrt(C1p * C2p) * Math.sin(dhp / 2);
+
+  const Lbarp = (L1 + L2) / 2;
+  const Cbarp = (C1p + C2p) / 2;
+
+  let hbarp: number;
+  if (C1p * C2p === 0) {
+    hbarp = h1p + h2p;
+  } else if (Math.abs(h1p - h2p) > Math.PI) {
+    hbarp =
+      h1p + h2p < 2 * Math.PI
+        ? (h1p + h2p + 2 * Math.PI) / 2
+        : (h1p + h2p - 2 * Math.PI) / 2;
+  } else {
+    hbarp = (h1p + h2p) / 2;
+  }
+
+  const T =
+    1 -
+    0.17 * Math.cos(hbarp - 30 * DEG) +
+    0.24 * Math.cos(2 * hbarp) +
+    0.32 * Math.cos(3 * hbarp + 6 * DEG) -
+    0.2 * Math.cos(4 * hbarp - 63 * DEG);
+
+  const dTheta = 30 * DEG * Math.exp(-Math.pow((hbarp / DEG - 275) / 25, 2));
+  const Cbarp7 = Math.pow(Cbarp, 7);
+  const RC = 2 * Math.sqrt(Cbarp7 / (Cbarp7 + POW25_7));
+  const SL =
+    1 +
+    (0.015 * Math.pow(Lbarp - 50, 2)) / Math.sqrt(20 + Math.pow(Lbarp - 50, 2));
+  const SC = 1 + 0.045 * Cbarp;
+  const SH = 1 + 0.015 * Cbarp * T;
+  const RT = -Math.sin(2 * dTheta) * RC;
+
+  const termL = dLp / SL;
+  const termC = dCp / SC;
+  const termH = dHp / SH;
+
+  return Math.sqrt(
+    termL * termL + termC * termC + termH * termH + RT * termC * termH,
+  );
+}
+
+/**
+ * Find the closest Munsell color for a given RGB color via CIEDE2000 in Lab space.
  */
 export function rgbToMunsell(rgb: RGBColor): {
   full: string;
@@ -64,23 +146,18 @@ export function rgbToMunsell(rgb: RGBColor): {
 } {
   const inputLab = rgbToLab(rgb);
   let closestIdx = 0;
-  // Squared distance: avoids one sqrt per entry; we sqrt the winner at the end.
-  let minDistSq = Infinity;
+  let minDist = Infinity;
 
-  for (let i = 0; i < MUNSELL_LAB.length; i++) {
-    const lab = MUNSELL_LAB[i];
-    const dL = inputLab.L - lab.L;
-    const da = inputLab.a - lab.a;
-    const db = inputLab.b - lab.b;
-    const distSq = dL * dL + da * da + db * db;
-    if (distSq < minDistSq) {
-      minDistSq = distSq;
+  for (let i = 0; i < MUNSELL_DATA.length; i++) {
+    const dist = ciede2000(inputLab, MUNSELL_DATA[i].lab);
+    if (dist < minDist) {
+      minDist = dist;
       closestIdx = i;
     }
   }
 
   return {
     full: MUNSELL_DATA[closestIdx].munsell,
-    distance: Math.sqrt(minDistSq),
+    distance: minDist,
   };
 }

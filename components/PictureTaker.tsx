@@ -56,6 +56,12 @@ export default function PictureTaker({ onConfirm }: Props) {
   // Reference to the camera component
   const ref = useRef<CameraView>(null);
 
+  // On-screen aspect ratio (width / height) of the camera preview. The preview
+  // is center-cropped to fill the screen, so the extractor uses this to sample
+  // the same region of the photo that the user framed. Captured at layout time
+  // because the CameraView unmounts once a photo is taken.
+  const previewAspectRef = useRef<number | undefined>(undefined);
+
   // Store the URI of the taken photo
   const [uri, setUri] = useState<string | null>(null);
 
@@ -120,8 +126,10 @@ export default function PictureTaker({ onConfirm }: Props) {
     try {
       setIsExtractingColor(true);
       // Extract color and convert to Munsell notation
-      const { correctedColor, correctedColorMunsell } =
-        await extractSoilColor(photoUri);
+      const { correctedColor, correctedColorMunsell } = await extractSoilColor(
+        photoUri,
+        previewAspectRef.current,
+      );
       setSoilColor(correctedColor); // Store RGB values
       setMunsellColor(correctedColorMunsell.full); // Store full Munsell notation
     } catch (error) {
@@ -143,6 +151,7 @@ export default function PictureTaker({ onConfirm }: Props) {
       <View style={{ flex: 1, paddingBottom: 70 }}>
         <Image
           source={{ uri }}
+          contentFit="cover"
           style={{ width: "100%", height: "100%", borderRadius: 10 }}
         />
         <View style={overlayStyles.largeRectangle} />
@@ -237,6 +246,12 @@ export default function PictureTaker({ onConfirm }: Props) {
           mode="picture"
           facing="back"
           responsiveOrientationWhenOrientationLocked
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            if (width > 0 && height > 0) {
+              previewAspectRef.current = width / height;
+            }
+          }}
         />
         <View style={overlayStyles.largeRectangle} />
         <View style={overlayStyles.smallRectangle} />

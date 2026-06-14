@@ -220,16 +220,16 @@ Humusgehalt-Schätzung nach Renger et al. (1987) via trilineare Interpolation (A
 Bidirektionale WGS84 ↔ UTM-Konvertierung: `latLonToUTM` (gültig für lat ∈ [-80°, +84°], normale UTM-Zonen — Sonderzonen N/Svalbard nicht behandelt), `utmToLatLon`.
 
 ### `utils/soilColorExtractor.ts`
-Bildanalyse für Bodenfarbe: Lädt das Bild via `Skia.Image.MakeImageFromEncoded`, liest Pixel (RGBA-Annahme, dokumentiert), mittelt die Greycard-Region (via `getSamplingRect("greyCard", …)` aus `cameraOverlay`) für die Korrekturfaktoren und mittelt anschließend die Bodenprobe-Region. Skia-Image wird im `finally` mit `image.dispose()` freigegeben. Ergebnis-RGB → Munsell via `rgbToMunsell`.
+Bildanalyse für Bodenfarbe: Lädt das Bild via `Skia.Image.MakeImageFromEncoded`, liest Pixel (RGBA-Annahme, dokumentiert) und mittelt Greycard- und Bodenprobe-Region (via `getSamplingRect(…)` aus `cameraOverlay`). Die gesamte Farbmathematik läuft im linearen Licht: jedes sRGB-Byte wird vor dem Mitteln linearisiert, daraus werden die Greycard-Korrekturfaktoren (`linear(128)/Greycard`, von-Kries-artig pro Kanal) berechnet und auf die Bodenprobe angewandt; erst das Endergebnis wird nach sRGB zurückkodiert. `extractSoilColor` nimmt optional `previewAspect`, das an `getSamplingRect` durchgereicht wird (siehe `cameraOverlay`). Skia-Image wird im `finally` mit `image.dispose()` freigegeben. Ergebnis-RGB → Munsell via `rgbToMunsell`.
 
 ### `utils/cameraOverlay.ts`
-Zentrale Quelle der Overlay-Rechtecke für Kamera-UI und Pixel-Extraktion. `OVERLAY_FRACTIONS` liefert je Region (`greyCard`, `soilSample`) zwei Rechtecke: `display` (was der User sieht) und `sample` (was der Extraktor mittelt). Greycard-`sample` ist absichtlich kürzer als `display`, um Randartefakte zu vermeiden. `getSamplingRect(type, w, h)` rechnet die `sample`-Bruchteile in Pixel-Koordinaten.
+Zentrale Quelle der Overlay-Rechtecke für Kamera-UI und Pixel-Extraktion. `OVERLAY_FRACTIONS` liefert je Region (`greyCard`, `soilSample`) zwei Rechtecke: `display` (was der User sieht) und `sample` (was der Extraktor mittelt). Greycard-`sample` ist absichtlich kürzer als `display`, um Randartefakte zu vermeiden. `getSamplingRect(type, w, h, previewAspect?)` rechnet die `sample`-Bruchteile in Pixel-Koordinaten. Da die Vorschau bildschirmfüllend center-cropped wird ("cover"), das Foto aber den vollen Sensorausschnitt behält, beschränkt die Funktion bei gegebenem `previewAspect` die Bruchteile auf den sichtbaren (zentral beschnittenen) Bereich des Fotos — so treffen die gemittelten Pixel die vom User anvisierten Rechtecke. Ohne `previewAspect` gilt das Legacy-Verhalten (Bruchteile aufs ganze Foto).
 
 ### `utils/munsellLookup.ts`
-RGB → Munsell via Delta-E-Abstand im CIE-Lab-Farbraum. `MUNSELL_LAB` wird einmalig beim Modul-Laden aus `MUNSELL_DATA` vorberechnet, sodass je Aufruf nur die Eingabefarbe konvertiert wird; der Loop arbeitet mit quadrierten Abständen und zieht erst am Ende einmal die Wurzel.
+RGB → Munsell via CIEDE2000-Farbabstand im CIE-Lab-Farbraum (perzeptuell genauer als CIE76, v. a. im niedrigchromatischen Bodenbereich). Die Eingabefarbe wird per `rgbToLab` konvertiert; die Referenz-Chips bringen ihr präzises Lab direkt aus `MUNSELL_DATA` mit (kein Round-Trip über 8-bit-RGB beim Laden). Der Loop sucht den nächsten Chip per Nearest-Neighbor — keine Interpolation, das diskrete Raster (Value-Schritt 1, Chroma-Schritt 2) bleibt erhalten.
 
 ### `utils/munsellData.ts`
-Statisches RIT Munsell Renotation Dataset. Nur von `munsellLookup.ts` verwendet.
+Statisches RIT Munsell Renotation Dataset. Jeder Eintrag trägt `r,g,b` (sRGB, für Anzeige) und `lab` (CIE-Lab D65, direkt aus XYZ, fürs Matching). Verwendet von `munsellLookup.ts` (Lab) und `fieldValidation.ts` (Munsell-String).
 
 ### `utils/DecisionTreeTypes.ts`
 Typen für Entscheidungsbäume: `TreeOption`, `InnerNode` (mit optionalem `hint`), `ResultNode`, `TreeNode`, `DecisionTreeData`.
@@ -276,4 +276,4 @@ Lagerungsdichte Ld1–Ld5 per Stechzylinder- und Fingerprobe.
 ## Skripte (`scripts/`)
 
 ### `scripts/generateMunsellData.js`
-Erzeugt `utils/munsellData.ts` aus dem RIT Munsell Renotation Dataset (`real.dat`). Wendet eine Bradford-Chromatic-Adaptation (Illuminant C → D65) an und konvertiert xyY → XYZ → sRGB. Wird nur manuell ausgeführt, nicht zur Laufzeit.
+Erzeugt `utils/munsellData.ts` aus dem RIT Munsell Renotation Dataset (`real.dat`). Wendet eine Bradford-Chromatic-Adaptation (Illuminant C → D65) auf xyY → XYZ an und leitet daraus zwei Werte ab: `r,g,b` (sRGB, zugleich Gamut-Filter — nur in-Gamut-Chips werden behalten) und `lab` (CIE-Lab direkt aus XYZ, damit das gespeicherte Lab volle Präzision hat statt über 8-bit-sRGB gerundet zu werden). Wird nur manuell ausgeführt, nicht zur Laufzeit.

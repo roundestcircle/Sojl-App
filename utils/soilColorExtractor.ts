@@ -1,5 +1,5 @@
 import { Skia } from "@shopify/react-native-skia";
-import { rgbToMunsell } from "./munsellLookup";
+import { linearRgbToMunsell } from "./munsellLookup";
 import { getSamplingRect, type OverlayRect } from "./cameraOverlay";
 
 /**
@@ -210,13 +210,15 @@ export const extractSoilColor = async (
       actualHeight,
     );
 
-    // Apply white-balance correction in linear light, then re-encode to sRGB.
+    // Apply white-balance correction in linear light. Match directly from the
+    // linear color (no 8-bit re-encode, which would quantize dark colors and
+    // inflate their chroma); the sRGB triplet is only for display.
     const correctedLinear = applyCorrectionToColor(
       soilLinear,
       correctionFactors,
     );
+    const correctedMunsell = linearRgbToMunsell(correctedLinear);
     const correctedRGB = linearToSrgb255(correctedLinear);
-    const correctedMunsell = rgbToMunsell(correctedRGB);
 
     return {
       correctedColor: correctedRGB,

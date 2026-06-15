@@ -20,20 +20,12 @@ interface LabColor {
 }
 
 /**
- * Convert an sRGB color (0-255) to CIE-Lab (D65). Used only for the input
- * color; reference chips carry their own precise Lab from the dataset.
+ * Convert a linear-light sRGB color (channels in 0..1) to CIE-Lab (D65).
+ * Kept separate from `rgbToLab` so callers that already work in linear light
+ * can match without re-encoding to 8-bit sRGB and back — that round-trip
+ * quantizes dark colors and inflates their chroma.
  */
-function rgbToLab(rgb: RGBColor): LabColor {
-  // Normalize RGB to 0-1
-  let r = rgb.r / 255;
-  let g = rgb.g / 255;
-  let b = rgb.b / 255;
-
-  // Apply gamma correction (sRGB -> linear)
-  r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-  g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-  b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-
+function linearRgbToLab(r: number, g: number, b: number): LabColor {
   // Convert to XYZ
   const x = r * 0.4124 + g * 0.3576 + b * 0.1805;
   const y = r * 0.2126 + g * 0.7152 + b * 0.0722;
@@ -49,11 +41,20 @@ function rgbToLab(rgb: RGBColor): LabColor {
   const fy = yn > 0.008856 ? Math.pow(yn, 1 / 3) : 7.787 * yn + 16 / 116;
   const fz = zn > 0.008856 ? Math.pow(zn, 1 / 3) : 7.787 * zn + 16 / 116;
 
-  const L = 116 * fy - 16;
-  const a = 500 * (fx - fy);
-  const labB = 200 * (fy - fz);
+  return { L: 116 * fy - 16, a: 500 * (fx - fy), b: 200 * (fy - fz) };
+}
 
-  return { L, a, b: labB };
+/**
+ * Convert an sRGB color (0-255) to CIE-Lab (D65). Used only for the input
+ * color; reference chips carry their own precise Lab from the dataset.
+ */
+function rgbToLab(rgb: RGBColor): LabColor {
+  // Normalize 0-255 -> 0-1 and gamma-decode (sRGB -> linear)
+  const lin = (c: number): number => {
+    c /= 255;
+    return c > 0.04045 ? Math.pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
+  };
+  return linearRgbToLab(lin(rgb.r), lin(rgb.g), lin(rgb.b));
 }
 
 const DEG = Math.PI / 180;
@@ -138,13 +139,12 @@ function ciede2000(lab1: LabColor, lab2: LabColor): number {
 }
 
 /**
- * Find the closest Munsell color for a given RGB color via CIEDE2000 in Lab space.
+ * Find the closest Munsell color for a given Lab color via CIEDE2000.
  */
-export function rgbToMunsell(rgb: RGBColor): {
+export function labToMunsell(inputLab: LabColor): {
   full: string;
   distance: number;
 } {
-  const inputLab = rgbToLab(rgb);
   let closestIdx = 0;
   let minDist = Infinity;
 
@@ -160,4 +160,26 @@ export function rgbToMunsell(rgb: RGBColor): {
     full: MUNSELL_DATA[closestIdx].munsell,
     distance: minDist,
   };
+}
+
+/**
+ * Find the closest Munsell color for a linear-light sRGB color (channels in
+ * 0..1). Preferred entry point for the extractor, which already works in
+ * linear light — avoids the lossy 8-bit re-encode before matching.
+ */
+export function linearRgbToMunsell(lin: { r: number; g: number; b: number }): {
+  full: string;
+  distance: number;
+} {
+  return labToMunsell(linearRgbToLab(lin.r, lin.g, lin.b));
+}
+
+/**
+ * Find the closest Munsell color for a given sRGB color (0-255) via CIEDE2000.
+ */
+export function rgbToMunsell(rgb: RGBColor): {
+  full: string;
+  distance: number;
+} {
+  return labToMunsell(rgbToLab(rgb));
 }

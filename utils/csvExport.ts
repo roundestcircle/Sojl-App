@@ -10,6 +10,7 @@ import type { Aufnahme } from "./MappingQueries";
 
 type AufnahmeCSVRow = {
   aufnahme_id: number;
+  name: string;
   erstellt_am: string;
   status: string;
   gps_lat: string;
@@ -117,6 +118,7 @@ function buildRows(aufnahmen: Aufnahme[]): {
 } {
   const aufnahmenRows: AufnahmeCSVRow[] = aufnahmen.map((a) => ({
     aufnahme_id: a.id,
+    name: a.name ?? "",
     erstellt_am: a.erstellt_am,
     status: a.status,
     gps_lat: a.gps_lat != null ? String(a.gps_lat) : "",

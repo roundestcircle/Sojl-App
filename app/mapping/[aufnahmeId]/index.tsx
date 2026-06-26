@@ -34,6 +34,31 @@ import { exportAufnahmeAsZip } from "@/utils/csvExport";
 import * as Haptics from "expo-haptics";
 import HorizontButton from "@/components/HorizonButton";
 import Badge from "@/components/Badge";
+import OrtFindenModal from "@/components/OrtFindenModal";
+import { utmToLatLon } from "@/utils/utmConversion";
+
+// ─── Target coordinates ───────────────────────────────────────────────────────
+
+/**
+ * Resolves an Aufnahme's location to WGS84 lat/lon: uses GPS coordinates when
+ * present, otherwise derives them from the stored UTM coordinates (parsing the
+ * `utm_zone` label like "32N" into zone number + hemisphere). Returns null when
+ * no coordinates exist at all.
+ */
+function getTargetCoords(a: Aufnahme): { lat: number; lon: number } | null {
+  if (a.gps_lat != null && a.gps_lon != null) {
+    return { lat: a.gps_lat, lon: a.gps_lon };
+  }
+  if (a.utm_easting != null && a.utm_northing != null && a.utm_zone) {
+    const match = /^(\d+)\s*([NS])$/i.exec(a.utm_zone.trim());
+    if (match) {
+      const zone = parseInt(match[1], 10);
+      const hemisphere = match[2].toUpperCase() === "S" ? "S" : "N";
+      return utmToLatLon(a.utm_easting, a.utm_northing, zone, hemisphere);
+    }
+  }
+  return null;
+}
 
 // ─── Standortdaten status ─────────────────────────────────────────────────────
 
@@ -87,6 +112,8 @@ export default function HorizonOverview() {
   const [exporting, setExporting] = useState(false);
   // Horizon queued for deletion; non-null triggers the delete confirmation modal
   const [deleteTarget, setDeleteTarget] = useState<Horizont | null>(null);
+  // Whether the "Ort finden" compass modal is open
+  const [showOrtFinden, setShowOrtFinden] = useState(false);
   // Ids of the two horizons involved in the last move, plus a counter that bumps
   // on every move so the affected rows re-trigger their label crossfade.
   const [moved, setMoved] = useState<{ ids: number[]; nonce: number }>({
@@ -106,7 +133,9 @@ export default function HorizonOverview() {
   useLayoutEffect(() => {
     if (aufnahme) {
       navigation.setOptions({
-        title: `Aufnahme ${aufnahme.nummer ?? aufnahme.id}`,
+        title: `Aufnahme ${aufnahme.nummer ?? aufnahme.id}${
+          aufnahme.name ? ` – ${aufnahme.name}` : ""
+        }`,
       });
     }
   }, [navigation, aufnahme]);
@@ -174,6 +203,7 @@ export default function HorizonOverview() {
 
   const standortStatus = aufnahme ? deriveStandortStatus(aufnahme) : "leer";
   const badge = standortBadge[standortStatus];
+  const targetCoords = aufnahme ? getTargetCoords(aufnahme) : null;
 
   return (
     <>
@@ -197,6 +227,15 @@ export default function HorizonOverview() {
             <Text style={[styles.rowTitle, { flex: 1 }]}>Standortdaten</Text>
             <Badge label={badge.label} color={badge.bg} />
             <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+
+          {/* ── Ort finden button ── */}
+          <TouchableOpacity
+            style={[styles.actionButton, !targetCoords && localStyles.disabled]}
+            onPress={() => setShowOrtFinden(true)}
+            disabled={!targetCoords}
+          >
+            <Text style={styles.actionButtonText}>Ort finden</Text>
           </TouchableOpacity>
 
           {/* ── Horizon list ── */}
@@ -243,6 +282,15 @@ export default function HorizonOverview() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* ── Ort finden compass modal ── */}
+      {targetCoords && (
+        <OrtFindenModal
+          visible={showOrtFinden}
+          onClose={() => setShowOrtFinden(false)}
+          target={targetCoords}
+        />
+      )}
 
       {/* ── Delete Horizont confirmation modal ── */}
       <Modal
@@ -323,5 +371,8 @@ const localStyles = StyleSheet.create({
   horizonList: {
     gap: 12,
     paddingVertical: 8,
+  },
+  disabled: {
+    opacity: 0.4,
   },
 });

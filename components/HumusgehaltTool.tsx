@@ -71,7 +71,10 @@ export default function HumusgehaltTool({
   const [valueStr, setValueStr] = useState(initValue);
   const [bodenart, setBodenart] = useState(initialBodenart ?? "");
   const [clayStr, setClayStr] = useState("");
-  const [clayRange, setClayRange] = useState<{ min: number; max: number } | null>(null);
+  const [clayRange, setClayRange] = useState<{
+    min: number;
+    max: number;
+  } | null>(null);
   const [phStr, setPhStr] = useState(initialPH ?? "");
   const [bodenartError, setBodenartError] = useState(false);
   const [activeModal, setActiveModal] = useState<"farbe" | "bodenart" | null>(

@@ -3,9 +3,7 @@ import { File } from "expo-file-system";
 import Papa from "papaparse";
 import JSZip from "jszip";
 import db from "./db";
-import {
-  createFeldkampagne,
-} from "./FeldkampagneQueries";
+import { createFeldkampagne } from "./FeldkampagneQueries";
 import {
   createAufnahme,
   saveAufnahmeDetails,
@@ -219,7 +217,12 @@ export async function pickAndImportCampaignZip(): Promise<ImportResult | null> {
     for (const row of aufnahmenRows) {
       const newId = createAufnahme(0, campaignId);
       saveAufnahmeDetails(newId, mapAufnahmeRow(row));
-      setAufnahmeImportMeta(newId, row.status || "offen", row.erstellt_am);
+      setAufnahmeImportMeta(
+        newId,
+        row.status || "offen",
+        row.erstellt_am,
+        strOrNull(row.name),
+      );
       if (row.aufnahme_id != null) idMap.set(row.aufnahme_id, newId);
     }
 

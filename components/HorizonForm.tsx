@@ -231,7 +231,10 @@ export default function HorizontFormular({
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [autoExpanded, setAutoExpanded] = useState(false);
   const [erweiterteExpanded, setErweiterteExpanded] = useState(false);
-  const [tonanteilRange, setTonanteilRange] = useState<{ min: number; max: number } | null>(null);
+  const [tonanteilRange, setTonanteilRange] = useState<{
+    min: number;
+    max: number;
+  } | null>(null);
   const isFirstWatch = useRef(true);
   const onSaveRef = useRef(onSave);
   onSaveRef.current = onSave;
@@ -505,7 +508,10 @@ export default function HorizontFormular({
                 onPress={() => {
                   const range = bodenartToClay(watchedBodenart);
                   if (range !== null) {
-                    setValue("tonanteil", String(Math.round((range.min + range.max) / 2)));
+                    setValue(
+                      "tonanteil",
+                      String(Math.round((range.min + range.max) / 2)),
+                    );
                     setTonanteilRange(range);
                   } else {
                     Alert.alert(

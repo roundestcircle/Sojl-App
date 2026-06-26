@@ -33,7 +33,7 @@ Globales `StyleSheet`-Objekt mit wiederverwendbaren Stilen. Enthält u.a. `conta
 Wurzel-Stack-Navigator. Ruft `initDatabase()` einmalig in einem `useEffect` auf. Legt dunkles Grün als globale Header-Farbe fest und zeigt auf allen Screens ein Haus-Icon als `headerRight`. Die Segmente `mapping` und `tools` erhalten `headerShown: false` (eigene innere Stack-Navigatoren).
 
 ### `app/index.tsx`
-Startbildschirm mit Navigations-Buttons zu Kartierung, Bodenfarbe, weitere Kartierungsunterstützung und About. Fußzeile zeigt App-Icon und Versionsnummer (aus `Constants.expoConfig.version`).
+Startbildschirm mit Navigations-Buttons zu Kartierung, Bodenfarbe, weitere Kartierungsunterstützung und About. Zusätzlich zwei Import-Buttons mit `ActivityIndicator`-Ladezustand: **„Begonnene Kampagne importieren"** ruft `pickAndImportCampaignZip` (`utils/zipImport`), **„geplante Kampagne als GPX importieren"** ruft `pickAndImportGpx` (`utils/gpxImport`); beide navigieren bei Erfolg in die neue Kampagne und zeigen bei Fehler/leerer Datei einen Alert. Fußzeile zeigt App-Icon und Versionsnummer (aus `Constants.expoConfig.version`).
 
 ### `app/+not-found.tsx`
 404-Fallback-Screen mit Link zurück zur Startseite.
@@ -55,10 +55,10 @@ Innerer Stack-Navigator für alle Kartierungs-Routen.
 Feldkampagnen-Listenscreen mit `FlatList`, Lösch-Modal (langer Druck), "Neue Kampagne"-Modal und `InstructionModal` beim ersten Aufruf. Nutzt `formatDate` aus `utils/formatDate.ts` für die Zeitanzeige. `ResetInstructionButton` wird mit explizitem `position: 'relative', alignSelf: 'stretch'` inline in der `bottomBar` gerendert, damit er nicht absolut über der Schaltfläche "+ Neue Kampagne" liegt.
 
 ### `app/mapping/kampagne/[kampagneId]/index.tsx`
-Kampagnen-Detailscreen. Listet Aufnahmen mit Status-Badge und ZIP-Export. Verwendet `getAufnahmenWithHorizontCount` für eine einzige SQL-Abfrage statt N+1 Lookups. "Kampagne beenden" mit Warn-Modal bei offenen Aufnahmen.
+Kampagnen-Detailscreen. Listet Aufnahmen mit Status-Badge und ZIP-Export. Verwendet `getAufnahmenWithHorizontCount` für eine einzige SQL-Abfrage statt N+1 Lookups. "Kampagne beenden" mit Warn-Modal bei offenen Aufnahmen. Zeigt `item.name` (falls vorhanden) im Zeilentitel (`Aufnahme {nummer} – {name}`). **Näherungsdetektor** über den Toggle „Standort verfolgen": fordert Vordergrund-Standortberechtigung an und abonniert `Location.watchPositionAsync`; pro Zeile mit Koordinaten wird die Distanz via `haversineMeters` berechnet, bei `≤ 5 m` (`PROXIMITY_RADIUS_M`) wird die Zeile grün hervorgehoben, und während des Trackings zeigt `rowSub` die Live-Distanz. Das Abo wird beim Ausschalten, bei Screen-Blur (`useFocusEffect`-Cleanup) und beim Unmount entfernt.
 
 ### `app/mapping/[aufnahmeId]/index.tsx`
-Zentraler Aufnahme-Screen mit Standortdaten-Button, Horizont-Liste und Abschließen-Button. `deriveStandortStatus` ermittelt `leer`/`begonnen`/`abgeschlossen` anhand von `STANDORT_REQUIRED_FOR_VOLLSTAENDIG`. Verwendet den geteilten `<Badge>` für die Standortdaten-Statusanzeige.
+Zentraler Aufnahme-Screen mit Standortdaten-Button, Horizont-Liste und Abschließen-Button. `deriveStandortStatus` ermittelt `leer`/`begonnen`/`abgeschlossen` anhand von `STANDORT_REQUIRED_FOR_VOLLSTAENDIG`. Verwendet den geteilten `<Badge>` für die Standortdaten-Statusanzeige. Zeigt `aufnahme.name` (falls vorhanden) im Header-Titel. **„Ort finden"-Button** unter den Standortdaten öffnet `OrtFindenModal`. Die Zielkoordinaten liefert `getTargetCoords`: `gps_lat`/`gps_lon` wenn vorhanden, sonst aus UTM abgeleitet via `utmToLatLon` (Label wie `"32N"` wird in Zonennummer + Hemisphäre geparst). Ohne jegliche Koordinaten ist der Button ausgegraut/deaktiviert.
 
 ### `app/mapping/[aufnahmeId]/standort.tsx`
 Standortdaten-Formular-Screen. Lädt Aufnahme und alle Horizonte per `useFocusEffect`, rendert `AufnahmeForm` in einer `KeyboardAwareScrollView` (scrollt fokussierte Inputs automatisch über die Tastatur). Verwendet das `useDebouncedCallback`-Hook (250 ms) für die Datenbankschreibungen, damit nicht jeder Tastenanschlag ein vollständiges UPDATE auslöst. Berechnet `calcGrundigkeit` (Summe aller Horizont-Mächtigkeiten) und reicht Horizonte als Prop weiter (für FK/nFK/S-Wert-Berechnung in `AufnahmeForm`).
@@ -106,6 +106,9 @@ Kleiner Fragezeichen-Button, der ein Erklär-Modal mit übergebenem Text öffnet
 
 ### `components/InstructionModal.tsx`
 Erstnutzer-Anleitungs-Modal mit `AsyncStorage`-Persistenz. Exportiert auch `ResetInstructionButton`, der den "Nicht mehr anzeigen"-Schlüssel löscht und einen optionalen `onReset`-Callback ausführt (üblich: Parent erhöht einen `modalKey` zur Wiederanzeige).
+
+### `components/OrtFindenModal.tsx`
+Vollflächiges Overlay-Modal („Ort finden"), das per Kompasspfeil + Live-Distanz zu einem Zielpunkt navigiert. Props: `{ visible, onClose, target: { lat, lon } }`. Beim Öffnen werden Standortberechtigung angefragt und zwei Abos gestartet: `Location.watchPositionAsync` (Position) und `Location.watchHeadingAsync` (Geräteausrichtung, `trueHeading` mit Fallback auf `magHeading`, wenn `< 0`). Distanz via `haversineMeters`, Peilung via `bearingDegrees` aus `utils/geo`; die Pfeilrotation ist `bearing − heading` (`transform: [{ rotate }]`). Distanz wird als „X m" (< 1 km) bzw. „X.X km" formatiert. Zeigt Lade-/Berechtigungs-verweigert-/„Kompass nicht verfügbar"-Zustände. Beide Abos werden beim Schließen/Unmount sauber entfernt. Schließen-Button im geteilten `actionButton`-Stil.
 
 ### `components/LabeledDropdownField.tsx`
 Wiederverwendbares Dropdown mit Modal-Sheet. Akzeptiert entweder `LabeledOption[]` (`{ code, label? }`), eine `LabeledSection[]`-Liste (für `SectionList` mit Gruppen-Headers) oder eine reine `string[]` (Kurzform für Code-only-Optionen). Tap auf bereits aktive Option hebt Auswahl auf.
@@ -171,11 +174,11 @@ Generischer Such-+-SectionList-Shell für Wörterbuch-artige Inhalte. Verwaltet 
 ### `utils/db.ts`
 Öffnet die SQLite-Datenbank (`bodenaufnahme.db`). `initDatabase()` erstellt drei Tabellen mit vollständigem Schema und führt danach additive Migrationen via `ALTER TABLE … ADD COLUMN` (in try/catch) durch:
 - `feldkampagnen`: id, name, erstellt_am, status
-- `aufnahmen`: alle Standort-, Profil-, Klima-, Erweiterte- und Profilkennzeichnungs-Felder + `effektiver_wurzelraum REAL` (Migration)
+- `aufnahmen`: alle Standort-, Profil-, Klima-, Erweiterte- und Profilkennzeichnungs-Felder + `effektiver_wurzelraum REAL` (Migration) + `name TEXT` (Migration; Aufnahme-/GPX-Wegpunktname)
 - `horizonte`: alle Basis- und erweiterten Felder + `probennummern` + 8 Porenkennwert-Spalten (`gpv_pct` … `nfk_lm2`) + `kak`, `basensaettigung`, `tonanteil` (alle TEXT, Migrationen)
 
 ### `utils/MappingQueries.ts`
-CRUD für `aufnahmen`. Typ `Aufnahme` und `AufnahmeDetails` umfassen alle Formularfelder inkl. `effektiver_wurzelraum: number | null`. `saveAufnahmeDetails` speichert alle Felder in einem UPDATE. `createAufnahme` legt einen Datensatz mit `INSERT … SELECT COALESCE(MAX(nummer),0)+1` in einem Statement an (rennsicher). Exportiert `STANDORT_REQUIRED_FOR_VOLLSTAENDIG` — die Pflichtfelder-Liste, die der Aufnahme-Screen für die Status-Ableitung nutzt. Weitere Funktionen: `getAufnahme`, `deleteAufnahme`, `closeAufnahme`, `reopenAufnahme`.
+CRUD für `aufnahmen`. Typ `Aufnahme` umfasst alle Formularfelder inkl. `effektiver_wurzelraum: number | null` und `name: string | null`. `saveAufnahmeDetails` speichert alle Felder in einem UPDATE. `createAufnahme` legt einen Datensatz mit `INSERT … SELECT COALESCE(MAX(nummer),0)+1` in einem Statement an (rennsicher). `createAufnahmeAtLocation(feldkampagneId, lat, lon, name)` (für den GPX-Import) berechnet `latLonToUTM` in JS und legt in **einem** rennsicheren `INSERT … SELECT` eine Aufnahme mit vorausgefüllten GPS-/UTM-Koordinaten und `name` an (0 Horizonte). `setAufnahmeImportMeta(id, status, erstellt_am, name?)` überschreibt importspezifische Metadaten (genutzt vom ZIP-Import). Exportiert `STANDORT_REQUIRED_FOR_VOLLSTAENDIG` — die Pflichtfelder-Liste, die der Aufnahme-Screen für die Status-Ableitung nutzt. Weitere Funktionen: `getAufnahme`, `deleteAufnahme`, `closeAufnahme`, `reopenAufnahme`.
 
 ### `utils/HorizonQueries.ts`
 CRUD für `horizonte`. Typ `Horizont` umfasst alle Basis- und erweiterten Felder inkl. `probennummern` (JSON-String), 8 Porenkennwert-Felder, `kak`, `basensaettigung` und `tonanteil`. `saveHorizont` aktualisiert alle Felder; Status wird aus `HORIZONT_REQUIRED_FOR_VOLLSTAENDIG` abgeleitet (`vollstaendig` wenn alle Pflichtfelder ausgefüllt, sonst `angefangen`). `addHorizont` nutzt ein einzelnes `INSERT … SELECT COALESCE(MAX(nummer),0)+1`. Weitere Funktionen: `deleteHorizont`, `getHorizonteForAufnahme`, `getHorizont`.
@@ -184,7 +187,28 @@ CRUD für `horizonte`. Typ `Horizont` umfasst alle Basis- und erweiterten Felder
 CRUD für `feldkampagnen`. Funktionen: `createFeldkampagne`, `getAllFeldkampagnen`, `getFeldkampagne`, `getAufnahmenForFeldkampagne`, `getAufnahmenWithHorizontCount` (Aufnahmen + COUNT(Horizonte) per korreliertem Subquery in einer Abfrage), `closeFeldkampagne`, `deleteFeldkampagne`.
 
 ### `utils/csvExport.ts`
-Exportiert Aufnahmen + Horizonte als ZIP mit `aufnahmen.csv` und `horizonte.csv`. Enthält alle Felder inkl. `effektiver_wurzelraum`, `tonanteil`, der 8 Porenkennwert-Spalten, `kak` und `basensaettigung`. Öffentlich: `exportAufnahmeAsZip`, `exportKampagneAsZip`.
+Exportiert Aufnahmen + Horizonte als ZIP mit `aufnahmen.csv` und `horizonte.csv`. Enthält alle Felder inkl. `name` (Aufnahme-/Wegpunktname), `effektiver_wurzelraum`, `tonanteil`, der 8 Porenkennwert-Spalten, `kak` und `basensaettigung`. Öffentlich: `exportAufnahmeAsZip`, `exportKampagneAsZip`.
+
+### `utils/zipImport.ts`
+Gegenstück zu `csvExport.ts`: liest eine zuvor exportierte Kampagnen-ZIP (`aufnahmen.csv` + `horizonte.csv`) zurück und rekonstruiert sie als **neue** Feldkampagne. Öffentlich: `pickAndImportCampaignZip()`. Ablauf:
+- **Dateiauswahl** via `expo-document-picker` (`getDocumentAsync`, Typen `application/zip` / `*/*`). Abbruch → `null`.
+- **Entpacken**: ZIP-Bytes über die neue `expo-file-system`-API (`new File(uri).bytes()`) lesen, mit `JSZip` öffnen, beide CSVs mit `papaparse` (`header: true`) parsen. Fehlt eine der beiden CSVs oder ist `aufnahmen.csv` leer → Fehler (Aufrufer zeigt Alert).
+- **Wertkonvertierung** als Umkehrung des Export-Mappings: `numOrNull`/`strOrNull` wandeln leere Strings zurück nach `null`. `mapAufnahmeRow` / `mapHorizontRow` bauen daraus die von `saveAufnahmeDetails` bzw. `saveHorizont` erwarteten Objekte.
+- **Rekonstruktion** läuft komplett in **einer** `db.withTransactionSync`-Transaktion (eine fehlerhafte Datei hinterlässt keine halb-importierte Kampagne). Pro Aufnahme: `createAufnahme(0, …)` → `saveAufnahmeDetails` → `setAufnahmeImportMeta` (stellt `status`, `erstellt_am` **und** `name` originalgetreu wieder her, da `createAufnahme` `'offen'` + `now` setzt und `name` leer lässt). Eine `idMap` verknüpft die alten `aufnahme_id`-Werte aus der CSV mit den neuen IDs; Horizonte werden per Map sequenziell (1..n) je neuer Aufnahme eingefügt (`addHorizont` → `saveHorizont` → ggf. `setHorizontStatus`), verwaiste Horizont-Zeilen werden übersprungen.
+- Der Kampagnenname stammt aus dem Dateinamen (`.zip` entfernt, führendes `kampagne_`-Präfix abgestreift). Rückgabe: `{ campaignId, aufnahmen, horizonte }`.
+
+### `utils/gpx.ts`
+Reiner, abhängigkeitsfreier GPX-Wegpunkt-Parser für den GPX-Import (testbar, kein DOM/keine Bibliothek). `parseGpxWaypoints(xml): GpxWaypoint[]` mit `GpxWaypoint = { lat, lon, name? }`. Extrahiert **nur** `<wpt>`-Wegpunkte (Routen/Tracks werden ignoriert), unterstützt die normale (`<wpt …>…</wpt>`) und die selbstschließende Form (`<wpt … />`) per Regex, liest `lat`/`lon`-Attribute und ein optionales `<name>`-Kind. Wegpunkte mit fehlenden oder nicht-numerischen Koordinaten werden übersprungen; `<name>` wird via `decodeXmlEntities` von XML-Entities (`&lt;`, `&amp;`, …) befreit und getrimmt.
+
+### `utils/gpxImport.ts`
+Orchestrierung des GPX-Imports. Öffentlich: `pickAndImportGpx(): Promise<{ campaignId; count } | null>`. Ablauf:
+- **Dateiauswahl** via `expo-document-picker` (Typen `application/gpx+xml`, `application/xml`, `text/xml`, `*/*`). Abbruch → `null`.
+- Datei-Text über `new File(uri).text()` lesen, `parseGpxWaypoints` anwenden. **0 Wegpunkte → Fehler** (Aufrufer zeigt Alert).
+- Kampagnenname = Dateiname ohne Endung (`campaignNameFromFile`). `createFeldkampagne(name)`.
+- Pro Wegpunkt `createAufnahmeAtLocation(campaignId, lat, lon, name)` innerhalb **einer** `db.withTransactionSync`-Transaktion. Die so erzeugten Aufnahmen starten mit **0 Horizonten** und vorausgefüllten GPS-/UTM-Koordinaten. Rückgabe: `{ campaignId, count }`.
+
+### `utils/geo.ts`
+Geo-Helfer (Kugel-Erde, ausreichend genau für kurze Distanzen) für den Näherungsdetektor und den „Ort finden"-Kompass. `haversineMeters(lat1, lon1, lat2, lon2)` → Großkreisdistanz in Metern (Haversine). `bearingDegrees(lat1, lon1, lat2, lon2)` → Anfangspeilung in Grad im Uhrzeigersinn von Nord (0–360).
 
 ### `utils/MappingMaths.ts`
 Reine Berechnungsfunktionen:

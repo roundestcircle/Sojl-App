@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, TouchableOpacity, Text, View, StyleSheet } from "react-native";
+import {
+  Animated,
+  TouchableOpacity,
+  Text,
+  View,
+  StyleSheet,
+} from "react-native";
 import { colors } from "@/styles/colors";
 import { styles } from "@/styles/styles";
 import type { Horizont } from "@/utils/HorizonQueries";
@@ -99,7 +105,9 @@ export default function HorizontButton({
           hitSlop={6}
           accessibilityLabel="Horizont nach oben verschieben"
         >
-          <Text style={[localStyles.arrow, !canMoveUp && localStyles.arrowDisabled]}>
+          <Text
+            style={[localStyles.arrow, !canMoveUp && localStyles.arrowDisabled]}
+          >
             ▲
           </Text>
         </TouchableOpacity>
@@ -110,7 +118,12 @@ export default function HorizontButton({
           hitSlop={6}
           accessibilityLabel="Horizont nach unten verschieben"
         >
-          <Text style={[localStyles.arrow, !canMoveDown && localStyles.arrowDisabled]}>
+          <Text
+            style={[
+              localStyles.arrow,
+              !canMoveDown && localStyles.arrowDisabled,
+            ]}
+          >
             ▼
           </Text>
         </TouchableOpacity>
@@ -124,7 +137,11 @@ export default function HorizontButton({
         </Animated.Text>
         {outgoing !== null && (
           <Animated.Text
-            style={[localStyles.name, localStyles.nameOverlay, { opacity: oldOpacity }]}
+            style={[
+              localStyles.name,
+              localStyles.nameOverlay,
+              { opacity: oldOpacity },
+            ]}
             numberOfLines={1}
             pointerEvents="none"
           >

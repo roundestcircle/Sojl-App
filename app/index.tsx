@@ -12,10 +12,13 @@ import Constants from "expo-constants";
 import { styles } from "../styles/styles";
 import { colors } from "../styles/colors";
 import { pickAndImportCampaignZip } from "../utils/zipImport";
+import { pickAndImportGpx } from "../utils/gpxImport";
 
 export default function Index() {
   // True while a ZIP import is in progress (picker + reconstruction).
   const [importing, setImporting] = useState(false);
+  // True while a GPX import is in progress (picker + waypoint creation).
+  const [importingGpx, setImportingGpx] = useState(false);
 
   /**
    * Picks a previously exported campaign ZIP and reconstructs it as a new campaign,
@@ -34,6 +37,23 @@ export default function Index() {
     }
   };
 
+  /**
+   * Picks a GPX file, creates a planned campaign with one Aufnahme per waypoint,
+   * then navigates into it. No-ops on cancel; alerts on error or empty file.
+   */
+  const handleImportGpx = async () => {
+    try {
+      setImportingGpx(true);
+      const result = await pickAndImportGpx();
+      if (!result) return; // cancelled
+      router.push(`/mapping/kampagne/${result.campaignId}` as any);
+    } catch (e) {
+      Alert.alert("Import fehlgeschlagen", String(e));
+    } finally {
+      setImportingGpx(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Link href={"/mapping" as any} asChild>
@@ -48,9 +68,23 @@ export default function Index() {
         disabled={importing}
       >
         <Text style={styles.navButtonLabel}>
-          Begonnene Kampagne importieren
+          Begonnene Kampagne importieren (ZIP)
         </Text>
         {importing ? (
+          <ActivityIndicator color={colors.primary} size="small" />
+        ) : (
+          <Text style={styles.chevron}>›</Text>
+        )}
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.navButton}
+        onPress={handleImportGpx}
+        disabled={importingGpx}
+      >
+        <Text style={styles.navButtonLabel}>
+          Geplante Kampagne importieren (GPX)
+        </Text>
+        {importingGpx ? (
           <ActivityIndicator color={colors.primary} size="small" />
         ) : (
           <Text style={styles.chevron}>›</Text>

@@ -26,6 +26,7 @@ export function initDatabase() {
       id                INTEGER PRIMARY KEY AUTOINCREMENT,
       feldkampagne_id   INTEGER REFERENCES feldkampagnen(id) ON DELETE CASCADE,
       nummer            INTEGER,
+      name              TEXT,
       erstellt_am       TEXT    NOT NULL DEFAULT (datetime('now')),
       status            TEXT    NOT NULL DEFAULT 'offen',
       gps_lat           REAL,
@@ -139,6 +140,10 @@ export function initDatabase() {
   } catch {}
   try {
     db.execSync(`ALTER TABLE horizonte DROP COLUMN lagerungsdichte;`);
+  } catch {}
+  // GPX import: optional waypoint name on each Aufnahme.
+  try {
+    db.execSync(`ALTER TABLE aufnahmen ADD COLUMN name TEXT;`);
   } catch {}
 }
 

@@ -1,4 +1,10 @@
-import { useCallback, useLayoutEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -7,6 +13,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  StyleSheet,
 } from "react-native";
 import {
   router,
@@ -14,6 +21,8 @@ import {
   useLocalSearchParams,
   useNavigation,
 } from "expo-router";
+import * as Location from "expo-location";
+import { haversineMeters, bearingDegrees, smoothHeading } from "@/utils/geo";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import {
@@ -32,6 +41,14 @@ import {
 
 // Extends Aufnahme with a derived horizon count used in the list subtitle
 type AufnahmeRow = Aufnahme & { horizontCount: number };
+
+// A row is highlighted green once the user is within this many metres of it.
+const PROXIMITY_RADIUS_M = 5;
+
+// Light smoothing for the per-row compass; only re-render the list when the
+// heading has moved at least this many degrees, to keep the FlatList calm.
+const ROW_HEADING_SMOOTHING = 0.2;
+const ROW_HEADING_THRESHOLD_DEG = 2;
 
 /**
  * Campaign detail screen.
@@ -55,6 +72,103 @@ export default function SessionDetailScreen() {
   const [deleteTarget, setDeleteTarget] = useState<AufnahmeRow | null>(null);
   // Whether to show the "still open Aufnahmen" warning before closing the campaign
   const [showOffeneWarnung, setShowOffeneWarnung] = useState(false);
+  // Whether the live proximity detector is active
+  const [tracking, setTracking] = useState(false);
+  // The user's current position while tracking (null when off or not yet fixed)
+  const [currentPos, setCurrentPos] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
+  // The device's smoothed compass heading while tracking (null when unavailable)
+  const [heading, setHeading] = useState<number | null>(null);
+  // Active position/heading subscriptions; removed when tracking stops
+  const watchRef = useRef<Location.LocationSubscription | null>(null);
+  const headingRef = useRef<Location.LocationSubscription | null>(null);
+  // Smoothed heading accumulator (decoupled from the throttled state above)
+  const smoothedHeadingRef = useRef<number | null>(null);
+  // True between a start request and its matching stop. Lets the async
+  // startTracking bail (and tear down any watch it just created) if tracking was
+  // switched off while a watchPosition/watchHeading promise was still in flight.
+  const wantTrackingRef = useRef(false);
+
+  /** Stops the location/heading watches and clears the current position. */
+  const stopTracking = useCallback(() => {
+    wantTrackingRef.current = false;
+    watchRef.current?.remove();
+    watchRef.current = null;
+    headingRef.current?.remove();
+    headingRef.current = null;
+    smoothedHeadingRef.current = null;
+    setTracking(false);
+    setCurrentPos(null);
+    setHeading(null);
+  }, []);
+
+  /** Requests permission and starts watching the device position + heading. */
+  const startTracking = useCallback(async () => {
+    wantTrackingRef.current = true;
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (!wantTrackingRef.current) return;
+    if (status !== "granted") {
+      wantTrackingRef.current = false;
+      Alert.alert(
+        "Standort nicht verfügbar",
+        "Bitte erlaube den Zugriff auf den Standort, um Aufnahmen in der Nähe zu erkennen.",
+      );
+      return;
+    }
+    const posSub = await Location.watchPositionAsync(
+      { accuracy: Location.Accuracy.High, distanceInterval: 1 },
+      (loc) =>
+        setCurrentPos({
+          lat: loc.coords.latitude,
+          lon: loc.coords.longitude,
+        }),
+    );
+    if (!wantTrackingRef.current) {
+      posSub.remove();
+      return;
+    }
+    watchRef.current = posSub;
+    const headSub = await Location.watchHeadingAsync((h) => {
+      // trueHeading is -1 when unavailable; fall back to magnetic heading.
+      const raw = h.trueHeading >= 0 ? h.trueHeading : h.magHeading;
+      const smoothed = smoothHeading(
+        smoothedHeadingRef.current,
+        raw,
+        ROW_HEADING_SMOOTHING,
+      );
+      smoothedHeadingRef.current = smoothed;
+      // Only push to state (re-rendering the list) on meaningful changes.
+      setHeading((prev) => {
+        if (prev == null) return smoothed;
+        const delta = Math.abs(((smoothed - prev + 540) % 360) - 180);
+        return delta >= ROW_HEADING_THRESHOLD_DEG ? smoothed : prev;
+      });
+    });
+    if (!wantTrackingRef.current) {
+      headSub.remove();
+      watchRef.current?.remove();
+      watchRef.current = null;
+      return;
+    }
+    headingRef.current = headSub;
+    setTracking(true);
+  }, []);
+
+  /** Toggles the proximity detector on/off. */
+  const handleToggleTracking = () => {
+    if (tracking) stopTracking();
+    else startTracking();
+  };
+
+  // Stop tracking when leaving the screen (blur) and on unmount.
+  useFocusEffect(
+    useCallback(() => {
+      return () => stopTracking();
+    }, [stopTracking]),
+  );
+  useEffect(() => () => stopTracking(), [stopTracking]);
 
   // Update header title whenever the session name is loaded
   useLayoutEffect(() => {
@@ -144,42 +258,110 @@ export default function SessionDetailScreen() {
             Noch keine Aufnahmen in dieser Kampagne.
           </Text>
         }
-        renderItem={({ item }) => (
-          <View style={styles.listRow}>
-            <TouchableOpacity
-              style={styles.listRowMain}
-              onPress={() => router.push(`/mapping/${item.id}`)}
-              onLongPress={() => setDeleteTarget(item)}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>
-                  Aufnahme {item.nummer ?? item.id}
-                </Text>
-                <Text style={styles.rowSub}>
-                  {formatDate(item.erstellt_am)} · {item.horizontCount} Horizont
-                  {item.horizontCount !== 1 ? "e" : ""}
-                </Text>
-              </View>
-              <StatusBadge status={item.status} />
-              <Text style={styles.chevron}>›</Text>
-            </TouchableOpacity>
+        renderItem={({ item }) => {
+          // Distance to this row's coordinates while tracking (null otherwise).
+          const distance =
+            currentPos && item.gps_lat != null && item.gps_lon != null
+              ? haversineMeters(
+                  currentPos.lat,
+                  currentPos.lon,
+                  item.gps_lat,
+                  item.gps_lon,
+                )
+              : null;
+          const isNear = distance != null && distance <= PROXIMITY_RADIUS_M;
+          // Bearing to this row, rotated by the device heading so the little
+          // arrow points the way you'd walk to reach the Aufnahme.
+          const arrowAngle =
+            distance != null &&
+            heading != null &&
+            currentPos &&
+            item.gps_lat != null &&
+            item.gps_lon != null
+              ? bearingDegrees(
+                  currentPos.lat,
+                  currentPos.lon,
+                  item.gps_lat,
+                  item.gps_lon,
+                ) - heading
+              : null;
 
-            <TouchableOpacity
-              style={styles.exportBtn}
-              onPress={() => handleExport(item)}
-              disabled={exportingId === item.id}
+          return (
+            <View
+              style={[
+                styles.listRow,
+                isNear && {
+                  borderColor: colors.primary,
+                  backgroundColor: "#dff0d8",
+                },
+              ]}
             >
-              {exportingId === item.id ? (
-                <ActivityIndicator color={colors.primary} size="small" />
-              ) : (
-                <Text style={styles.exportText}>ZIP</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
+              <TouchableOpacity
+                style={styles.listRowMain}
+                onPress={() => router.push(`/mapping/${item.id}`)}
+                onLongPress={() => setDeleteTarget(item)}
+              >
+                <View style={{ flex: 1 }}>
+                  <View style={localStyles.titleRow}>
+                    <Text style={[styles.rowTitle, localStyles.titleText]}>
+                      Aufnahme {item.nummer ?? item.id}
+                      {item.name ? ` – ${item.name}` : ""}
+                    </Text>
+                    {arrowAngle != null && (
+                      <Text
+                        style={[
+                          localStyles.miniArrow,
+                          { transform: [{ rotate: `${arrowAngle}deg` }] },
+                        ]}
+                      >
+                        ↑
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={styles.rowSub}>
+                    {formatDate(item.erstellt_am)} · {item.horizontCount}{" "}
+                    Horizont
+                    {item.horizontCount !== 1 ? "e" : ""}
+                    {distance != null
+                      ? ` · Distanz: ${Math.round(distance)} m`
+                      : ""}
+                  </Text>
+                </View>
+                <StatusBadge status={item.status} />
+                <Text style={styles.chevron}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.exportBtn}
+                onPress={() => handleExport(item)}
+                disabled={exportingId === item.id}
+              >
+                {exportingId === item.id ? (
+                  <ActivityIndicator color={colors.primary} size="small" />
+                ) : (
+                  <Text style={styles.exportText}>ZIP</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          );
+        }}
       />
 
       <View style={styles.bottomBar}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            tracking && {
+              backgroundColor: colors.primary,
+              borderColor: colors.primary,
+            },
+          ]}
+          onPress={handleToggleTracking}
+        >
+          <Text style={[styles.maintext, tracking && { color: "#fff" }]}>
+            {tracking ? "Standortverfolgung stoppen" : "Standort verfolgen"}
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
@@ -282,3 +464,21 @@ export default function SessionDetailScreen() {
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  // Lets the title shrink/wrap so the arrow always stays visible beside it.
+  titleText: {
+    flexShrink: 1,
+  },
+  miniArrow: {
+    marginLeft: 8,
+    fontSize: 18,
+    lineHeight: 20,
+    fontWeight: "700",
+    color: colors.primary,
+  },
+});

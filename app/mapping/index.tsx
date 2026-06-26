@@ -102,7 +102,10 @@ export default function FeldkampagnenScreen() {
       <InstructionModal
         key={modalKey}
         storageKey="mappingDontShowAgain"
-        instructionText="Erstelle eine neue Kampagne. Innerhalb der Kampagne kannst du mehrere Bodenaufnahmen erstellen und in diesen deine erhobenen Daten eintragen. Die Daten werden automatisch gespeichert. Am Ende kannst du sowohl einzelne Aufnahmen als auch die gesamte Kampagne als ZIP exportieren. Diese Datei enthält zwei CSV-Dateien mit den Aufnahme- und Horizontdaten."
+        instructionText={
+          "Erstelle eine neue Kampagne. Innerhalb der Kampagne kannst du mehrere Bodenaufnahmen erstellen und in diesen deine erhobenen Daten eintragen. Die Daten werden automatisch gespeichert. Am Ende kannst du sowohl einzelne Aufnahmen als auch die gesamte Kampagne als ZIP exportieren. Diese Datei enthält zwei CSV-Dateien mit den Aufnahme- und Horizontdaten.\n\n" +
+          'Mit „Standort verfolgen" in einer Kampagne werden Aufnahmen in deiner Nähe (unter 5 m) grün hervorgehoben und ihre Distanz wird angezeigt. Über „Ort finden" in einer Aufnahme weisen dir ein Kompasspfeil und die Entfernung den Weg zu ihren Koordinaten.'
+        }
       />
 
       <FlatList

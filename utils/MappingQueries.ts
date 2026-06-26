@@ -1,10 +1,12 @@
 import db from "./db";
+import { latLonToUTM } from "./utmConversion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type Aufnahme = {
   id: number;
   nummer: number | null;
+  name: string | null;
   feldkampagne_id: number | null;
   erstellt_am: string;
   gps_lat: number | null;
@@ -99,6 +101,38 @@ export function createAufnahme(
   }
 
   return aufnahmeId;
+}
+
+/**
+ * Creates an Aufnahme at a known location (e.g. from a GPX waypoint) with its
+ * GPS and derived UTM coordinates and an optional name already filled in.
+ * Starts with 0 horizons, just like createAufnahme. Returns the new aufnahme id.
+ */
+export function createAufnahmeAtLocation(
+  feldkampagneId: number,
+  lat: number,
+  lon: number,
+  name: string | null,
+): number {
+  const utm = latLonToUTM(lat, lon);
+  // Single read-then-insert statement so concurrent callers can't race to
+  // produce duplicate nummern within the same Feldkampagne.
+  const result = db.runSync(
+    `INSERT INTO aufnahmen
+       (status, feldkampagne_id, nummer, name,
+        gps_lat, gps_lon, utm_easting, utm_northing, utm_zone)
+     SELECT 'offen', ?, COALESCE(MAX(nummer), 0) + 1, ?, ?, ?, ?, ?, ?
+       FROM aufnahmen WHERE feldkampagne_id = ?`,
+    feldkampagneId,
+    name,
+    lat,
+    lon,
+    utm.easting,
+    utm.northing,
+    utm.label,
+    feldkampagneId,
+  );
+  return result.lastInsertRowId;
 }
 
 /** Returns a single Aufnahme by id. */
@@ -212,18 +246,21 @@ export function saveAufnahmeDetails(id: number, data: AufnahmeDetails) {
 }
 
 /**
- * Overrides an imported Aufnahme's status and creation timestamp so a ZIP import
- * can faithfully restore the exported state (createAufnahme sets 'offen' + now).
+ * Overrides an imported Aufnahme's status, creation timestamp and name so a ZIP
+ * import can faithfully restore the exported state (createAufnahme sets 'offen' +
+ * now and leaves name null).
  */
 export function setAufnahmeImportMeta(
   id: number,
   status: string,
   erstellt_am: string,
+  name: string | null = null,
 ) {
   db.runSync(
-    `UPDATE aufnahmen SET status = ?, erstellt_am = ? WHERE id = ?`,
+    `UPDATE aufnahmen SET status = ?, erstellt_am = ?, name = ? WHERE id = ?`,
     status,
     erstellt_am,
+    name,
     id,
   );
 }

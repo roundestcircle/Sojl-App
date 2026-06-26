@@ -1,5 +1,5 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Text,
   TouchableOpacity,
@@ -8,11 +8,26 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
+import { File } from "expo-file-system";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
 import { extractSoilColor } from "../utils/soilColorExtractor";
 import { OVERLAY_FRACTIONS } from "@/utils/cameraOverlay";
 import { InstructionModal, ResetInstructionButton } from "./InstructionModal";
+
+/**
+ * Best-effort deletion of a captured photo from the cache. `takePictureAsync`
+ * writes a JPEG to the cache directory on every capture; without this they
+ * accumulate. Safe to call with null or an already-deleted file.
+ */
+const deleteCachedPhoto = (photoUri: string | null) => {
+  if (!photoUri) return;
+  try {
+    const file = new File(photoUri);
+    if (file.exists) file.delete();
+  } catch {
+    // Ignore — the file may already be gone; cleanup is best-effort.
+  }
+};
 
 /**
  * Overlay rectangles guide proper positioning. Display fractions are kept in
@@ -64,6 +79,12 @@ export default function PictureTaker({ onConfirm }: Props) {
 
   // Store the URI of the taken photo
   const [uri, setUri] = useState<string | null>(null);
+
+  // Mirror the current URI in a ref so the unmount cleanup can delete whatever
+  // photo is still pending if the user navigates away without resetting.
+  const uriRef = useRef<string | null>(null);
+  uriRef.current = uri;
+  useEffect(() => () => deleteCachedPhoto(uriRef.current), []);
 
   // Store extracted RGB color values
   const [soilColor, setSoilColor] = useState<{
@@ -192,7 +213,11 @@ export default function PictureTaker({ onConfirm }: Props) {
           {munsellColor && onConfirm && (
             <TouchableOpacity
               style={[styles.actionButton, { alignSelf: "stretch" }]}
-              onPress={() => onConfirm(munsellColor)}
+              onPress={() => {
+                onConfirm(munsellColor);
+                // Value handed off; the photo is no longer needed.
+                deleteCachedPhoto(uri);
+              }}
             >
               <Text style={styles.actionButtonText}>Wert übernehmen</Text>
             </TouchableOpacity>
@@ -216,6 +241,7 @@ export default function PictureTaker({ onConfirm }: Props) {
           <TouchableOpacity
             style={styles.button}
             onPress={() => {
+              deleteCachedPhoto(uri);
               setUri(null);
               setSoilColor(null);
               setMunsellColor(null);

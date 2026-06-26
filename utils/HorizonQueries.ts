@@ -75,9 +75,46 @@ export function addHorizont(aufnahmeId: number): void {
   );
 }
 
+/**
+ * Overrides a Horizont's status by id. Used by ZIP import to restore the exported
+ * status exactly (saveHorizont only ever derives 'angefangen'/'vollstaendig', never 'leer').
+ */
+export function setHorizontStatus(id: number, status: string): void {
+  db.runSync(`UPDATE horizonte SET status = ? WHERE id = ?`, status, id);
+}
+
 /** Deletes a Horizont by id. */
 export function deleteHorizont(id: number): void {
   db.runSync(`DELETE FROM horizonte WHERE id = ?`, id);
+}
+
+/**
+ * Moves a Horizont one position up or down within its Aufnahme and renumbers all
+ * horizons sequentially (1..n) so `nummer` always matches the visual order.
+ * No-op if the horizon is already at the top (up) or bottom (down).
+ */
+export function moveHorizont(
+  aufnahmeId: number,
+  nummer: number,
+  direction: "up" | "down",
+): void {
+  const horizonte = getHorizonteForAufnahme(aufnahmeId);
+  const index = horizonte.findIndex((h) => h.nummer === nummer);
+  if (index === -1) return;
+  const target = direction === "up" ? index - 1 : index + 1;
+  if (target < 0 || target >= horizonte.length) return;
+
+  // Swap the two rows, then renumber everyone sequentially by stable id so the
+  // renumbering can't transiently collide on `nummer`.
+  [horizonte[index], horizonte[target]] = [horizonte[target], horizonte[index]];
+  db.withTransactionSync(() => {
+    horizonte.forEach((h, i) => {
+      const newNummer = i + 1;
+      if (h.nummer !== newNummer) {
+        db.runSync(`UPDATE horizonte SET nummer = ? WHERE id = ?`, newNummer, h.id);
+      }
+    });
+  });
 }
 
 /** Returns all Horizonte for a given Aufnahme, ordered by nummer. */

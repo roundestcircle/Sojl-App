@@ -27,9 +27,11 @@ import {
   addHorizont,
   deleteHorizont,
   getHorizonteForAufnahme,
+  moveHorizont,
   type Horizont,
 } from "@/utils/HorizonQueries";
 import { exportAufnahmeAsZip } from "@/utils/csvExport";
+import * as Haptics from "expo-haptics";
 import HorizontButton from "@/components/HorizonButton";
 import Badge from "@/components/Badge";
 
@@ -85,6 +87,12 @@ export default function HorizonOverview() {
   const [exporting, setExporting] = useState(false);
   // Horizon queued for deletion; non-null triggers the delete confirmation modal
   const [deleteTarget, setDeleteTarget] = useState<Horizont | null>(null);
+  // Ids of the two horizons involved in the last move, plus a counter that bumps
+  // on every move so the affected rows re-trigger their label crossfade.
+  const [moved, setMoved] = useState<{ ids: number[]; nonce: number }>({
+    ids: [],
+    nonce: 0,
+  });
 
   // Reload both the Aufnahme and its horizons whenever the screen comes back into focus
   useFocusEffect(
@@ -112,6 +120,17 @@ export default function HorizonOverview() {
   /** Navigates to the detail screen for the tapped Horizont. */
   const handleHorizontPress = (horizont: Horizont) => {
     router.push(`/mapping/${aufnahmeId}/horizon/${horizont.nummer}`);
+  };
+
+  /** Moves a Horizont one position up or down, with haptic + label crossfade feedback. */
+  const handleMoveHorizont = (horizont: Horizont, direction: "up" | "down") => {
+    const index = horizonte.findIndex((h) => h.id === horizont.id);
+    const neighbor = horizonte[direction === "up" ? index - 1 : index + 1];
+    if (!neighbor) return;
+    moveHorizont(aufnahmeId, horizont.nummer, direction);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setHorizonte(getHorizonteForAufnahme(aufnahmeId));
+    setMoved((m) => ({ ids: [horizont.id, neighbor.id], nonce: m.nonce + 1 }));
   };
 
   /**
@@ -182,12 +201,17 @@ export default function HorizonOverview() {
 
           {/* ── Horizon list ── */}
           <View style={localStyles.horizonList}>
-            {horizonte.map((horizont) => (
+            {horizonte.map((horizont, index) => (
               <HorizontButton
                 key={horizont.id}
                 horizont={horizont}
                 onPress={() => handleHorizontPress(horizont)}
                 onLongPress={() => setDeleteTarget(horizont)}
+                onMoveUp={() => handleMoveHorizont(horizont, "up")}
+                onMoveDown={() => handleMoveHorizont(horizont, "down")}
+                canMoveUp={index > 0}
+                canMoveDown={index < horizonte.length - 1}
+                moveNonce={moved.ids.includes(horizont.id) ? moved.nonce : 0}
               />
             ))}
             <TouchableOpacity

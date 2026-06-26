@@ -9,7 +9,9 @@ const prettierPlugin = require("eslint-plugin-prettier");
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*"],
+    // dist/* is build output; munsellData.ts is generated (see
+    // scripts/generateMunsellData.js) and must not be hand-formatted.
+    ignores: ["dist/*", "utils/munsellData.ts"],
   },
   {
     rules: {

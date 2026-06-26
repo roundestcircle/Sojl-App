@@ -211,6 +211,23 @@ export function saveAufnahmeDetails(id: number, data: AufnahmeDetails) {
   );
 }
 
+/**
+ * Overrides an imported Aufnahme's status and creation timestamp so a ZIP import
+ * can faithfully restore the exported state (createAufnahme sets 'offen' + now).
+ */
+export function setAufnahmeImportMeta(
+  id: number,
+  status: string,
+  erstellt_am: string,
+) {
+  db.runSync(
+    `UPDATE aufnahmen SET status = ?, erstellt_am = ? WHERE id = ?`,
+    status,
+    erstellt_am,
+    id,
+  );
+}
+
 /** Marks an Aufnahme as abgeschlossen. */
 export function closeAufnahme(aufnahmeId: number) {
   db.runSync(

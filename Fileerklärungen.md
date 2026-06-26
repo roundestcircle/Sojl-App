@@ -220,13 +220,13 @@ Humusgehalt-Schätzung nach Renger et al. (1987) via trilineare Interpolation (A
 Bidirektionale WGS84 ↔ UTM-Konvertierung: `latLonToUTM` (gültig für lat ∈ [-80°, +84°], normale UTM-Zonen — Sonderzonen N/Svalbard nicht behandelt), `utmToLatLon`.
 
 ### `utils/soilColorExtractor.ts`
-Bildanalyse für Bodenfarbe: Lädt das Bild via `Skia.Image.MakeImageFromEncoded`, liest Pixel (RGBA-Annahme, dokumentiert) und mittelt Greycard- und Bodenprobe-Region (via `getSamplingRect(…)` aus `cameraOverlay`). Die gesamte Farbmathematik läuft im linearen Licht: jedes sRGB-Byte wird vor dem Mitteln linearisiert, daraus werden die Greycard-Korrekturfaktoren (`linear(128)/Greycard`, von-Kries-artig pro Kanal) berechnet und auf die Bodenprobe angewandt; erst das Endergebnis wird nach sRGB zurückkodiert. `extractSoilColor` nimmt optional `previewAspect`, das an `getSamplingRect` durchgereicht wird (siehe `cameraOverlay`). Skia-Image wird im `finally` mit `image.dispose()` freigegeben. Ergebnis-RGB → Munsell via `rgbToMunsell`.
+Bildanalyse für Bodenfarbe: Lädt das Bild via `Skia.Image.MakeImageFromEncoded`, liest Pixel (RGBA-Annahme, dokumentiert) und mittelt Greycard- und Bodenprobe-Region (via `getSamplingRect(…)` aus `cameraOverlay`). Die gesamte Farbmathematik läuft im linearen Licht: jedes sRGB-Byte wird vor dem Mitteln linearisiert, daraus werden die Greycard-Korrekturfaktoren (`linear(128)/Greycard`, von-Kries-artig pro Kanal) berechnet und auf die Bodenprobe angewandt; erst das Endergebnis wird nach sRGB zurückkodiert. `extractSoilColor` nimmt optional `previewAspect`, das an `getSamplingRect` durchgereicht wird (siehe `cameraOverlay`). Skia-Image wird im `finally` mit `image.dispose()` freigegeben. Die linear korrigierte Farbe geht direkt (ohne 8-bit-Zwischenschritt) via `linearRgbToMunsell` nach Munsell; der sRGB-Wert dient nur der Anzeige.
 
 ### `utils/cameraOverlay.ts`
 Zentrale Quelle der Overlay-Rechtecke für Kamera-UI und Pixel-Extraktion. `OVERLAY_FRACTIONS` liefert je Region (`greyCard`, `soilSample`) zwei Rechtecke: `display` (was der User sieht) und `sample` (was der Extraktor mittelt). Greycard-`sample` ist absichtlich kürzer als `display`, um Randartefakte zu vermeiden. `getSamplingRect(type, w, h, previewAspect?)` rechnet die `sample`-Bruchteile in Pixel-Koordinaten. Da die Vorschau bildschirmfüllend center-cropped wird ("cover"), das Foto aber den vollen Sensorausschnitt behält, beschränkt die Funktion bei gegebenem `previewAspect` die Bruchteile auf den sichtbaren (zentral beschnittenen) Bereich des Fotos — so treffen die gemittelten Pixel die vom User anvisierten Rechtecke. Ohne `previewAspect` gilt das Legacy-Verhalten (Bruchteile aufs ganze Foto).
 
 ### `utils/munsellLookup.ts`
-RGB → Munsell via CIEDE2000-Farbabstand im CIE-Lab-Farbraum (perzeptuell genauer als CIE76, v. a. im niedrigchromatischen Bodenbereich). Die Eingabefarbe wird per `rgbToLab` konvertiert; die Referenz-Chips bringen ihr präzises Lab direkt aus `MUNSELL_DATA` mit (kein Round-Trip über 8-bit-RGB beim Laden). Der Loop sucht den nächsten Chip per Nearest-Neighbor — keine Interpolation, das diskrete Raster (Value-Schritt 1, Chroma-Schritt 2) bleibt erhalten.
+Farbe → Munsell via CIEDE2000-Farbabstand im CIE-Lab-Farbraum (perzeptuell genauer als CIE76, v. a. im niedrigchromatischen Bodenbereich). Die Eingabefarbe wird per `linearRgbToLab` aus linearem Licht nach Lab konvertiert (`linearRgbToMunsell`); die Referenz-Chips bringen ihr präzises Lab direkt aus `MUNSELL_DATA` mit (kein Round-Trip über 8-bit-RGB beim Laden). `labToMunsell` durchsucht die Chips per Nearest-Neighbor — keine Interpolation, das diskrete Raster (Value-Schritt 1, Chroma-Schritt 2) bleibt erhalten.
 
 ### `utils/munsellData.ts`
 Statisches RIT Munsell Renotation Dataset. Jeder Eintrag trägt `r,g,b` (sRGB, für Anzeige) und `lab` (CIE-Lab D65, direkt aus XYZ, fürs Matching). Verwendet von `munsellLookup.ts` (Lab) und `fieldValidation.ts` (Munsell-String).
@@ -277,3 +277,67 @@ Lagerungsdichte Ld1–Ld5 per Stechzylinder- und Fingerprobe.
 
 ### `scripts/generateMunsellData.js`
 Erzeugt `utils/munsellData.ts` aus dem RIT Munsell Renotation Dataset (`real.dat`). Wendet eine Bradford-Chromatic-Adaptation (Illuminant C → D65) auf xyY → XYZ an und leitet daraus zwei Werte ab: `r,g,b` (sRGB, zugleich Gamut-Filter — nur in-Gamut-Chips werden behalten) und `lab` (CIE-Lab direkt aus XYZ, damit das gespeicherte Lab volle Präzision hat statt über 8-bit-sRGB gerundet zu werden). Wird nur manuell ausgeführt, nicht zur Laufzeit.
+
+---
+
+## Farberkennung — Ablauf (Flowchart)
+
+Gesamter Weg von der Aufnahme bis zur Munsell-Notation. Die gesamte Farbmathematik
+läuft im **linearen Licht**; erst der Anzeige-Wert wird nach sRGB zurückkodiert.
+Die Referenz-Chips (`MUNSELL_DATA[].lab`) werden offline per
+`scripts/generateMunsellData.js` aus `real.dat` vorberechnet.
+
+```
+PictureTaker.tsx  (UI)
+  CameraView (Vorschau, bildschirmfüllend, center-crop "cover")
+    │  onLayout → previewAspect = Breite / Höhe
+    │            (gemessen, da CameraView nach der Aufnahme unmountet)
+    ▼
+  "Foto aufnehmen" → takePictureAsync() → photo.uri
+    ▼
+  "Farbe bestimmen" → handleExtractSoilColor(uri, previewAspect)
+    │
+    ▼
+extractSoilColor(imageUri, previewAspect)            [utils/soilColorExtractor.ts]
+  Skia.Data.fromURI → MakeImageFromEncoded → readPixels()   (RGBA, 8-bit)
+    │
+    ├── getSamplingRect("greyCard", W, H, previewAspect)     [utils/cameraOverlay.ts]
+    │     center-crop des Fotos auf previewAspect → sichtbarer Bereich
+    │     → Sample-Rechteck (Pixelkoordinaten)
+    │        │
+    │        ▼  extractColorFromRegion
+    │     je Pixel: SRGB8_TO_LINEAR[byte]  (LUT → linear) und mitteln
+    │        ▼
+    │     greyCardLinear  (linear 0..1)
+    │        ▼
+    │     calculateCorrectionFactors = TARGET_GREY_LINEAR / greyCardLinear
+    │        (TARGET_GREY_LINEAR = linear(sRGB 128), pro Kanal, Division-Guard)
+    │
+    ├── getSamplingRect("soilSample", …) → extractColorFromRegion
+    │        ▼
+    │     soilLinear  (linear 0..1)
+    ▼
+  applyCorrectionToColor(soilLinear, factors)
+    → correctedLinear  (Weißabgleich im linearen Licht, geklemmt 0..1)
+    │
+    ├── linearRgbToMunsell(correctedLinear)              [utils/munsellLookup.ts]
+    │     linearRgbToLab → Lab(D65)   (kein 8-bit-Zwischenschritt)
+    │     labToMunsell: CIEDE2000-Nearest-Neighbor über MUNSELL_DATA[].lab
+    │       (1522 Chips, keine Interpolation; Raster: Value-Schritt 1, Chroma-Schritt 2)
+    │        ▼
+    │     "7.5YR 4/4"
+    │
+    └── linearToSrgb255(correctedLinear) → correctedRGB   (nur für die Anzeige)
+    ▼
+  image.dispose()   (gibt nativen Bildspeicher frei)
+    ▼
+  return { correctedColor, correctedColorMunsell, greyCardColor, correctionFactors }
+    ▼
+PictureTaker zeigt Munsell-Notation + RGB an
+```
+
+**Konventionen / Annahmen:** Vorschau skaliert mit "cover" (Center-Crop);
+das analysierte Frame wird auf `previewAspect` beschränkt, damit die gemittelten
+Pixel zu den weißen Hilfsrechtecken passen. Greycard-`sample` ist absichtlich
+kürzer als die angezeigte Box (Randartefakte). Pixel werden als RGBA (8-bit)
+angenommen (react-native-skia-Default).

@@ -35,7 +35,9 @@ real.dat
 generateMunsellData.ts
 
 # local env files
-.env*.local
+.env
+.env.*
+!.env.example
 
 # typescript
 *.tsbuildinfo
@@ -55,3 +57,9 @@ planned.md
 
 # Store screenshots
 Screenshots/
+
+# Local editor / tool config
+.cursor/
+
+# Local notes
+TODO

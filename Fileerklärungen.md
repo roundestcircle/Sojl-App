@@ -7,7 +7,7 @@ Kurze Zusammenfassung aller Quelldateien des Projekts.
 ## Konfiguration
 
 ### `app.json`
-Expo-Projektkonfiguration. Definiert App-Name (`bachelorproject`), Version, Icons, Splash-Screen, und Plugins: `expo-router`, `expo-location` (mit deutschem Berechtigungstext), `expo-camera`, `expo-font`, `expo-image`. Aktiviert `typedRoutes` und den React Compiler unter `experiments`.
+Expo-Projektkonfiguration. Definiert App-Name (`Sojl`, Slug `sojl-app`, Android-Package `com.bertibertsorganization.sojlapp.beta`), Version, Icons, Scheme und die Android-Standortberechtigungen (`ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION`). Plugins: `expo-router`, `expo-splash-screen`, `expo-font`, `expo-image`, `expo-location` (mit deutschem Berechtigungstext). Aktiviert `typedRoutes` und den React Compiler unter `experiments`.
 
 ### `tsconfig.json`
 TypeScript-Konfiguration. Erweitert `expo/tsconfig.base`, aktiviert `strict`-Modus und mappt den Alias `@/*` auf das Projektstamm­verzeichnis. Erlaubt `esModuleInterop` und `allowSyntheticDefaultImports`.
@@ -33,7 +33,7 @@ Globales `StyleSheet`-Objekt mit wiederverwendbaren Stilen. Enthält u.a. `conta
 Wurzel-Stack-Navigator. Ruft `initDatabase()` einmalig in einem `useEffect` auf. Legt dunkles Grün als globale Header-Farbe fest und zeigt auf allen Screens ein Haus-Icon als `headerRight`. Die Segmente `mapping` und `tools` erhalten `headerShown: false` (eigene innere Stack-Navigatoren).
 
 ### `app/index.tsx`
-Startbildschirm mit Navigations-Buttons zu Kartierung, Bodenfarbe, weitere Kartierungsunterstützung und About. Zusätzlich zwei Import-Buttons mit `ActivityIndicator`-Ladezustand: **„Begonnene Kampagne importieren"** ruft `pickAndImportCampaignZip` (`utils/zipImport`), **„geplante Kampagne als GPX importieren"** ruft `pickAndImportGpx` (`utils/gpxImport`); beide navigieren bei Erfolg in die neue Kampagne und zeigen bei Fehler/leerer Datei einen Alert. Fußzeile zeigt App-Icon und Versionsnummer (aus `Constants.expoConfig.version`).
+Startbildschirm mit Navigations-Buttons zu Kartierung, Bodenfarbe, weitere Kartierungsunterstützung und About. Zusätzlich zwei Import-Buttons mit `ActivityIndicator`-Ladezustand: **„Begonnene Kampagne importieren (ZIP)"** ruft `pickAndImportCampaignZip` (`utils/zipImport`), **„Geplante Kampagne importieren (GPX)"** ruft `pickAndImportGpx` (`utils/gpxImport`); beide navigieren bei Erfolg in die neue Kampagne und zeigen bei Fehler/leerer Datei einen Alert. Fußzeile zeigt App-Icon und Versionsnummer (aus `Constants.expoConfig.version`).
 
 ### `app/+not-found.tsx`
 404-Fallback-Screen mit Link zurück zur Startseite.

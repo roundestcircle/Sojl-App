@@ -6,7 +6,7 @@ Ich studiere irgendwas mit Boden im Bachelor, bin aber kein Experte und bestimmt
 
 ## Download
 
-Ladet euch von hier die .apk herunter:
+Ladet euch die .apk unter releases herunter, und installiert sie auf eurem Android-Gerät. Wenn apkpure ihre Upload-Seite gefixed kriegen findet ihr sie auch dort.
 
 Ich habe nicht vor, sie im iOS App-Store zu veröffentlichen.
 
@@ -33,9 +33,30 @@ Aus dem Data Entry Formular können einige Bestimmungshilfen aufgerufen werden. 
     - Humusgehalt
     - Gesamtem Porenvolumen sowie Luftkapazität und (nutzbare) Feldkapazität.
 
+Dazu kommen zwei Funktionen rund um die Feldarbeit:
+
+- **Ort finden** — ein Kompasspfeil mit Live-Entfernung führt euch zu den Koordinaten einer Aufnahme. In der Kampagnenübersicht lassen sich zusätzlich alle Aufnahmen in eurer Nähe hervorheben.
+- **Import** — eine bereits exportierte Kampagne lässt sich als ZIP wieder einlesen, und eine am Rechner geplante Kampagne könnt ihr als GPX-Datei importieren, um die Punkte im Feld abzulaufen.
+
 Genaue Erklärungen zur Nutzung der Hilfen findet ihr in der App selber und bald bei https://www.youtube.com/@SojlBodenkunde. 
 
 ## Funktionsweise der Tools
+
+### Ort finden und Standortverfolgung
+
+Beide Funktionen arbeiten rein auf dem Gerät mit dem GPS-Signal, es werden keine Karten geladen und keine Daten verschickt.
+
+**„Ort finden"** öffnet ihr in einer Aufnahme unter den Standortdaten. Die App abonniert die eigene Position und die Kompassausrichtung des Geräts und zeigt einen Pfeil, der auf die Zielkoordinaten der Aufnahme zeigt, sowie die verbleibende Entfernung. Die Distanz wird über die Haversine-Formel berechnet (Kugelerde, für Feldentfernungen völlig ausreichend), die Peilung als Anfangspeilung im Uhrzeigersinn von Nord. Der Pfeil wird um `Peilung − Geräteausrichtung` gedreht, zeigt also unabhängig davon, wie ihr das Handy haltet, in die richtige Richtung. Als Ziel werden die GPS-Koordinaten der Aufnahme genutzt; sind nur UTM-Werte eingetragen, rechnet die App diese vorher um. Ohne jegliche Koordinaten ist der Button deaktiviert. Wenn das Gerät keinen Kompass hat, wird das gemeldet — die Entfernung funktioniert trotzdem.
+
+**„Standort verfolgen"** ist der Schalter in der Kampagnenübersicht. Solange er aktiv ist, wird für jede Aufnahme mit Koordinaten laufend die Distanz zu eurer aktuellen Position berechnet und in der Liste angezeigt. Aufnahmen, die näher als 5 m sind, werden grün hervorgehoben. Das hilft vor allem beim Wiederfinden von Punkten einer geplanten Kampagne. Die Standortabfrage wird beim Ausschalten und beim Verlassen des Screens wieder beendet, damit sie nicht im Hintergrund weiterläuft.
+
+### Import von Kampagnen
+
+Es gibt zwei Importwege, beide über die Buttons auf dem Startbildschirm.
+
+**Begonnene Kampagne importieren (ZIP)** ist das Gegenstück zum Export. Ihr wählt eine zuvor von der App exportierte ZIP-Datei aus (`aufnahmen.csv` + `horizonte.csv`), und die App baut daraus eine **neue** Kampagne mit allen Aufnahmen und Horizonten wieder auf. Status, Erstellungsdatum und Namen der Aufnahmen bleiben dabei erhalten. Der Kampagnenname wird aus dem Dateinamen abgeleitet. Der Import läuft komplett in einer Datenbank-Transaktion: entweder er geht ganz durch, oder es bleibt gar nichts halb Importiertes zurück. Das ist praktisch, um eine Aufnahme auf einem anderen Gerät weiterzuführen oder ein Backup zurückzuspielen.
+
+**Geplante Kampagne importieren (GPX)** ist für die Vorplanung am Rechner gedacht. Ihr setzt eure geplanten Bohrpunkte z.B. in QGIS oder einem GPS-Tool als Wegpunkte, exportiert sie als GPX und importiert die Datei. Die App legt eine neue Kampagne an und pro Wegpunkt eine leere Aufnahme mit bereits eingetragenen GPS- und UTM-Koordinaten sowie dem Wegpunktnamen. Im Feld müsst ihr dann nur noch die Punkte ablaufen — wobei euch „Standort verfolgen" und „Ort finden" von oben helfen. Gelesen werden ausschließlich `<wpt>`-Wegpunkte; Routen und Tracks werden ignoriert, Wegpunkte ohne brauchbare Koordinaten übersprungen.
 
 ### Humusberechnung
 

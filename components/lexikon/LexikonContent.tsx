@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SectionList, StyleSheet, Text, TextInput, View } from "react-native";
+import { SectionList, StyleSheet, Text, View } from "react-native";
 import { styles as globalStyles } from "@/styles/styles";
+import { colors, spacing } from "@/styles/theme";
+import TextField from "@/components/ui/TextField";
 import TermRow, { type TermRowProps } from "@/components/lexikon/TermRow";
 
 type SectionShape<TItem> = { title: string; data: TItem[] };
@@ -66,12 +68,11 @@ export default function LexikonContent<
   }, [filtered]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View style={{ flex: 1, backgroundColor: colors.white }}>
       <View style={localStyles.searchContainer}>
-        <TextInput
-          style={[globalStyles.input, { marginBottom: 0 }]}
+        <TextField
           placeholder={searchPlaceholder}
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textMuted}
           value={query}
           onChangeText={setQuery}
           clearButtonMode="while-editing"
@@ -96,7 +97,13 @@ export default function LexikonContent<
         stickySectionHeadersEnabled
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
-          <View style={{ paddingHorizontal: 20, paddingTop: 40, gap: 8 }}>
+          <View
+            style={{
+              paddingHorizontal: spacing.screen,
+              paddingTop: 40,
+              gap: 8,
+            }}
+          >
             <Text style={globalStyles.emptyText}>Keine Einträge gefunden.</Text>
             {emptyHint != null && (
               <Text style={globalStyles.emptyText}>{emptyHint}</Text>
@@ -110,17 +117,17 @@ export default function LexikonContent<
 
 const localStyles = StyleSheet.create({
   searchContainer: {
-    paddingHorizontal: 15,
+    paddingHorizontal: spacing.screen,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ddd",
-    backgroundColor: "#fff",
+    borderBottomColor: colors.divider,
+    backgroundColor: colors.white,
   },
   sectionHeader: {
-    backgroundColor: "#f5f5f5",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: spacing.screen,
+    paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ddd",
+    borderBottomColor: colors.divider,
   },
 });

@@ -4,13 +4,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Modal,
   ScrollView,
   StyleSheet,
 } from "react-native";
 import type { TextInputProps, StyleProp, ViewStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Dialog from "@/components/ui/Dialog";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
+import { colors, fontSize, radius, spacing } from "@/styles/theme";
 import type {
   SuggestionPayload,
   ValidationResult,
@@ -30,7 +31,7 @@ type Props = Omit<TextInputProps, "onChangeText" | "value" | "onBlur"> & {
 };
 
 /**
- * TextInput that surfaces a red exclamation badge when the value is non-empty,
+ * TextInput (placeholder colour preset) that surfaces a red exclamation badge when the value is non-empty,
  * has been blurred at least once, and the validator reports an issue.
  * Tapping the badge opens a modal with a range hint or a tappable list of
  * suggested values. List taps replace the input value with the suggestion.
@@ -44,6 +45,7 @@ export default function ValidatedField({
   containerStyle,
   fieldLabel,
   style,
+  placeholderTextColor = colors.placeholder,
   ...rest
 }: Props) {
   const [touched, setTouched] = useState(false);
@@ -71,6 +73,7 @@ export default function ValidatedField({
     <View style={[localStyles.wrapper, containerStyle]}>
       <TextInput
         {...rest}
+        placeholderTextColor={placeholderTextColor}
         style={[styles.input, localStyles.input, style]}
         value={value}
         onChangeText={onChangeText}
@@ -83,46 +86,27 @@ export default function ValidatedField({
           onPress={() => setModalOpen(true)}
           accessibilityLabel="Eingabe prüfen"
         >
-          <Text style={localStyles.badgeText}>!</Text>
+          <Ionicons name="alert-circle" size={26} color={colors.danger} />
         </TouchableOpacity>
       )}
 
-      <Modal
+      <Dialog
         visible={modalOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalOpen(false)}
+        onClose={() => setModalOpen(false)}
+        title={fieldLabel ?? "Mögliche Werte"}
+        closeIcon
+        padded={false}
       >
-        <TouchableOpacity
-          style={localStyles.overlay}
-          activeOpacity={1}
-          onPress={() => setModalOpen(false)}
-        >
-          <View
-            style={localStyles.sheet}
-            onStartShouldSetResponder={() => true}
-          >
-            <View style={localStyles.sheetHeader}>
-              <Text style={localStyles.sheetTitle}>
-                {fieldLabel ?? "Mögliche Werte"}
-              </Text>
-              <TouchableOpacity onPress={() => setModalOpen(false)}>
-                <Text style={localStyles.closeBtn}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {suggestion && (
-              <SuggestionBody
-                suggestion={suggestion}
-                onPick={(v) => {
-                  onChangeText(v);
-                  setModalOpen(false);
-                }}
-              />
-            )}
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        {suggestion && (
+          <SuggestionBody
+            suggestion={suggestion}
+            onPick={(v) => {
+              onChangeText(v);
+              setModalOpen(false);
+            }}
+          />
+        )}
+      </Dialog>
     </View>
   );
 }
@@ -197,69 +181,25 @@ const localStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  badgeText: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#c00",
-    color: "#fff",
-    textAlign: "center",
-    lineHeight: 24,
-    fontSize: 16,
-    fontWeight: "800",
-    overflow: "hidden",
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    padding: 24,
-  },
-  sheet: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    overflow: "hidden",
-    maxHeight: "80%",
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ddd",
-  },
-  sheetTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.primary,
-    flex: 1,
-  },
-  closeBtn: {
-    color: colors.primary,
-    fontSize: 18,
-    fontWeight: "700",
-    paddingHorizontal: 6,
-  },
   body: {
-    padding: 16,
-    gap: 12,
+    padding: spacing.lg,
+    gap: spacing.md,
+    flexShrink: 1,
   },
   description: {
-    fontSize: 14,
-    color: "#444",
-    lineHeight: 20,
+    fontSize: fontSize.md,
+    color: colors.textBody,
+    lineHeight: 21,
   },
   rangeBox: {
-    backgroundColor: colors.primary + "18",
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    backgroundColor: colors.primaryTint,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     alignItems: "center",
   },
   rangeText: {
-    fontSize: 20,
+    fontSize: fontSize.lg,
     fontWeight: "700",
     color: colors.primary,
   },
@@ -271,19 +211,19 @@ const localStyles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 10,
     paddingVertical: 10,
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#eee",
+    borderBottomColor: colors.dividerLight,
   },
   listValue: {
-    fontSize: 15,
+    fontSize: fontSize.md,
     fontWeight: "700",
-    color: "#222",
+    color: colors.text,
     minWidth: 72,
   },
   listLabel: {
-    fontSize: 14,
-    color: "#555",
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
     flex: 1,
   },
 });

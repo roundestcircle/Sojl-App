@@ -3,6 +3,7 @@ import { Linking, Text, View } from "react-native";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import FunktionsweiseContent from "@/components/lexikon/FunktionsweiseContent";
 import { styles } from "@/styles/styles";
+import { spacing } from "@/styles/theme";
 
 export default function AboutScreen() {
   const [allgemeinesExpanded, setAllgemeinesExpanded] = useState(true);
@@ -10,7 +11,7 @@ export default function AboutScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ paddingHorizontal: 15, paddingTop: 10 }}>
+      <View style={{ paddingHorizontal: spacing.screen, paddingTop: 10 }}>
         <CollapsibleSection
           title="Allgemeines"
           expanded={allgemeinesExpanded}

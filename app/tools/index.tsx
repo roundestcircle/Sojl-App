@@ -1,7 +1,9 @@
 import { Fragment } from "react";
-import { Text, ScrollView, TouchableOpacity, View } from "react-native";
-import { Link, type Href } from "expo-router";
+import { Text, ScrollView, StyleSheet } from "react-native";
+import type { Href } from "expo-router";
+import NavRow from "@/components/ui/NavRow";
 import { styles } from "@/styles/styles";
+import { spacing } from "@/styles/theme";
 
 type ToolLink = {
   label: string;
@@ -66,31 +68,30 @@ const TOOL_SECTIONS: ToolSection[] = [
 
 export default function ToolsIndex() {
   return (
-    <ScrollView
-      contentContainerStyle={{
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        gap: 10,
-      }}
-    >
+    <ScrollView contentContainerStyle={localStyles.content}>
       {TOOL_SECTIONS.map((section, sIdx) => (
         <Fragment key={sIdx}>
           {section.title != null && (
-            <>
-              <View style={{ height: 8 }} />
-              <Text style={styles.sectionTitle}>{section.title}</Text>
-            </>
+            <Text style={[styles.sectionTitle, localStyles.heading]}>
+              {section.title}
+            </Text>
           )}
           {section.items.map((item) => (
-            <Link key={item.label} href={item.href} asChild>
-              <TouchableOpacity style={styles.navButton}>
-                <Text style={styles.navButtonLabel}>{item.label}</Text>
-                <Text style={styles.chevron}>›</Text>
-              </TouchableOpacity>
-            </Link>
+            <NavRow key={item.label} title={item.label} href={item.href} />
           ))}
         </Fragment>
       ))}
     </ScrollView>
   );
 }
+
+const localStyles = StyleSheet.create({
+  content: {
+    paddingHorizontal: spacing.screen,
+    paddingVertical: spacing.md,
+    gap: 10,
+  },
+  heading: {
+    marginTop: spacing.sm,
+  },
+});

@@ -60,8 +60,8 @@ export default function BerechneteWerteSection() {
           title="Humusgehalt (29)"
           info={`Geschätzter Humusgehalt nach Renger (1987) in %; benötigt Bodenfarbe (Munsell), pH (CaCl₂) und Tonanteil. ${MISSING_HINT}`}
         />
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <View style={{ flex: 1 }}>
+        <View style={styles.formRow}>
+          <View style={styles.halfField}>
             <Text style={styles.fieldLabel}>Humusgehalt</Text>
             <ControlledReadonlyField
               control={control}
@@ -69,7 +69,7 @@ export default function BerechneteWerteSection() {
               unit="%"
             />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={styles.halfField}>
             <Text style={styles.fieldLabel}>Humusklasse</Text>
             <ControlledReadonlyField control={control} name="humus" />
           </View>

@@ -1,19 +1,13 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import ValidatedField from "@/components/ui/ValidatedField";
 import { ToolModal } from "@/components/ui/ToolModal";
+import { WithToolButton, WithUnit } from "@/components/forms/shared";
 import {
   validatePh,
   validateHumusgehalt,
 } from "@/lib/validation/fieldValidation";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
 import {
   calcBasensaettigung,
   humusGroupLabel,
@@ -33,15 +27,13 @@ export default function BasensaettigungTool() {
   return (
     <>
       <ScrollView
-        contentContainerStyle={localStyles.container}
+        contentContainerStyle={styles.toolContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={localStyles.fieldGroup}>
-          <Text style={localStyles.label}>pH (CaCl₂)</Text>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>pH (CaCl₂)</Text>
           <ValidatedField
-            style={styles.input}
             placeholder="z.B. 5.5"
-            placeholderTextColor={colors.primary + "66"}
             keyboardType="decimal-pad"
             onChangeText={setPH}
             value={pH}
@@ -50,41 +42,34 @@ export default function BasensaettigungTool() {
           />
         </View>
 
-        <View style={localStyles.fieldGroup}>
-          <Text style={localStyles.label}>Humusgehalt</Text>
-          <View style={localStyles.inputRow}>
-            <ValidatedField
-              style={[styles.input, { flex: 1 }]}
-              placeholder="z.B. 2.5"
-              placeholderTextColor={colors.primary + "66"}
-              keyboardType="decimal-pad"
-              onChangeText={setHumusPct}
-              value={humusPct}
-              validate={validateHumusgehalt}
-              fieldLabel="Humusgehalt (%)"
-            />
-            <Text style={localStyles.unit}>%</Text>
-            <TouchableOpacity
-              style={[styles.actionButton, localStyles.toolBtn]}
-              onPress={() => setActiveModal("humus")}
-            >
-              <Text style={styles.actionButtonText}>Bestimmungshilfe</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>Humusgehalt</Text>
+          <WithToolButton onPress={() => setActiveModal("humus")}>
+            <WithUnit unit="%">
+              <ValidatedField
+                placeholder="z.B. 2.5"
+                keyboardType="decimal-pad"
+                onChangeText={setHumusPct}
+                value={humusPct}
+                validate={validateHumusgehalt}
+                fieldLabel="Humusgehalt (%)"
+              />
+            </WithUnit>
+          </WithToolButton>
         </View>
 
-        {result !== "" ? (
-          <View style={styles.resultBox}>
-            <Text style={styles.resultValue}>{result} %</Text>
-            {group && <Text style={styles.resultLabel}>Kurve: {group}</Text>}
-          </View>
-        ) : (
-          <View style={styles.resultBox}>
+        <View style={styles.resultBox}>
+          {result !== "" ? (
+            <>
+              <Text style={styles.resultValue}>{result} %</Text>
+              {group && <Text style={styles.resultLabel}>Kurve: {group}</Text>}
+            </>
+          ) : (
             <Text style={styles.resultPlaceholder}>
               Fehlende Eingabe – alle Felder ausfüllen
             </Text>
-          </View>
-        )}
+          )}
+        </View>
       </ScrollView>
 
       <ToolModal
@@ -101,33 +86,3 @@ export default function BasensaettigungTool() {
     </>
   );
 }
-
-const localStyles = StyleSheet.create({
-  container: {
-    padding: 20,
-    gap: 16,
-    paddingBottom: 40,
-  },
-  fieldGroup: {
-    gap: 4,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  unit: {
-    color: colors.primary,
-    fontWeight: "600",
-    fontSize: 15,
-  },
-  toolBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-});

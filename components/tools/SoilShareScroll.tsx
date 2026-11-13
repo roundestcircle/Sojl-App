@@ -1,18 +1,9 @@
 import { useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  StyleSheet,
-} from "react-native";
+import { View, Text, ScrollView, Dimensions, StyleSheet } from "react-native";
 import { Canvas, Rect } from "@shopify/react-native-skia";
-import { styles } from "@/styles/styles";
-import {
-  InstructionModal,
-  ResetInstructionButton,
-} from "@/components/ui/InstructionModal";
+import Button from "@/components/ui/Button";
+import { HelpButton, useInstruction } from "@/components/ui/Instruction";
+import { colors, radius, spacing } from "@/styles/theme";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
@@ -30,10 +21,12 @@ function seededRandom(seed: number) {
 
 type Props = { onConfirm?: (percent: string) => void };
 
+const INSTRUCTION =
+  "Der Prozentcounter in der Mitte zeigt dir den Anteil an schwarzen Pixeln. Vergleiche ihn mit dem Anteil deiner zu analysierenden Komponente. Scrolle, um den Anteil zu erhöhen.";
+
 export default function SoilShareScroll({ onConfirm }: Props) {
   const [percent, setPercent] = useState(0);
-  // Remount the InstructionModal to reset its "don't show again" state.
-  const [modalKey, setModalKey] = useState(0);
+  const instruction = useInstruction("soilShareDontShowAgain", INSTRUCTION);
 
   const squares = useMemo(() => {
     const rand = seededRandom(42);
@@ -66,18 +59,9 @@ export default function SoilShareScroll({ onConfirm }: Props) {
 
   const visibleCount = Math.round((percent / 100) * squares.length);
 
-  const handleReset = () => {
-    setModalKey((prev) => prev + 1);
-  };
-
   return (
     <View style={{ flex: 1 }}>
-      <InstructionModal
-        key={modalKey}
-        title="Anleitung"
-        instructionText="Der Prozentcounter in der Mitte zeigt dir den Anteil an schwarzen Pixeln. Vergleiche ihn mit dem Anteil deiner zu analysierenden Komponente. Scrolle, um den Anteil zu erhöhen."
-        storageKey="soilShareDontShowAgain"
-      />
+      {instruction.modal}
 
       <Canvas style={StyleSheet.absoluteFill}>
         {squares.map((sq, i) => (
@@ -93,9 +77,9 @@ export default function SoilShareScroll({ onConfirm }: Props) {
         ))}
       </Canvas>
 
-      <View style={styles.labelContainer} pointerEvents="none">
-        <View style={styles.button}>
-          <Text style={styles.label}>{percent}%</Text>
+      <View style={localStyles.labelContainer} pointerEvents="none">
+        <View style={localStyles.labelBox}>
+          <Text style={localStyles.label}>{percent}%</Text>
         </View>
       </View>
 
@@ -114,31 +98,55 @@ export default function SoilShareScroll({ onConfirm }: Props) {
         scrollEventThrottle={16}
       />
 
-      {/* Rendered after the ScrollView so the button still receives touches. */}
-      {onConfirm && (
-        <View style={{ position: "absolute", bottom: 80, left: 0, right: 0 }}>
-          <TouchableOpacity
-            style={[styles.actionButton, { alignSelf: "stretch" }]}
+      {/* Rendered after the ScrollView so the buttons still receive touches. */}
+      <View style={localStyles.footer}>
+        {onConfirm && (
+          <Button
+            title={`Wert übernehmen (${percent}%)`}
+            style={localStyles.grow}
             onPress={() => onConfirm(String(percent))}
-          >
-            <Text style={styles.actionButtonText}>
-              Wert übernehmen ({percent}%)
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <ResetInstructionButton
-        storageKey="soilShareDontShowAgain"
-        onReset={handleReset}
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 16,
-          paddingHorizontal: 0,
-        }}
-      />
+          />
+        )}
+        <HelpButton onPress={instruction.show} />
+      </View>
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  labelContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  labelBox: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius.md,
+    borderWidth: 3,
+    borderColor: colors.primary,
+    backgroundColor: colors.white,
+  },
+  label: {
+    fontSize: 64,
+    fontWeight: "600",
+    letterSpacing: -2,
+    color: colors.text,
+  },
+  footer: {
+    position: "absolute",
+    bottom: spacing.lg,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: spacing.sm,
+  },
+  grow: {
+    flex: 1,
+  },
+});

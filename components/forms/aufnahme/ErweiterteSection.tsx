@@ -36,7 +36,7 @@ export default function ErweiterteSection() {
       expanded={expanded}
       onToggle={() => setExpanded((v) => !v)}
     >
-      <Text style={styles.erweiterteHint}>
+      <Text style={styles.hint}>
         Hierfür stehen noch keine Bestimmungshilfen zur Verfügung. Bitte nutzt
         die KA6 für die korrekte Formatierung der Werte.
       </Text>

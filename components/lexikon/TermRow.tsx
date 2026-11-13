@@ -5,7 +5,7 @@ import {
   View,
   type ImageSourcePropType,
 } from "react-native";
-import { colors } from "@/styles/colors";
+import { colors, fontSize, spacing } from "@/styles/theme";
 
 export type TermRowProps = {
   /** Bold label: a horizon symbol or an entry title. */
@@ -49,10 +49,10 @@ export default function TermRow({
 
 const localStyles = StyleSheet.create({
   row: {
-    paddingHorizontal: 15,
+    paddingHorizontal: spacing.screen,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#eee",
+    borderBottomColor: colors.dividerLight,
   },
   inlineRow: {
     flexDirection: "row",
@@ -63,7 +63,7 @@ const localStyles = StyleSheet.create({
     gap: 4,
   },
   term: {
-    fontSize: 15,
+    fontSize: fontSize.md,
     fontWeight: "700",
     color: colors.primary,
   },
@@ -71,13 +71,13 @@ const localStyles = StyleSheet.create({
     minWidth: 70,
   },
   caption: {
-    fontSize: 13,
+    fontSize: fontSize.sm,
     fontWeight: "600",
     color: colors.primary,
   },
   text: {
-    fontSize: 14,
-    color: "#333",
+    fontSize: fontSize.md,
+    color: colors.textBody,
     lineHeight: 20,
   },
   inlineText: {

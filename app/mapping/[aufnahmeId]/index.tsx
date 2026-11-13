@@ -1,14 +1,5 @@
 import { useCallback, useLayoutEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import {
   router,
   useFocusEffect,
@@ -16,7 +7,7 @@ import {
   useNavigation,
 } from "expo-router";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
+import { spacing } from "@/styles/theme";
 import {
   closeAufnahme,
   getAufnahme,
@@ -33,7 +24,11 @@ import {
 import { exportAufnahmeAsZip } from "@/lib/io/csvExport";
 import * as Haptics from "expo-haptics";
 import HorizontButton from "@/components/forms/HorizontButton";
-import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import NavRow from "@/components/ui/NavRow";
+import StatusBadge from "@/components/ui/StatusBadge";
+import { ConfirmDialog } from "@/components/ui/Dialog";
+import { aufnahmeTitle } from "@/lib/text";
 import OrtFindenModal from "@/components/tools/OrtFindenModal";
 import { storedLatLon } from "@/lib/geo/coordinates";
 
@@ -57,12 +52,6 @@ function deriveStandortStatus(a: Aufnahme): StandortStatus {
   if (anyFilled) return "begonnen";
   return "leer";
 }
-
-const standortBadge: Record<StandortStatus, { label: string; bg: string }> = {
-  leer: { label: "leer", bg: colors.statusEmpty },
-  begonnen: { label: "begonnen", bg: colors.statusStarted },
-  abgeschlossen: { label: "abgeschlossen", bg: colors.statusDone },
-};
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -110,11 +99,7 @@ export default function AufnahmeOverview() {
   // Update the navigation bar title once the Aufnahme is loaded
   useLayoutEffect(() => {
     if (aufnahme) {
-      navigation.setOptions({
-        title: `Aufnahme ${aufnahme.nummer ?? aufnahme.id}${
-          aufnahme.name ? ` – ${aufnahme.name}` : ""
-        }`,
-      });
+      navigation.setOptions({ title: aufnahmeTitle(aufnahme) });
     }
   }, [navigation, aufnahme]);
 
@@ -191,7 +176,6 @@ export default function AufnahmeOverview() {
   };
 
   const standortStatus = aufnahme ? deriveStandortStatus(aufnahme) : "leer";
-  const badge = standortBadge[standortStatus];
   const targetCoords = aufnahme ? storedLatLon(aufnahme) : null;
 
   return (
@@ -202,30 +186,18 @@ export default function AufnahmeOverview() {
           contentContainerStyle={localStyles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Standortdaten button ── */}
-          <TouchableOpacity
-            style={[
-              styles.listRow,
-              { paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
-            ]}
-            onPress={() =>
-              router.push(`/mapping/${aufnahmeId}/standort` as any)
-            }
-            activeOpacity={0.75}
-          >
-            <Text style={[styles.rowTitle, { flex: 1 }]}>Standortdaten</Text>
-            <Badge label={badge.label} color={badge.bg} />
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
+          <NavRow
+            title="Standortdaten"
+            badge={<StatusBadge status={standortStatus} />}
+            onPress={() => router.push(`/mapping/${aufnahmeId}/standort`)}
+          />
 
-          {/* ── Ort finden button ── */}
-          <TouchableOpacity
-            style={[styles.actionButton, !targetCoords && localStyles.disabled]}
+          <Button
+            title="Ort finden"
+            icon="compass-outline"
             onPress={() => setShowOrtFinden(true)}
             disabled={!targetCoords}
-          >
-            <Text style={styles.actionButtonText}>Ort finden</Text>
-          </TouchableOpacity>
+          />
 
           {/* ── Horizont list ── */}
           <View style={localStyles.horizontList}>
@@ -242,37 +214,29 @@ export default function AufnahmeOverview() {
                 moveNonce={moved.ids.includes(horizont.id) ? moved.nonce : 0}
               />
             ))}
-            <TouchableOpacity
-              style={styles.actionButton}
+            <Button
+              title="Horizont hinzufügen"
+              icon="add"
               onPress={handleAddHorizont}
-            >
-              <Text style={styles.actionButtonText}>+ Horizont hinzufügen</Text>
-            </TouchableOpacity>
+            />
           </View>
         </ScrollView>
 
-        {/* ── Bottom buttons ── */}
         <View style={styles.bottomBar}>
-          <TouchableOpacity style={styles.button} onPress={handleAbschliessen}>
-            <Text style={styles.maintext}>Abschließen</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
+          <Button
+            title="Abschließen"
+            variant="outline"
+            onPress={handleAbschliessen}
+          />
+          <Button
+            title="Aufnahme exportieren (ZIP)"
             onPress={handleExport}
-            disabled={exporting || !aufnahme}
-          >
-            {exporting ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.actionButtonText}>
-                Aufnahme exportieren (ZIP)
-              </Text>
-            )}
-          </TouchableOpacity>
+            loading={exporting}
+            disabled={!aufnahme}
+          />
         </View>
       </View>
 
-      {/* ── Ort finden compass modal ── */}
       {targetCoords && (
         <OrtFindenModal
           visible={showOrtFinden}
@@ -281,95 +245,46 @@ export default function AufnahmeOverview() {
         />
       )}
 
-      {/* ── Delete Horizont confirmation modal ── */}
-      <Modal
+      <ConfirmDialog
         visible={deleteTarget !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDeleteTarget(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Horizont löschen</Text>
-            <Text style={styles.modalText}>
-              H{deleteTarget?.nummer}
-              {deleteTarget?.horizontname
-                ? ` – ${deleteTarget.horizontname}`
-                : ""}{" "}
-              löschen?
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#c0392b" }]}
-                onPress={() => {
-                  if (deleteTarget) deleteHorizont(deleteTarget.id);
-                  setDeleteTarget(null);
-                  setHorizonte(getHorizonteForAufnahme(aufnahmeId));
-                }}
-              >
-                <Text style={styles.modalButtonText}>Löschen</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#888" }]}
-                onPress={() => setDeleteTarget(null)}
-              >
-                <Text style={styles.modalButtonText}>Abbrechen</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title="Horizont löschen"
+        message={`H${deleteTarget?.nummer}${
+          deleteTarget?.horizontname ? ` – ${deleteTarget.horizontname}` : ""
+        } löschen?`}
+        confirmLabel="Löschen"
+        tone="danger"
+        onConfirm={() => {
+          if (deleteTarget) deleteHorizont(deleteTarget.id);
+          setDeleteTarget(null);
+          setHorizonte(getHorizonteForAufnahme(aufnahmeId));
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
-      {/* ── Unvollständig confirmation modal ── */}
-      <Modal
+      <ConfirmDialog
         visible={closeWarnings !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setCloseWarnings(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Aufnahme unvollständig</Text>
-            <Text style={styles.modalText}>
-              {closeWarnings?.join("\n")}
-              {"\n\n"}Trotzdem abschließen?
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => {
-                  setCloseWarnings(null);
-                  doClose();
-                }}
-              >
-                <Text style={styles.modalButtonText}>Trotzdem abschließen</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#888" }]}
-                onPress={() => setCloseWarnings(null)}
-              >
-                <Text style={styles.modalButtonText}>Abbrechen</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title="Aufnahme unvollständig"
+        message={`${closeWarnings?.join("\n")}\n\nTrotzdem abschließen?`}
+        confirmLabel="Trotzdem abschließen"
+        onConfirm={() => {
+          setCloseWarnings(null);
+          doClose();
+        }}
+        onCancel={() => setCloseWarnings(null)}
+      />
     </>
   );
 }
 
 const localStyles = StyleSheet.create({
   content: {
-    paddingHorizontal: 15,
-    paddingTop: 16,
+    paddingHorizontal: spacing.screen,
+    paddingTop: spacing.lg,
     paddingBottom: 32,
-    gap: 8,
+    gap: spacing.sm,
   },
   horizontList: {
-    gap: 12,
-    paddingVertical: 8,
-  },
-  disabled: {
-    opacity: 0.4,
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
   },
 });

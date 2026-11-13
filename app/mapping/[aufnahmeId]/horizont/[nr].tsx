@@ -10,6 +10,7 @@ import {
 import { getAufnahme } from "@/lib/db/aufnahmeQueries";
 import HorizontForm from "@/components/forms/horizont/HorizontForm";
 import { useAutosave } from "@/hooks/useAutosave";
+import { spacing } from "@/styles/theme";
 
 /** Route params may arrive as arrays in edge cases; normalize to a number. */
 const toInt = (p: string | string[]) =>
@@ -48,7 +49,7 @@ export default function HorizontScreen() {
   return (
     <KeyboardAwareScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      contentContainerStyle={{ padding: spacing.screen, paddingBottom: 40 }}
       keyboardShouldPersistTaps="handled"
       enableOnAndroid
       extraScrollHeight={165}

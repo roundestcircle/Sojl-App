@@ -1,23 +1,13 @@
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
-import {
-  Text,
-  View,
-  Image,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { Text, View, Image, Alert, StyleSheet } from "react-native";
 import Constants from "expo-constants";
-import { styles } from "../styles/styles";
-import { colors } from "../styles/colors";
+import { styles } from "@/styles/styles";
+import { fontSize } from "@/styles/theme";
+import NavRow from "@/components/ui/NavRow";
 import { pickAndImportCampaignZip } from "@/lib/io/zipImport";
 import { pickAndImportGpx } from "@/lib/io/gpxImport";
-
-/** "1 Aufnahme" / "3 Aufnahmen". */
-function count(n: number, singular: string, plural: string): string {
-  return `${n} ${n === 1 ? singular : plural}`;
-}
+import { count } from "@/lib/text";
 
 /** The message of a thrown error without the "Error: " prefix. */
 function errorMessage(e: unknown): string {
@@ -39,7 +29,7 @@ export default function Index() {
       setImporting(true);
       const result = await pickAndImportCampaignZip();
       if (!result) return; // cancelled
-      router.push(`/mapping/kampagne/${result.campaignId}` as any);
+      router.push(`/mapping/kampagne/${result.campaignId}`);
       let message = `${count(result.aufnahmen, "Aufnahme", "Aufnahmen")}, ${count(result.horizonte, "Horizont", "Horizonte")} importiert.`;
       if (result.skippedHorizonte > 0) {
         message += `
@@ -64,7 +54,7 @@ ${count(result.skippedHorizonte, "Horizont", "Horizonte")} ohne zugehörige Aufn
       setImportingGpx(true);
       const result = await pickAndImportGpx();
       if (!result) return; // cancelled
-      router.push(`/mapping/kampagne/${result.campaignId}` as any);
+      router.push(`/mapping/kampagne/${result.campaignId}`);
       Alert.alert(
         "Import abgeschlossen",
         `${count(result.count, "Wegpunkt", "Wegpunkte")} importiert.`,
@@ -77,70 +67,47 @@ ${count(result.skippedHorizonte, "Horizont", "Horizonte")} ohne zugehörige Aufn
   };
 
   return (
-    <View style={styles.container}>
-      <Link href={"/mapping" as any} asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Kartierung</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <TouchableOpacity
-        style={styles.navButton}
+    <View style={styles.centered}>
+      <NavRow title="Kartierung" href="/mapping" />
+      <NavRow
+        title="Begonnene Kampagne importieren (ZIP)"
         onPress={handleImport}
-        disabled={importing}
-      >
-        <Text style={styles.navButtonLabel}>
-          Begonnene Kampagne importieren (ZIP)
-        </Text>
-        {importing ? (
-          <ActivityIndicator color={colors.primary} size="small" />
-        ) : (
-          <Text style={styles.chevron}>›</Text>
-        )}
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.navButton}
+        loading={importing}
+      />
+      <NavRow
+        title="Geplante Kampagne importieren (GPX)"
         onPress={handleImportGpx}
-        disabled={importingGpx}
-      >
-        <Text style={styles.navButtonLabel}>
-          Geplante Kampagne importieren (GPX)
-        </Text>
-        {importingGpx ? (
-          <ActivityIndicator color={colors.primary} size="small" />
-        ) : (
-          <Text style={styles.chevron}>›</Text>
-        )}
-      </TouchableOpacity>
-      <Link href="/tools/bodenfarbe" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>Nur Bodenfarbe bestimmen</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href={"/tools" as any} asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>
-            Weitere Kartierungsunterstützung
-          </Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <Link href="/about" asChild>
-        <TouchableOpacity style={styles.navButton}>
-          <Text style={styles.navButtonLabel}>About</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-      </Link>
-      <View style={styles.footnote}>
+        loading={importingGpx}
+      />
+      <NavRow title="Nur Bodenfarbe bestimmen" href="/tools/bodenfarbe" />
+      <NavRow title="Weitere Kartierungsunterstützung" href="/tools" />
+      <NavRow title="About" href="/about" />
+      <View style={localStyles.footnote}>
         <Image
           source={require("../assets/images/icon.png")}
-          style={{ width: 48, height: 48, borderRadius: 10 }}
+          style={localStyles.icon}
         />
-        <Text style={{ fontSize: 9 }}>
+        <Text style={localStyles.version}>
           Version {Constants.expoConfig?.version ?? ""}
         </Text>
       </View>
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  footnote: {
+    position: "absolute",
+    bottom: 20,
+    alignItems: "center",
+    gap: 4,
+  },
+  icon: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+  },
+  version: {
+    fontSize: fontSize.xs,
+  },
+});

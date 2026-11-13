@@ -78,7 +78,7 @@ export default function BerechneteWerteSection({
       expanded={expanded}
       onToggle={() => setExpanded((v) => !v)}
     >
-      <Text style={styles.erweiterteHint}>
+      <Text style={styles.hint}>
         Alle Werte werden automatisch aus den Horizontdaten berechnet. Die
         Horizonte müssen den Tiefenbereich lückenlos ab 0 cm abdecken. Falls
         nichts oder „unvollständig“ angezeigt wird, bitte die Tiefen und Felder

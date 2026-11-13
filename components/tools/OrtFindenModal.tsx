@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Modal,
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Animated,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
-import { haversineMeters, bearingDegrees, angleDelta } from "@/lib/geo/geo";
+import { colors, fontSize, spacing } from "@/styles/theme";
+import Dialog, { dialogText } from "@/components/ui/Dialog";
+import Button from "@/components/ui/Button";
+import {
+  haversineMeters,
+  bearingDegrees,
+  angleDelta,
+  formatDistance,
+} from "@/lib/geo/geo";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
 
 // Duration of the animated catch-up to each new arrow angle.
@@ -21,12 +27,6 @@ type Props = {
   onClose: () => void;
   target: { lat: number; lon: number };
 };
-
-/** Formats a distance in metres as "X m" (<1 km) or "X.X km". */
-function formatDistance(meters: number): string {
-  if (meters < 1000) return `${Math.round(meters)} m`;
-  return `${(meters / 1000).toFixed(1)} km`;
-}
 
 /**
  * Full-screen overlay that points a compass arrow toward `target` and shows the
@@ -72,49 +72,38 @@ export default function OrtFindenModal({ visible, onClose, target }: Props) {
   });
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, localStyles.content]}>
-          <Text style={styles.modalTitle}>Ort finden</Text>
-
-          {error != null ? (
-            <Text style={styles.modalText}>{error}</Text>
-          ) : pos == null ? (
-            <View style={localStyles.spinner}>
-              <ActivityIndicator color={colors.primary} size="large" />
-              <Text style={styles.rowSub}>Standort wird ermittelt …</Text>
-            </View>
-          ) : (
-            <>
-              {heading != null ? (
-                <Animated.Text
-                  style={[localStyles.arrow, { transform: [{ rotate }] }]}
-                >
-                  ↑
-                </Animated.Text>
-              ) : (
-                <Text style={styles.rowSub}>Kompass nicht verfügbar</Text>
-              )}
-              <Text style={localStyles.distance}>
-                {distance != null ? formatDistance(distance) : "—"}
-              </Text>
-            </>
-          )}
-
-          <TouchableOpacity
-            style={[styles.actionButton, localStyles.closeBtn]}
-            onPress={onClose}
-          >
-            <Text style={styles.actionButtonText}>Schließen</Text>
-          </TouchableOpacity>
-        </View>
+    <Dialog visible={visible} onClose={onClose} title="Ort finden">
+      <View style={localStyles.content}>
+        {error != null ? (
+          <Text style={dialogText}>{error}</Text>
+        ) : pos == null ? (
+          <View style={localStyles.spinner}>
+            <ActivityIndicator color={colors.primary} size="large" />
+            <Text style={styles.hint}>Standort wird ermittelt …</Text>
+          </View>
+        ) : (
+          <>
+            {heading != null ? (
+              <Animated.View style={{ transform: [{ rotate }] }}>
+                <Ionicons
+                  name="arrow-up"
+                  size={120}
+                  color={colors.primary}
+                  accessibilityLabel="Richtung zum Ziel"
+                />
+              </Animated.View>
+            ) : (
+              <Text style={styles.hint}>Kompass nicht verfügbar</Text>
+            )}
+            <Text style={localStyles.distance}>
+              {distance != null ? formatDistance(distance) : "–"}
+            </Text>
+          </>
+        )}
       </View>
-    </Modal>
+
+      <Button title="Schließen" onPress={onClose} />
+    </Dialog>
   );
 }
 
@@ -124,22 +113,13 @@ const localStyles = StyleSheet.create({
   },
   spinner: {
     alignItems: "center",
-    gap: 12,
+    gap: spacing.md,
     paddingVertical: 30,
   },
-  arrow: {
-    fontSize: 120,
-    color: colors.primary,
-    lineHeight: 130,
-  },
   distance: {
-    fontSize: 36,
+    fontSize: fontSize.xxl,
     fontWeight: "800",
     color: colors.primary,
-    marginTop: 8,
-  },
-  closeBtn: {
-    marginTop: 20,
-    alignSelf: "stretch",
+    marginTop: spacing.sm,
   },
 });

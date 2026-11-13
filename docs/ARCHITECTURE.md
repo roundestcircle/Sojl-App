@@ -16,7 +16,8 @@ app/                    Screens (expo-router, dateibasiertes Routing)
   mapping/              Kartierung: Kampagnen → Aufnahmen → Horizonte
   tools/                Kartierungsunterstützung (Bestimmungs-/Berechnungshilfen, Lexika)
 components/
-  ui/                   Generische Bausteine (Badge, InfoButton, ValidatedField, Dropdown, ToolModal, …)
+  ui/                   Generische Bausteine (Button, NavRow, Dialog/ConfirmDialog, StatusBadge,
+                        ChoiceChips, TextField, ValidatedField, Dropdown, ToolModal, Instruction, …)
   forms/                Formulare der Kartierung
     aufnahme/           Standortdaten-Formular, in Sektionen zerlegt
     horizont/           Horizont-Formular, in Sektionen zerlegt
@@ -33,7 +34,7 @@ lib/                    Logik ohne UI
 data/                   Statische Daten (Munsell-Chips, Lexika, Dropdown-Optionen)
   trees/                Entscheidungsbäume der Bestimmungshilfen (Registry: index.ts → TREE_TOOLS)
 hooks/                  React-Hooks (Autosave, Live-Standort, Debounce)
-styles/                 Globale Farben und StyleSheet
+styles/                 Design-Tokens (theme.ts: Farben, Schriftgrößen, Abstände) und geteilte Text-/Layout-Styles
 scripts/                Offline-Skripte (z. B. Erzeugung von data/munsellData.ts)
 docs/                   Diese Dokumentation
 ```

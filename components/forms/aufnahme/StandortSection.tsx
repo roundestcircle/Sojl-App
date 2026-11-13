@@ -1,20 +1,11 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  StyleSheet,
-  type KeyboardTypeOptions,
-} from "react-native";
+import { View, Text, Alert, type KeyboardTypeOptions } from "react-native";
 import { Controller, useFormContext } from "react-hook-form";
 import * as Location from "expo-location";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
 import { latLonToUTM } from "@/lib/geo/utmConversion";
-import { PLACEHOLDER_COLOR } from "../shared";
+import Button from "@/components/ui/Button";
+import TextField from "@/components/ui/TextField";
 import type { AufnahmeFormData, CoordMode } from "./types";
 
 type CoordField = {
@@ -112,12 +103,10 @@ export default function StandortSection({
               control={control}
               name={f.name}
               render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={styles.input}
+                <TextField
                   keyboardType={f.keyboardType}
                   autoCapitalize={f.name === "zone" ? "characters" : undefined}
                   placeholder={f.placeholder}
-                  placeholderTextColor={PLACEHOLDER_COLOR}
                   onChangeText={onChange}
                   value={value}
                 />
@@ -127,36 +116,32 @@ export default function StandortSection({
         ))}
       </View>
 
-      <TouchableOpacity style={localStyles.toggleButton} onPress={onToggleMode}>
-        <Text style={localStyles.toggleText}>
-          {mode === "utm" ? "Zu Dezimalgrad wechseln" : "Zu UTM wechseln"}
-        </Text>
-      </TouchableOpacity>
+      <Button
+        title={mode === "utm" ? "Zu Dezimalgrad wechseln" : "Zu UTM wechseln"}
+        variant="outline"
+        size="sm"
+        icon="swap-horizontal"
+        style={{ alignSelf: "flex-start" }}
+        onPress={onToggleMode}
+      />
 
-      <TouchableOpacity
-        style={styles.actionButton}
+      <Button
+        title="GPS automatisch bestimmen"
+        icon="locate"
         onPress={handleGetLocation}
-        disabled={locating}
-      >
-        {locating ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <Text style={styles.actionButtonText}>GPS automatisch bestimmen</Text>
-        )}
-      </TouchableOpacity>
+        loading={locating}
+      />
 
       <Text style={styles.fieldLabel}>Höhe (m ü. NN) (8a)</Text>
       <Controller
         control={control}
         name="m_ue_nn"
         render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
+          <TextField
             // Höhe can be negative (e.g. below sea level); number-pad has no
             // minus key.
             keyboardType="numbers-and-punctuation"
             placeholder="z.B. 350"
-            placeholderTextColor={PLACEHOLDER_COLOR}
             onChangeText={onChange}
             value={value}
           />
@@ -165,19 +150,3 @@ export default function StandortSection({
     </>
   );
 }
-
-const localStyles = StyleSheet.create({
-  toggleButton: {
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignSelf: "flex-start",
-  },
-  toggleText: {
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: "500",
-  },
-});

@@ -92,3 +92,26 @@ export function isWithinProximity(
   );
   return distance <= (wasNear ? enter + PROXIMITY_HYSTERESIS_M : enter);
 }
+
+/** Integer with "." as thousands separator (German), e.g. 12345 → "12.345". */
+function groupThousands(n: number): string {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+/**
+ * Human-readable distance with a unit that fits its size (German format):
+ * "< 1 m", "7 m", "350 m", "1,2 km", "9,9 km", "12 km", "1.234 km".
+ * Whole metres below 1 km, one decimal below 10 km, whole kilometres above.
+ * Negative or non-finite input gives "–".
+ */
+export function formatDistance(meters: number): string {
+  if (!Number.isFinite(meters) || meters < 0) return "–";
+  if (meters < 1) return "< 1 m";
+  const m = Math.round(meters);
+  if (m < 1000) return `${m} m`;
+  const tenthsKm = Math.round(meters / 100);
+  if (tenthsKm < 100) {
+    return `${Math.floor(tenthsKm / 10)},${tenthsKm % 10} km`;
+  }
+  return `${groupThousands(Math.round(meters / 1000))} km`;
+}

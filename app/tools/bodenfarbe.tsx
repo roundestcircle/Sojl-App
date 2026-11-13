@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import PictureTaker from "@/components/tools/PictureTaker";
-import { styles } from "@/styles/styles";
+import { spacing } from "@/styles/theme";
 
 /**
  * Standalone soil color screen.
@@ -9,7 +9,13 @@ import { styles } from "@/styles/styles";
  */
 export default function SoilColorScreen() {
   return (
-    <View style={styles.containerfull}>
+    <View
+      style={{
+        flex: 1,
+        paddingHorizontal: spacing.screen,
+        paddingVertical: spacing.md,
+      }}
+    >
       <PictureTaker />
     </View>
   );

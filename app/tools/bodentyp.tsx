@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { ToolModal } from "@/components/ui/ToolModal";
 import TreeTool from "@/components/tools/TreeTool";
 import HorizontLexikonContent from "@/components/lexikon/HorizontLexikonContent";
-import { colors } from "@/styles/colors";
+import Button from "@/components/ui/Button";
+import { colors, spacing } from "@/styles/theme";
 
 /**
  * Standalone screen for the Bodentyp decision tree.
@@ -17,12 +18,12 @@ export default function BodentypScreen() {
     <View style={{ flex: 1 }}>
       {/* ── Lexikon shortcut ── */}
       <View style={localStyles.topBar}>
-        <TouchableOpacity
-          style={localStyles.lexikonBtn}
+        <Button
+          title="Horizontlexikon"
+          variant="outline"
+          size="sm"
           onPress={() => setLexikonVisible(true)}
-        >
-          <Text style={localStyles.lexikonBtnText}>Horizontlexikon</Text>
-        </TouchableOpacity>
+        />
       </View>
 
       <TreeTool kind="bodentyp" />
@@ -40,22 +41,10 @@ export default function BodentypScreen() {
 
 const localStyles = StyleSheet.create({
   topBar: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.screen,
+    paddingVertical: spacing.sm,
     alignItems: "flex-end",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ddd",
-  },
-  lexikonBtn: {
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    borderRadius: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  },
-  lexikonBtnText: {
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: "600",
+    borderBottomColor: colors.divider,
   },
 });

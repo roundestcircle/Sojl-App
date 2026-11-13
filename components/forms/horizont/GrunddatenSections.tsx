@@ -1,15 +1,8 @@
-import type { ReactNode } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  StyleSheet,
-} from "react-native";
+import { View, Text, Alert } from "react-native";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { styles } from "@/styles/styles";
 import ValidatedField from "@/components/ui/ValidatedField";
+import TextField from "@/components/ui/TextField";
 import LabeledDropdownField, {
   type LabeledOption,
 } from "@/components/ui/LabeledDropdownField";
@@ -32,7 +25,7 @@ import {
   bodenartToClay,
   bodenartToClayMidpoint,
 } from "@/lib/calc/bodenartClay";
-import { Section, formStyles, PLACEHOLDER_COLOR } from "../shared";
+import { Section, WithToolButton, WithUnit, formStyles } from "../shared";
 import type { HorizontFormData, HorizontTool } from "./types";
 
 type Props = {
@@ -75,10 +68,8 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
             control={control}
             name="horizontname"
             render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
+              <TextField
                 placeholder="z.B. Ap, Bv, C"
-                placeholderTextColor={PLACEHOLDER_COLOR}
                 onChangeText={onChange}
                 value={value}
               />
@@ -104,7 +95,6 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
                   <ValidatedField
                     keyboardType="number-pad"
                     placeholder={placeholder}
-                    placeholderTextColor={PLACEHOLDER_COLOR}
                     onChangeText={onChange}
                     value={value}
                     validate={validateTiefe}
@@ -127,7 +117,6 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
             render={({ field: { onChange, value } }) => (
               <ValidatedField
                 placeholder="z.B. Su2"
-                placeholderTextColor={PLACEHOLDER_COLOR}
                 onChangeText={onChange}
                 value={value}
                 validate={validateBodenart}
@@ -141,7 +130,7 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
       <Section title="Bodeneigenschaften">
         <Text style={styles.fieldLabel}>Tonanteil</Text>
         <WithToolButton label="Abschätzen" onPress={estimateTonanteil}>
-          <View style={localStyles.inputWithUnit}>
+          <WithUnit unit="%">
             <Controller
               control={control}
               name="tonanteil"
@@ -149,7 +138,6 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
                 <ValidatedField
                   placeholder="z.B. 17"
                   keyboardType="decimal-pad"
-                  placeholderTextColor={PLACEHOLDER_COLOR}
                   onChangeText={onChange}
                   value={value}
                   validate={validateTonanteil}
@@ -157,18 +145,17 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
                 />
               )}
             />
-            <Text style={formStyles.unit}>%</Text>
-          </View>
+          </WithUnit>
         </WithToolButton>
         {tonanteilRange && (
-          <Text style={localStyles.hint}>
+          <Text style={styles.hint}>
             KA6-Bereich: {tonanteilRange.min}–{tonanteilRange.max} %
           </Text>
         )}
 
         <Text style={styles.fieldLabel}>Skelettanteil (45)</Text>
         <WithToolButton onPress={() => onOpenTool("anteil")}>
-          <View style={localStyles.inputWithUnit}>
+          <WithUnit unit="%">
             <Controller
               control={control}
               name="anteil"
@@ -176,7 +163,6 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
                 <ValidatedField
                   placeholder="z.B. 35"
                   keyboardType="number-pad"
-                  placeholderTextColor={PLACEHOLDER_COLOR}
                   onChangeText={onChange}
                   value={value}
                   validate={validateAnteil}
@@ -184,8 +170,7 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
                 />
               )}
             />
-            <Text style={formStyles.unit}>%</Text>
-          </View>
+          </WithUnit>
         </WithToolButton>
 
         <Text style={styles.fieldLabel}>pH (CaCl₂)</Text>
@@ -196,7 +181,6 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
             <ValidatedField
               keyboardType="decimal-pad"
               placeholder="z.B. 5.5"
-              placeholderTextColor={PLACEHOLDER_COLOR}
               onChangeText={onChange}
               value={value}
               validate={validatePh}
@@ -213,7 +197,6 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
             render={({ field: { onChange, value } }) => (
               <ValidatedField
                 placeholder="z.B. 10YR 4/3"
-                placeholderTextColor={PLACEHOLDER_COLOR}
                 onChangeText={onChange}
                 value={value}
                 validate={validateMunsell}
@@ -248,10 +231,8 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
             control={control}
             name="gefuege"
             render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
+              <TextField
                 placeholder="z.B. ein, sub"
-                placeholderTextColor={PLACEHOLDER_COLOR}
                 onChangeText={onChange}
                 value={value}
               />
@@ -265,10 +246,9 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
           control={control}
           name="notizen"
           render={({ field: { onChange, value } }) => (
-            <TextInput
-              style={[styles.input, localStyles.multiline]}
+            <TextField
+              style={formStyles.multiline}
               placeholder="Freitext..."
-              placeholderTextColor={PLACEHOLDER_COLOR}
               multiline
               numberOfLines={4}
               onChangeText={onChange}
@@ -278,29 +258,6 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
         />
       </Section>
     </>
-  );
-}
-
-/** Row with an input on the left and a fixed-width tool button on the right. */
-function WithToolButton({
-  label = "Bestimmungshilfe",
-  onPress,
-  children,
-}: {
-  label?: string;
-  onPress: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <View style={formStyles.fieldWithTool}>
-      {children}
-      <TouchableOpacity
-        style={[styles.actionButton, formStyles.halfRowBtn]}
-        onPress={onPress}
-      >
-        <Text style={styles.actionButtonText}>{label}</Text>
-      </TouchableOpacity>
-    </View>
   );
 }
 
@@ -321,39 +278,19 @@ function DropdownWithTool({
     <>
       <Text style={styles.fieldLabel}>{label}</Text>
       <WithToolButton onPress={onOpenTool}>
-        <View style={{ flex: 1 }}>
-          <Controller
-            control={control}
-            name={name}
-            render={({ field: { onChange, value } }) => (
-              <LabeledDropdownField
-                value={value}
-                options={options}
-                placeholder="Auswählen…"
-                onChange={onChange}
-              />
-            )}
-          />
-        </View>
+        <Controller
+          control={control}
+          name={name}
+          render={({ field: { onChange, value } }) => (
+            <LabeledDropdownField
+              value={value}
+              options={options}
+              placeholder="Auswählen…"
+              onChange={onChange}
+            />
+          )}
+        />
       </WithToolButton>
     </>
   );
 }
-
-const localStyles = StyleSheet.create({
-  inputWithUnit: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: 4,
-  },
-  hint: {
-    fontSize: 12,
-    color: "#888",
-    marginTop: 2,
-  },
-  multiline: {
-    minHeight: 100,
-    textAlignVertical: "top",
-  },
-});

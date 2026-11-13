@@ -2,15 +2,16 @@ import { useMemo, useState } from "react";
 import {
   Text,
   TouchableOpacity,
-  Modal,
   FlatList,
   SectionList,
   StyleSheet,
   View,
   TextInput,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Dialog from "@/components/ui/Dialog";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
+import { colors, fontSize, spacing } from "@/styles/theme";
 
 export type LabeledOption = { code: string; label?: string };
 export type LabeledSection = { title: string; data: LabeledOption[] };
@@ -128,61 +129,43 @@ export default function LabeledDropdownField({
         <Text style={value ? localStyles.value : localStyles.placeholder}>
           {value || placeholder}
         </Text>
-        <Text style={localStyles.arrow}>▾</Text>
+        <Ionicons name="chevron-down" size={18} color={colors.primary} />
       </TouchableOpacity>
 
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={closeSheet}
-      >
-        <TouchableOpacity
-          style={localStyles.overlay}
-          activeOpacity={1}
-          onPress={closeSheet}
-        >
-          {/* onStartShouldSetResponder stops taps inside the sheet from closing the modal */}
-          <View
-            style={localStyles.sheet}
-            onStartShouldSetResponder={() => true}
-          >
-            <View>
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Suchen..."
-                style={localStyles.search}
-                clearButtonMode="while-editing"
-              />
+      <Dialog visible={open} onClose={closeSheet} padded={false} position="top">
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Suchen..."
+          placeholderTextColor={colors.textMuted}
+          style={localStyles.search}
+          clearButtonMode="while-editing"
+        />
 
-              {filteredSections ? (
-                <SectionList
-                  sections={filteredSections}
-                  keyExtractor={(item) => item.code}
-                  renderItem={renderItem}
-                  renderSectionHeader={renderSectionHeader}
-                  stickySectionHeadersEnabled={false}
-                  ListEmptyComponent={
-                    <Text style={localStyles.empty}>Keine Ergebnisse</Text>
-                  }
-                  keyboardShouldPersistTaps="handled"
-                />
-              ) : (
-                <FlatList
-                  data={filteredFlat}
-                  keyExtractor={(item) => item.code}
-                  renderItem={renderItem}
-                  ListEmptyComponent={
-                    <Text style={localStyles.empty}>Keine Ergebnisse</Text>
-                  }
-                  keyboardShouldPersistTaps="handled"
-                />
-              )}
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        {filteredSections ? (
+          <SectionList
+            sections={filteredSections}
+            keyExtractor={(item) => item.code}
+            renderItem={renderItem}
+            renderSectionHeader={renderSectionHeader}
+            stickySectionHeadersEnabled={false}
+            ListEmptyComponent={
+              <Text style={localStyles.empty}>Keine Ergebnisse</Text>
+            }
+            keyboardShouldPersistTaps="handled"
+          />
+        ) : (
+          <FlatList
+            data={filteredFlat}
+            keyExtractor={(item) => item.code}
+            renderItem={renderItem}
+            ListEmptyComponent={
+              <Text style={localStyles.empty}>Keine Ergebnisse</Text>
+            }
+            keyboardShouldPersistTaps="handled"
+          />
+        )}
+      </Dialog>
     </>
   );
 }
@@ -193,62 +176,51 @@ const localStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  value: { color: "#222", fontSize: 16 },
-  placeholder: { color: colors.primary + "66", fontSize: 16 },
-  arrow: { color: colors.primary, fontSize: 18 },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-start",
-    padding: 32,
-  },
-  sheet: {
-    position: "absolute",
-    left: 32,
-    right: 32,
-    top: "20%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    overflow: "hidden",
-    maxHeight: "80%",
-  },
+  value: { color: colors.text, fontSize: fontSize.base },
+  placeholder: { color: colors.placeholder, fontSize: fontSize.base },
   option: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#eee",
+    borderBottomColor: colors.dividerLight,
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
   },
-  optionSelected: { backgroundColor: colors.primary + "18" },
-  optionCode: { fontSize: 14, fontWeight: "700", color: "#222", width: 44 },
-  optionLabel: { fontSize: 14, color: "#555", flex: 1 },
+  optionSelected: { backgroundColor: colors.primaryTint },
+  optionCode: {
+    fontSize: fontSize.md,
+    fontWeight: "700",
+    color: colors.text,
+    width: 48,
+  },
+  optionLabel: { fontSize: fontSize.md, color: colors.textSecondary, flex: 1 },
   optionActive: { color: colors.primary },
   sectionHeader: {
-    backgroundColor: "#f0f0f0",
-    paddingHorizontal: 16,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ddd",
+    borderBottomColor: colors.divider,
   },
   sectionHeaderText: {
-    fontSize: 11,
+    fontSize: fontSize.xs,
     fontWeight: "700",
-    color: "#888",
+    color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   search: {
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#eee",
-    fontSize: 16,
+    borderBottomColor: colors.dividerLight,
+    fontSize: fontSize.base,
+    color: colors.text,
   },
   empty: {
-    padding: 16,
-    textAlign: "center" as const,
-    color: "#888",
+    padding: spacing.lg,
+    textAlign: "center",
+    color: colors.textMuted,
   },
 });

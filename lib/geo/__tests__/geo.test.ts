@@ -5,6 +5,7 @@ import {
   smoothHeading,
   angleDelta,
   isWithinProximity,
+  formatDistance,
 } from "@/lib/geo/geo";
 
 describe("haversineMeters", () => {
@@ -121,5 +122,35 @@ describe("isWithinProximity", () => {
     expect(isWithinProximity(8.1, 2, true)).toBe(false);
     expect(isWithinProximity(14.9, 12, true)).toBe(true);
     expect(isWithinProximity(15.1, 12, true)).toBe(false);
+  });
+});
+
+describe("formatDistance", () => {
+  it("shows whole metres below 1 km", () => {
+    expect(formatDistance(0.4)).toBe("< 1 m");
+    expect(formatDistance(1)).toBe("1 m");
+    expect(formatDistance(7.4)).toBe("7 m");
+    expect(formatDistance(349.6)).toBe("350 m");
+    expect(formatDistance(999.4)).toBe("999 m");
+  });
+
+  it("switches to km with one decimal comma below 10 km", () => {
+    expect(formatDistance(999.6)).toBe("1,0 km");
+    expect(formatDistance(1000)).toBe("1,0 km");
+    expect(formatDistance(1249)).toBe("1,2 km");
+    expect(formatDistance(1250)).toBe("1,3 km");
+    expect(formatDistance(9940)).toBe("9,9 km");
+  });
+
+  it("shows whole km from 10 km, with thousands separators", () => {
+    expect(formatDistance(9960)).toBe("10 km");
+    expect(formatDistance(12_345)).toBe("12 km");
+    expect(formatDistance(1_234_400)).toBe("1.234 km");
+  });
+
+  it("returns a dash for invalid input", () => {
+    expect(formatDistance(-1)).toBe("–");
+    expect(formatDistance(NaN)).toBe("–");
+    expect(formatDistance(Infinity)).toBe("–");
   });
 });

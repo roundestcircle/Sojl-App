@@ -1,16 +1,12 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Linking,
-  Text,
-  TouchableOpacity,
-  View,
-  ViewStyle,
-} from "react-native";
+import { Linking, Text, View, type ViewStyle } from "react-native";
 import { Image } from "expo-image";
 import { File } from "expo-file-system";
 import { styles } from "@/styles/styles";
+import { colors, fontSize, radius } from "@/styles/theme";
+import Button from "@/components/ui/Button";
+import { HelpButton, useInstruction } from "@/components/ui/Instruction";
 import {
   ColorExtractionError,
   extractSoilColor,
@@ -18,10 +14,6 @@ import {
 } from "@/lib/color/soilColorExtractor";
 import { OVERLAY_DISPLAY, type OverlayRect } from "@/lib/color/cameraOverlay";
 import { POOR_MATCH_DELTA_E00 } from "@/lib/color/munsellLookup";
-import {
-  InstructionModal,
-  ResetInstructionButton,
-} from "@/components/ui/InstructionModal";
 
 /**
  * Best-effort deletion of a captured photo from the cache. `takePictureAsync`
@@ -49,7 +41,7 @@ const guideBox = (rect: OverlayRect, borderWidth: number): ViewStyle => ({
   width: `${rect.width * 100}%`,
   height: `${rect.height * 100}%`,
   borderWidth,
-  borderColor: "white",
+  borderColor: colors.white,
   backgroundColor: "transparent",
 });
 
@@ -64,14 +56,34 @@ const overlayStyles = {
     marginTop: 0,
   } satisfies ViewStyle,
   errorBox: {
-    backgroundColor: "rgba(253, 236, 234, 0.95)",
-    borderRadius: 10,
+    backgroundColor: colors.dangerTint,
+    borderRadius: radius.md,
     padding: 12,
   } satisfies ViewStyle,
-  errorText: { color: "#b3261e", fontSize: 15, textAlign: "center" as const },
+  resultBox: {
+    backgroundColor: colors.successOverlay,
+  } satisfies ViewStyle,
+  buttons: {
+    position: "absolute",
+    bottom: 70,
+    left: 0,
+    right: 0,
+    gap: 10,
+  } satisfies ViewStyle,
+  // The help button sits in the 70 px strip below the preview.
+  help: {
+    position: "absolute",
+    right: 0,
+    bottom: 10,
+  } satisfies ViewStyle,
+  errorText: {
+    color: colors.dangerText,
+    fontSize: fontSize.md,
+    textAlign: "center" as const,
+  },
   hintText: {
-    color: "#8a4b00",
-    fontSize: 14,
+    color: colors.warningText,
+    fontSize: fontSize.md,
     textAlign: "center" as const,
   },
 };
@@ -80,6 +92,8 @@ const CAPTURE_ERROR =
   "Das Foto konnte nicht aufgenommen werden. Bitte erneut versuchen.";
 const EXTRACTION_ERROR =
   "Die Farbe konnte nicht bestimmt werden. Bitte ein neues Foto aufnehmen.";
+const INSTRUCTION =
+  "Platziere die Bodenprobe im kleinen, die GreyCard im großen Rechteck. Du kannst jede beliebige 18%-Greycard vom Fotofachhandel oder Amazon verwenden. Drücke auf 'Foto aufnehmen'.";
 
 type Props = { onConfirm?: (munsell: string) => void };
 
@@ -126,17 +140,7 @@ export default function PictureTaker({ onConfirm }: Props) {
   const [isCapturing, setIsCapturing] = useState(false);
   const [isExtractingColor, setIsExtractingColor] = useState(false);
 
-  // Key to force remount of InstructionModal after reset
-  const [modalKey, setModalKey] = useState(0);
-
-  /**
-   * Resets the instruction modal to show again
-   * Used when user clicks the reset instruction button
-   */
-  const handleReset = () => {
-    // Force InstructionModal to remount by changing its key
-    setModalKey((prev) => prev + 1);
-  };
+  const instruction = useInstruction("soilColDontShowAgain", INSTRUCTION);
 
   if (!permission) {
     return null;
@@ -145,30 +149,33 @@ export default function PictureTaker({ onConfirm }: Props) {
   // Show permission request if not yet granted
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.maintext}>
+      <View style={styles.centered}>
+        <Text style={styles.title}>
           Zum Farbe bestimmen benötigt die App Zugriff auf deine Kamera.
         </Text>
         {permission.canAskAgain ? (
-          <TouchableOpacity style={styles.button} onPress={requestPermission}>
-            <Text style={styles.maintext}>Zugriff erlauben</Text>
-          </TouchableOpacity>
+          <Button
+            title="Zugriff erlauben"
+            variant="outline"
+            style={{ alignSelf: "stretch" }}
+            onPress={requestPermission}
+          />
         ) : (
           <>
             <Text style={styles.text}>
               Der Kamerazugriff wurde abgelehnt. Du kannst ihn in den
               Einstellungen der App wieder erlauben.
             </Text>
-            <TouchableOpacity
-              style={styles.button}
+            <Button
+              title="Einstellungen öffnen"
+              variant="outline"
+              style={{ alignSelf: "stretch" }}
               onPress={() => {
                 Linking.openSettings().catch(() => {
                   setError("Die Einstellungen konnten nicht geöffnet werden.");
                 });
               }}
-            >
-              <Text style={styles.maintext}>Einstellungen öffnen</Text>
-            </TouchableOpacity>
+            />
             {error && <Text style={overlayStyles.errorText}>{error}</Text>}
           </>
         )}
@@ -254,7 +261,7 @@ export default function PictureTaker({ onConfirm }: Props) {
             style={[
               styles.resultBox,
               overlayStyles.topBox,
-              { backgroundColor: "rgba(220, 240, 210, 0.93)" },
+              overlayStyles.resultBox,
             ]}
           >
             <Text style={styles.resultValue}>{result.munsell}</Text>
@@ -272,45 +279,28 @@ export default function PictureTaker({ onConfirm }: Props) {
         )}
         {renderError(error)}
 
-        <View
-          style={{
-            position: "absolute",
-            bottom: 70,
-            left: 0,
-            right: 0,
-            gap: 10,
-          }}
-        >
+        <View style={overlayStyles.buttons}>
           {result && onConfirm && (
-            <TouchableOpacity
-              style={[styles.actionButton, { alignSelf: "stretch" }]}
+            <Button
+              title="Wert übernehmen"
               onPress={() => {
                 onConfirm(result.munsell);
                 // Value handed off; the photo is no longer needed.
                 deleteCachedPhoto(uri);
               }}
-            >
-              <Text style={styles.actionButtonText}>Wert übernehmen</Text>
-            </TouchableOpacity>
+            />
           )}
           {!result && (
-            <TouchableOpacity
-              style={styles.button}
+            <Button
+              title="Farbe bestimmen"
+              variant="outline"
               onPress={() => handleExtractSoilColor(uri)}
-              disabled={isExtractingColor}
-            >
-              {isExtractingColor ? (
-                <ActivityIndicator
-                  color={styles.maintext.color}
-                  size={styles.maintext.fontSize}
-                />
-              ) : (
-                <Text style={styles.maintext}>Farbe bestimmen</Text>
-              )}
-            </TouchableOpacity>
+              loading={isExtractingColor}
+            />
           )}
-          <TouchableOpacity
-            style={styles.button}
+          <Button
+            title="Neues Foto aufnehmen"
+            variant="outline"
             disabled={isExtractingColor}
             onPress={() => {
               deleteCachedPhoto(uri);
@@ -318,9 +308,7 @@ export default function PictureTaker({ onConfirm }: Props) {
               setResult(null);
               setError(null);
             }}
-          >
-            <Text style={styles.maintext}>Neues Foto aufnehmen</Text>
-          </TouchableOpacity>
+          />
         </View>
       </View>
     );
@@ -331,8 +319,7 @@ export default function PictureTaker({ onConfirm }: Props) {
    * Shows live camera feed with overlay guides for proper positioning
    */
   const renderCamera = () => {
-    const canCapture =
-      previewAspect !== null && cameraError === null && !isCapturing;
+    const cameraReady = previewAspect !== null && cameraError === null;
     return (
       <View style={{ flex: 1, paddingBottom: 70 }}>
         <CameraView
@@ -360,21 +347,14 @@ export default function PictureTaker({ onConfirm }: Props) {
         <View style={overlayStyles.smallRectangle} />
         {renderError(cameraError ?? error)}
 
-        <View style={{ position: "absolute", bottom: 70, left: 0, right: 0 }}>
-          <TouchableOpacity
-            style={[styles.button, !canCapture && { opacity: 0.5 }]}
+        <View style={overlayStyles.buttons}>
+          <Button
+            title="Foto aufnehmen"
+            variant="outline"
             onPress={takePicture}
-            disabled={!canCapture}
-          >
-            {isCapturing ? (
-              <ActivityIndicator
-                color={styles.maintext.color}
-                size={styles.maintext.fontSize}
-              />
-            ) : (
-              <Text style={styles.maintext}>Foto aufnehmen</Text>
-            )}
-          </TouchableOpacity>
+            loading={isCapturing}
+            disabled={!cameraReady}
+          />
         </View>
       </View>
     );
@@ -382,29 +362,12 @@ export default function PictureTaker({ onConfirm }: Props) {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Instruction Modal - Displays usage instructions and tips */}
-      <InstructionModal
-        key={modalKey} // Remount when key changes to reset shown state
-        title="Anleitung"
-        instructionText="Platziere die Bodenprobe im kleinen, die GreyCard im großen Rechteck. Du kannst jede beliebige 18%-Greycard vom Fotofachhandel oder Amazon verwenden. Drücke auf 'Foto aufnehmen'."
-        storageKey="soilColDontShowAgain"
-      />
+      {instruction.modal}
 
       {/* Conditionally render camera or picture review screen */}
       {uri ? renderPicture(uri) : renderCamera()}
 
-      {/* Reset instruction button - Allows user to show instructions again */}
-      <ResetInstructionButton
-        storageKey="soilColDontShowAgain"
-        onReset={handleReset}
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 16,
-          paddingHorizontal: 0,
-        }}
-      />
+      <HelpButton onPress={instruction.show} style={overlayStyles.help} />
     </View>
   );
 }

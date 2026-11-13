@@ -3,7 +3,7 @@ import { ActivityIndicator, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
+import { colors, spacing } from "@/styles/theme";
 import {
   getAufnahme,
   saveAufnahmeDetails,
@@ -74,7 +74,7 @@ export default function StandortScreen() {
 
   if (!aufnahme) {
     return (
-      <View style={[styles.container, { justifyContent: "center" }]}>
+      <View style={styles.centered}>
         <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
@@ -83,7 +83,7 @@ export default function StandortScreen() {
   return (
     <KeyboardAwareScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      contentContainerStyle={{ padding: spacing.screen, paddingBottom: 40 }}
       keyboardShouldPersistTaps="handled"
       enableOnAndroid
       extraScrollHeight={165}

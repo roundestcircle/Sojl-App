@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   type StyleProp,
   type TextStyle,
@@ -14,17 +13,12 @@ import {
   type FieldValues,
 } from "react-hook-form";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
+import { colors, fontSize, spacing } from "@/styles/theme";
 import InfoButton from "@/components/ui/InfoButton";
-
-/** Placeholder text color used by every form input. */
-export const PLACEHOLDER_COLOR = colors.primary + "66";
+import Button from "@/components/ui/Button";
+import TextField from "@/components/ui/TextField";
 
 const CALC_PLACEHOLDER = "Wird berechnet…";
-
-// ─── Fullscreen tool modal ─────────────────────────────────────────────────────
-
-// Moved to components/ui; re-exported until all form imports are switched over.
 
 // ─── Layout helpers ────────────────────────────────────────────────────────────
 
@@ -62,6 +56,40 @@ export function HeadingRow({
   );
 }
 
+/** Row with an input on the left and a fixed-width tool button on the right. */
+export function WithToolButton({
+  label = "Bestimmungshilfe",
+  onPress,
+  children,
+}: {
+  label?: string;
+  onPress: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <View style={formStyles.row}>
+      <View style={formStyles.grow}>{children}</View>
+      <Button title={label} onPress={onPress} style={formStyles.toolBtn} />
+    </View>
+  );
+}
+
+/** Input followed by a unit label ("%", "cm" …). */
+export function WithUnit({
+  unit,
+  children,
+}: {
+  unit: string;
+  children: ReactNode;
+}) {
+  return (
+    <View style={formStyles.row}>
+      <View style={formStyles.grow}>{children}</View>
+      <Text style={formStyles.unit}>{unit}</Text>
+    </View>
+  );
+}
+
 // ─── Read-only (calculated) fields ─────────────────────────────────────────────
 
 /** Read-only input for an automatically calculated value, with optional unit. */
@@ -74,29 +102,15 @@ export function ReadonlyField({
   unit?: string;
   placeholder?: string;
 }) {
-  if (!unit) {
-    return (
-      <TextInput
-        style={[styles.input, styles.readonlyInput]}
-        placeholder={placeholder}
-        placeholderTextColor={PLACEHOLDER_COLOR}
-        value={value}
-        editable={false}
-      />
-    );
-  }
-  return (
-    <View style={formStyles.inputWithUnit}>
-      <TextInput
-        style={[styles.input, styles.readonlyInput, { flex: 1 }]}
-        placeholder={placeholder}
-        placeholderTextColor={PLACEHOLDER_COLOR}
-        value={value}
-        editable={false}
-      />
-      <Text style={formStyles.unit}>{unit}</Text>
-    </View>
+  const field = (
+    <TextField
+      style={styles.readonlyInput}
+      placeholder={placeholder}
+      value={value}
+      editable={false}
+    />
   );
+  return unit ? <WithUnit unit={unit}>{field}</WithUnit> : field;
 }
 
 /** {@link ReadonlyField} bound to a react-hook-form field. */
@@ -162,10 +176,8 @@ export function TextFieldList<T extends FieldValues>({
             control={control}
             name={name}
             render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={styles.input}
+              <TextField
                 placeholder={placeholder}
-                placeholderTextColor={PLACEHOLDER_COLOR}
                 onChangeText={onChange}
                 value={value as string}
               />
@@ -185,30 +197,30 @@ export const formStyles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  inputWithUnit: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
-  fieldWithTool: {
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "center",
+  grow: {
+    flex: 1,
   },
-  halfRowBtn: {
+  toolBtn: {
     width: 150,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    alignItems: "center",
   },
   unit: {
     color: colors.primary,
-    fontSize: 13,
+    fontSize: fontSize.sm,
+    fontWeight: "600",
   },
   calcBlock: {
     gap: 6,
-    paddingTop: 8,
+    paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#ddd",
+    borderTopColor: colors.divider,
+  },
+  multiline: {
+    minHeight: 90,
+    textAlignVertical: "top",
   },
 });

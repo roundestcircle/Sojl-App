@@ -1,373 +1,158 @@
 import { StyleSheet } from "react-native";
-import { colors } from "./colors";
+import { colors, fontSize, radius, spacing } from "./theme";
 
+/**
+ * Text and layout styles shared across screens. Buttons, rows and dialogs are
+ * components in components/ui (Button, NavRow, Dialog) and carry their own styles.
+ */
 export const styles = StyleSheet.create({
-  // Base container - centered flex layout for screens with normal vertical flow
-  container: {
+  // ─── Screen layout ─────────────────────────────────────────────────────────
+
+  /** Centred column for short screens (home, permission prompts, 404). */
+  centered: {
     flex: 1,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.screen,
+    paddingVertical: spacing.md,
     justifyContent: "center",
     alignItems: "center",
-    gap: 15,
+    gap: spacing.lg,
   },
 
-  // Simple wrapper for full-screen components (just flex and padding, no centering)
-  containerfull: {
-    flex: 1,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+  /** Scroll content of tool screens. */
+  toolContent: {
+    padding: spacing.screen,
+    paddingBottom: 40,
+    gap: spacing.lg,
   },
 
-  footnote: {
-    position: "absolute",
-    bottom: 20,
-    alignItems: "center",
-    gap: 4,
+  /** FlatList content of the campaign/Aufnahme lists. */
+  list: {
+    gap: 10,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.screen,
+    flexGrow: 1,
   },
+
+  /** Buttons pinned below a scrolling list. */
+  bottomBar: {
+    paddingHorizontal: spacing.screen,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+
+  // ─── Text ──────────────────────────────────────────────────────────────────
 
   text: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: fontSize.base,
+    color: colors.textBody,
   },
 
-  maintext: {
-    fontSize: 18,
+  /** Bold green heading text, e.g. a decision-tree question. */
+  title: {
+    fontSize: fontSize.lg,
     color: colors.primary,
     fontWeight: "bold",
-  },
-
-  button: {
-    width: "100%",
-    padding: 18,
-    borderRadius: 10,
-    borderWidth: 3,
-    backgroundColor: "#fff",
-    borderColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  navButton: {
-    width: "100%",
-    padding: 18,
-    borderRadius: 10,
-    borderWidth: 3,
-    backgroundColor: "#fff",
-    borderColor: colors.primary,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  navButtonLabel: {
-    flex: 1,
-    fontSize: 18,
-    color: "#333",
-    fontWeight: "bold",
-  },
-
-  actionButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    alignItems: "center" as const,
-  },
-
-  actionButtonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600" as const,
   },
 
   link: {
-    color: "#007AFF",
+    color: colors.link,
     textDecorationLine: "underline",
   },
 
-  cameraContainer: {
-    flex: 1,
-  },
-
-  labelContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  label: {
-    fontSize: 64,
-    fontWeight: "600",
-    letterSpacing: -2,
-    color: "#000",
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 25,
-    width: "85%",
-    maxWidth: 400,
-    borderColor: colors.primary,
-    borderWidth: 3,
-  },
-
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.primary,
-    marginBottom: 15,
-  },
-
-  modalText: {
-    fontSize: 16,
-    color: "#333",
-    lineHeight: 24,
-    marginBottom: 20,
-  },
-
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    borderRadius: 4,
-    marginRight: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  checkboxChecked: {
-    backgroundColor: colors.primary,
-  },
-
-  checkboxLabel: {
-    fontSize: 14,
-    color: "#333",
-  },
-
-  modalButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-
-  modalButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-
-  // Visual-only defaults; positioning/layout is up to the caller.
-  resetButton: {
-    borderWidth: 5,
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-
-  resetButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-
-  // ─── Shared form & list styles ──────────────────────────────────────────────
-
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: "#222",
-    backgroundColor: "#fafafa",
-  },
-
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    color: colors.primary,
-    marginBottom: 4,
-  },
-
-  fieldLabel: {
-    fontSize: 13,
-    color: "#555",
-    marginBottom: 2,
+  hint: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
   },
 
   emptyText: {
     textAlign: "center",
-    color: "#888",
+    color: colors.textMuted,
     marginTop: 40,
-    fontSize: 16,
+    fontSize: fontSize.base,
   },
 
-  list: {
-    gap: 10,
-    paddingVertical: 16,
-    flexGrow: 1,
+  // ─── Forms ─────────────────────────────────────────────────────────────────
+
+  section: {
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
 
-  rowSub: {
-    fontSize: 13,
-    color: "#777",
-    marginTop: 2,
-  },
-
-  rowTitle: {
-    fontSize: 18,
+  sectionTitle: {
+    fontSize: fontSize.sm,
     fontWeight: "700",
-    color: "#222",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    color: colors.primary,
+    marginBottom: spacing.xs,
+  },
+
+  fieldLabel: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+
+  /** Label plus input(s) of one tool field. */
+  fieldGroup: {
+    gap: spacing.xs,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    fontSize: fontSize.base,
+    color: colors.text,
+    backgroundColor: colors.inputBackground,
   },
 
   readonlyInput: {
-    backgroundColor: "#f0f0f0",
-    color: "#666",
-  },
-
-  section: {
-    gap: 8,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ccc",
+    backgroundColor: colors.surfaceMuted,
+    color: colors.textSecondary,
   },
 
   formRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
   },
 
   halfField: {
     flex: 1,
-    gap: 4,
+    gap: spacing.xs,
   },
 
-  erweiterteHint: {
-    fontSize: 12,
-    color: "#888",
-    marginBottom: 4,
-  },
-
-  listRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: colors.primary,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    overflow: "hidden",
-  },
-
-  listRowMain: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-
-  chevron: {
-    fontSize: 28,
-    color: colors.primary,
-    marginLeft: 8,
-    includeFontPadding: false,
-  },
-
-  exportBtn: {
-    width: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    borderLeftWidth: 2,
-    borderLeftColor: colors.primary + "44",
-    alignSelf: "stretch",
-  },
-
-  exportText: {
-    color: colors.primary,
-    fontWeight: "700",
-    fontSize: 13,
-  },
-
-  modalButtons: {
-    gap: 10,
-    marginTop: 8,
-  },
-
-  badge: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-
-  badgeText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase",
-  },
-
-  bottomBar: {
-    paddingHorizontal: 15,
-    paddingTop: 8,
-    paddingBottom: 16,
-    gap: 8,
-  },
-
-  // ─── Tool result display ─────────────────────────────────────────────────────
+  // ─── Tool results ──────────────────────────────────────────────────────────
 
   resultBox: {
-    backgroundColor: colors.resultBackground,
-    borderRadius: 10,
-    padding: 16,
-    alignItems: "center" as const,
-    gap: 4,
-    marginTop: 4,
+    backgroundColor: colors.primaryTint,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
 
   resultValue: {
-    fontSize: 32,
-    fontWeight: "800" as const,
+    fontSize: fontSize.xxl,
+    fontWeight: "800",
     color: colors.primary,
-    textAlign: "center" as const,
+    textAlign: "center",
   },
 
   resultLabel: {
-    fontSize: 15,
-    fontWeight: "600" as const,
+    fontSize: fontSize.md,
+    fontWeight: "600",
     color: colors.primary,
-    textAlign: "center" as const,
+    textAlign: "center",
   },
 
   resultPlaceholder: {
-    fontSize: 14,
-    color: "#aaa",
+    fontSize: fontSize.md,
+    color: colors.textMuted,
   },
 });

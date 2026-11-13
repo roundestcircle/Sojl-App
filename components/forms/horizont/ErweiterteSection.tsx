@@ -1,14 +1,11 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { Controller, useFieldArray, useFormContext } from "react-hook-form";
 import { styles } from "@/styles/styles";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
-import {
-  TextFieldList,
-  formStyles,
-  PLACEHOLDER_COLOR,
-  type TextFieldSpec,
-} from "../shared";
+import Button from "@/components/ui/Button";
+import TextField from "@/components/ui/TextField";
+import { TextFieldList, formStyles, type TextFieldSpec } from "../shared";
 import type { HorizontFormData } from "./types";
 
 type Spec = TextFieldSpec<HorizontFormData>;
@@ -63,7 +60,7 @@ export default function ErweiterteSection() {
       expanded={expanded}
       onToggle={() => setExpanded((v) => !v)}
     >
-      <Text style={styles.erweiterteHint}>
+      <Text style={styles.hint}>
         Hierfür stehen noch keine Bestimmungshilfen zur Verfügung. Bitte nutzt
         die KA6 für die korrekte Formatierung der Werte.
       </Text>
@@ -79,41 +76,33 @@ export default function ErweiterteSection() {
 
       <Text style={styles.fieldLabel}>Probennummern (59)</Text>
       {fields.map((field, index) => (
-        <View key={field.id} style={formStyles.fieldWithTool}>
-          <Controller
-            control={control}
-            name={`probennummern.${index}.value`}
-            render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder={`Probe ${index + 1}`}
-                placeholderTextColor={PLACEHOLDER_COLOR}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
-          />
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              {
-                paddingHorizontal: 14,
-                paddingVertical: 12,
-                backgroundColor: "#c00",
-              },
-            ]}
+        <View key={field.id} style={formStyles.row}>
+          <View style={formStyles.grow}>
+            <Controller
+              control={control}
+              name={`probennummern.${index}.value`}
+              render={({ field: { onChange, value } }) => (
+                <TextField
+                  placeholder={`Probe ${index + 1}`}
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
+            />
+          </View>
+          <Button
+            variant="danger"
+            icon="trash-outline"
+            accessibilityLabel={`Probe ${index + 1} entfernen`}
             onPress={() => remove(index)}
-          >
-            <Text style={styles.actionButtonText}>✕</Text>
-          </TouchableOpacity>
+          />
         </View>
       ))}
-      <TouchableOpacity
-        style={styles.actionButton}
+      <Button
+        title="Weitere Probe hinzufügen"
+        icon="add"
         onPress={() => append({ value: "" })}
-      >
-        <Text style={styles.actionButtonText}>+ Weitere Probe hinzufügen</Text>
-      </TouchableOpacity>
+      />
     </CollapsibleSection>
   );
 }

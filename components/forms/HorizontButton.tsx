@@ -1,15 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  TouchableOpacity,
-  Text,
-  View,
-  StyleSheet,
-} from "react-native";
-import { colors } from "@/styles/colors";
-import { styles } from "@/styles/styles";
+import { Animated, TouchableOpacity, View, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors } from "@/styles/theme";
 import type { Horizont } from "@/lib/db/horizontQueries";
-import Badge from "@/components/ui/Badge";
+import NavRow, { rowTitleStyle } from "@/components/ui/NavRow";
+import StatusBadge from "@/components/ui/StatusBadge";
 
 const HOLD_MS = 600; // keep showing the old label before crossfading
 const FADE_MS = 350; // crossfade duration
@@ -32,8 +27,8 @@ type Props = {
 
 /**
  * Renders a single row button for a Horizont.
- * Shows ▲/▼ reorder controls and the horizon number + optional name on the left,
- * and a colored status badge on the right.
+ * Shows up/down reorder controls and the horizon number + optional name on the
+ * left, and its status badge on the right.
  * When the row is reordered, its label holds the old value briefly and then
  * crossfades to the new one.
  * Long-press triggers deletion (handled by the parent screen).
@@ -48,8 +43,6 @@ export default function HorizontButton({
   canMoveDown = false,
   moveNonce = 0,
 }: Props) {
-  const { label: statusLabel, badgeBg } = statusStyle[horizont.status];
-
   const label =
     `H${horizont.nummer}` +
     (horizont.horizontname ? ` – ${horizont.horizontname}` : "");
@@ -91,99 +84,77 @@ export default function HorizontButton({
   }, [label, moveNonce, oldOpacity, newOpacity]);
 
   return (
-    <TouchableOpacity
-      style={localStyles.button}
+    <NavRow
       onPress={onPress}
       onLongPress={onLongPress}
-      activeOpacity={0.75}
-    >
-      <View style={localStyles.reorder}>
-        <TouchableOpacity
-          style={localStyles.arrowButton}
-          onPress={onMoveUp}
-          disabled={!canMoveUp}
-          hitSlop={6}
-          accessibilityLabel="Horizont nach oben verschieben"
-        >
-          <Text
-            style={[localStyles.arrow, !canMoveUp && localStyles.arrowDisabled]}
-          >
-            ▲
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={localStyles.arrowButton}
-          onPress={onMoveDown}
-          disabled={!canMoveDown}
-          hitSlop={6}
-          accessibilityLabel="Horizont nach unten verschieben"
-        >
-          <Text
-            style={[
-              localStyles.arrow,
-              !canMoveDown && localStyles.arrowDisabled,
-            ]}
-          >
-            ▼
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <View style={localStyles.nameWrap}>
-        <Animated.Text
-          style={[localStyles.name, { opacity: newOpacity }]}
-          numberOfLines={1}
-        >
-          {label}
-        </Animated.Text>
-        {outgoing !== null && (
+      leading={
+        <View style={localStyles.reorder}>
+          <ReorderArrow direction="up" enabled={canMoveUp} onPress={onMoveUp} />
+          <ReorderArrow
+            direction="down"
+            enabled={canMoveDown}
+            onPress={onMoveDown}
+          />
+        </View>
+      }
+      title={
+        <View style={localStyles.nameWrap}>
           <Animated.Text
-            style={[
-              localStyles.name,
-              localStyles.nameOverlay,
-              { opacity: oldOpacity },
-            ]}
+            style={[rowTitleStyle, { opacity: newOpacity }]}
             numberOfLines={1}
-            pointerEvents="none"
           >
-            {outgoing}
+            {label}
           </Animated.Text>
-        )}
-      </View>
-      <Badge label={statusLabel} color={badgeBg} />
-      <Text style={styles.chevron}>›</Text>
+          {outgoing !== null && (
+            <Animated.Text
+              style={[
+                rowTitleStyle,
+                localStyles.nameOverlay,
+                { opacity: oldOpacity },
+              ]}
+              numberOfLines={1}
+              pointerEvents="none"
+            >
+              {outgoing}
+            </Animated.Text>
+          )}
+        </View>
+      }
+      badge={<StatusBadge status={horizont.status} />}
+    />
+  );
+}
+
+/** ▲/▼ control that moves the Horizont one position. */
+function ReorderArrow({
+  direction,
+  enabled,
+  onPress,
+}: {
+  direction: "up" | "down";
+  enabled: boolean;
+  onPress?: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={localStyles.arrowButton}
+      onPress={onPress}
+      disabled={!enabled}
+      hitSlop={6}
+      accessibilityLabel={`Horizont nach ${direction === "up" ? "oben" : "unten"} verschieben`}
+    >
+      <Ionicons
+        name={direction === "up" ? "chevron-up" : "chevron-down"}
+        size={22}
+        color={enabled ? colors.primary : colors.disabled}
+      />
     </TouchableOpacity>
   );
 }
 
-// Maps each horizon status to a human-readable label and badge background color
-const statusStyle: Record<
-  Horizont["status"],
-  { label: string; badgeBg: string }
-> = {
-  leer: { label: "leer", badgeBg: colors.statusEmpty },
-  angefangen: { label: "begonnen", badgeBg: colors.statusStarted },
-  vollstaendig: { label: "vollständig", badgeBg: colors.statusDone },
-};
-
 const localStyles = StyleSheet.create({
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: colors.primary,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
   nameWrap: {
     flex: 1,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
   },
   nameOverlay: {
     position: "absolute",
@@ -193,18 +164,9 @@ const localStyles = StyleSheet.create({
     bottom: 0,
   },
   reorder: {
-    flexDirection: "column",
     justifyContent: "center",
   },
   arrowButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  arrow: {
-    fontSize: 16,
-    color: colors.primary,
-  },
-  arrowDisabled: {
-    color: "#c4c4c4",
+    paddingHorizontal: 2,
   },
 });

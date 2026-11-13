@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
+import { colors, spacing } from "@/styles/theme";
 
 type Props = {
   title: string;
@@ -9,6 +10,7 @@ type Props = {
   children?: React.ReactNode;
 };
 
+/** Form section whose body is shown or hidden by tapping its title. */
 export default function CollapsibleSection({
   title,
   expanded,
@@ -21,9 +23,15 @@ export default function CollapsibleSection({
         style={localStyles.header}
         onPress={onToggle}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
       >
         <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={localStyles.chevron}>{expanded ? "▲" : "▼"}</Text>
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={colors.primary}
+        />
       </TouchableOpacity>
       {expanded && <View style={localStyles.content}>{children}</View>}
     </View>
@@ -36,12 +44,8 @@ const localStyles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  chevron: {
-    fontSize: 12,
-    color: colors.primary,
-  },
   content: {
-    gap: 8,
-    marginTop: 4,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
   },
 });

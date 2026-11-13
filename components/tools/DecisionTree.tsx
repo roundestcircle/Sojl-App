@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { styles } from "@/styles/styles";
-import {
-  InstructionModal,
-  ResetInstructionButton,
-} from "@/components/ui/InstructionModal";
+import { spacing } from "@/styles/theme";
+import Button from "@/components/ui/Button";
+import { HelpButton, useInstruction } from "@/components/ui/Instruction";
 import {
   isResultNode,
   type DecisionTreeData,
@@ -31,8 +30,7 @@ export default function DecisionTree({
 }: Props) {
   // Visited node ids from the root to the current node; the last one is shown.
   const [path, setPath] = useState<string[]>([tree.root]);
-  // Key to force remount of InstructionModal after user clicks "Anleitung erneut zeigen"
-  const [modalKey, setModalKey] = useState(0);
+  const instruction = useInstruction(storageKey, instructionText);
 
   const currentId = path[path.length - 1];
   const node: TreeNode = tree.nodes[currentId] ?? {
@@ -47,29 +45,19 @@ export default function DecisionTree({
 
   return (
     <View style={{ flex: 1 }}>
-      <InstructionModal
-        key={modalKey}
-        title="Anleitung"
-        instructionText={instructionText}
-        storageKey={storageKey}
-      />
+      {instruction.modal}
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, alignItems: "center" }}
+        contentContainerStyle={localStyles.content}
       >
         {/* ── Question text and optional hint ── */}
-        <View style={{ alignItems: "center", marginTop: 10, marginBottom: 16 }}>
-          <Text style={styles.maintext}>{node.question}</Text>
+        <View style={localStyles.question}>
+          <Text style={[styles.title, localStyles.centeredText]}>
+            {node.question}
+          </Text>
           {!isResultNode(node) && node.hint && (
-            <Text
-              style={{
-                fontSize: 12,
-                color: "#888",
-                marginTop: 6,
-                textAlign: "center",
-              }}
-            >
+            <Text style={[styles.hint, localStyles.centeredText]}>
               {node.hint}
             </Text>
           )}
@@ -77,65 +65,70 @@ export default function DecisionTree({
 
         {isResultNode(node) ? (
           <>
-            {/* ── Result display ── */}
-            <View
-              style={[
-                styles.resultBox,
-                { alignSelf: "stretch", padding: 20, marginTop: 10 },
-              ]}
-            >
+            <View style={[styles.resultBox, localStyles.result]}>
               <Text style={styles.resultValue}>{node.result.title}</Text>
               <Text style={styles.resultLabel}>{node.result.description}</Text>
             </View>
 
             {onConfirm && (
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  { alignSelf: "stretch", marginTop: 16 },
-                ]}
+              <Button
+                title="Wert übernehmen"
                 onPress={() => onConfirm(node.result.title)}
-              >
-                <Text style={styles.actionButtonText}>Wert übernehmen</Text>
-              </TouchableOpacity>
+              />
             )}
 
-            <TouchableOpacity
-              style={[styles.button, { marginTop: 16 }]}
-              onPress={restart}
-            >
-              <Text style={styles.maintext}>Neu Starten</Text>
-            </TouchableOpacity>
+            <Button title="Neu starten" variant="outline" onPress={restart} />
           </>
         ) : (
-          /* ── Answer option buttons ── */
-          <View style={{ gap: 10, alignSelf: "stretch" }}>
-            {node.options.map((option) => (
-              <TouchableOpacity
-                key={option.next}
-                style={styles.button}
-                onPress={() => goTo(option.next)}
-              >
-                <Text style={styles.maintext}>{option.text}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          node.options.map((option) => (
+            <Button
+              key={option.next}
+              title={option.text}
+              variant="outline"
+              onPress={() => goTo(option.next)}
+            />
+          ))
         )}
       </ScrollView>
 
       {/* ── Footer: Zurück + Anleitung (below the scrolling content) ── */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, localStyles.footer]}>
         {path.length > 1 && (
-          <TouchableOpacity style={styles.button} onPress={goBack}>
-            <Text style={styles.maintext}>Zurück</Text>
-          </TouchableOpacity>
+          <Button
+            title="Zurück"
+            icon="arrow-back"
+            variant="outline"
+            style={localStyles.grow}
+            onPress={goBack}
+          />
         )}
-        <ResetInstructionButton
-          storageKey={storageKey}
-          onReset={() => setModalKey((prev) => prev + 1)}
-          style={{ position: "relative", alignSelf: "stretch" }}
-        />
+        <HelpButton onPress={instruction.show} />
       </View>
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  content: {
+    padding: spacing.screen,
+    gap: 10,
+  },
+  question: {
+    alignItems: "center",
+    gap: 6,
+    marginVertical: spacing.sm,
+  },
+  centeredText: {
+    textAlign: "center",
+  },
+  result: {
+    padding: 20,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  grow: {
+    flex: 1,
+  },
+});

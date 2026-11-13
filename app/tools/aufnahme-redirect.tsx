@@ -1,7 +1,7 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
+import Button from "@/components/ui/Button";
+import { colors, fontSize } from "@/styles/theme";
 
 export default function AufnahmeRedirectScreen() {
   const { title } = useLocalSearchParams<{ title?: string }>();
@@ -13,12 +13,11 @@ export default function AufnahmeRedirectScreen() {
         Diese Berechnung ist nur innerhalb einer Aufnahme möglich. Starte eine
         Kartierung, um diese Funktion zu nutzen.
       </Text>
-      <TouchableOpacity
-        style={[styles.actionButton, { alignSelf: "stretch" }]}
+      <Button
+        title="Zur Kartierung"
+        style={{ alignSelf: "stretch" }}
         onPress={() => router.replace("/mapping")}
-      >
-        <Text style={styles.actionButtonText}>Zur Kartierung</Text>
-      </TouchableOpacity>
+      />
     </View>
   );
 }
@@ -32,14 +31,14 @@ const localStyles = StyleSheet.create({
     gap: 20,
   },
   heading: {
-    fontSize: 22,
+    fontSize: fontSize.xl,
     fontWeight: "700",
     color: colors.primary,
     textAlign: "center",
   },
   body: {
-    fontSize: 16,
-    color: "#444",
+    fontSize: fontSize.base,
+    color: colors.textBody,
     textAlign: "center",
     lineHeight: 24,
   },

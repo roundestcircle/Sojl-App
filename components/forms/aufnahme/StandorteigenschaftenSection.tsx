@@ -1,4 +1,4 @@
-import { View, Text, TextInput } from "react-native";
+import { View, Text } from "react-native";
 import { Controller, useFormContext } from "react-hook-form";
 import { styles } from "@/styles/styles";
 import LabeledDropdownField, {
@@ -12,7 +12,8 @@ import {
   NUTZUNG_SECTIONS,
   VEGETATION_SECTIONS,
 } from "@/data/aufnahmeOptions";
-import { formStyles, PLACEHOLDER_COLOR } from "../shared";
+import TextField from "@/components/ui/TextField";
+import { WithUnit } from "../shared";
 import type { AufnahmeFormData } from "./types";
 
 type DropdownName =
@@ -130,17 +131,14 @@ function NumberWithUnit({
         control={control}
         name={name}
         render={({ field: { onChange, value } }) => (
-          <View style={formStyles.inputWithUnit}>
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
+          <WithUnit unit={unit}>
+            <TextField
               keyboardType={keyboardType}
               placeholder={placeholder}
-              placeholderTextColor={PLACEHOLDER_COLOR}
               onChangeText={onChange}
               value={value}
             />
-            <Text style={formStyles.unit}>{unit}</Text>
-          </View>
+          </WithUnit>
         )}
       />
     </View>

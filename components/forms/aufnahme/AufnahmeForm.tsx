@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput } from "react-native";
+import { View, Text } from "react-native";
 import { useForm, FormProvider, Controller } from "react-hook-form";
 import { styles } from "@/styles/styles";
 import type { Aufnahme, AufnahmeDetails } from "@/lib/db/aufnahmeQueries";
@@ -11,7 +11,8 @@ import ErweiterteSection from "./ErweiterteSection";
 import BerechneteWerteSection from "./BerechneteWerteSection";
 import { degreeStringsToUtm, utmStringsToDegrees } from "@/lib/geo/coordinates";
 import { useFormAutosave } from "@/hooks/useFormAutosave";
-import { PLACEHOLDER_COLOR } from "../shared";
+import TextField from "@/components/ui/TextField";
+import { formStyles } from "../shared";
 import {
   toAufnahmeFormDefaults,
   toAufnahmeDetails,
@@ -112,13 +113,9 @@ export default function AufnahmeForm({
           control={control}
           name="notizen"
           render={({ field: { onChange, value } }) => (
-            <TextInput
-              style={[
-                styles.input,
-                { minHeight: 80, textAlignVertical: "top" },
-              ]}
+            <TextField
+              style={formStyles.multiline}
               placeholder="Freitext…"
-              placeholderTextColor={PLACEHOLDER_COLOR}
               multiline
               numberOfLines={3}
               onChangeText={onChange}

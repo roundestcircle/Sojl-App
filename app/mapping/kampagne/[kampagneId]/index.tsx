@@ -1,14 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  Alert,
-  ActivityIndicator,
-  Modal,
-  StyleSheet,
-} from "react-native";
+import { View, Text, FlatList, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   router,
   useFocusEffect,
@@ -19,17 +11,22 @@ import {
   haversineMeters,
   bearingDegrees,
   isWithinProximity,
+  formatDistance,
 } from "@/lib/geo/geo";
 import { storedLatLon } from "@/lib/geo/coordinates";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
+import { colors } from "@/styles/theme";
 import {
   getAufnahmenWithHorizontCount,
   getFeldkampagne,
   closeFeldkampagne,
 } from "@/lib/db/feldkampagneQueries";
 import StatusBadge from "@/components/ui/StatusBadge";
+import NavRow from "@/components/ui/NavRow";
+import Button from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/Dialog";
+import { aufnahmeTitle, count } from "@/lib/text";
 import { formatDate } from "@/lib/formatDate";
 import { exportAufnahmeAsZip, exportKampagneAsZip } from "@/lib/io/csvExport";
 import {
@@ -188,13 +185,16 @@ export default function SessionDetailScreen() {
     }
   };
 
+  const offeneCount = aufnahmen.filter(
+    (a) => a.status !== "abgeschlossen",
+  ).length;
+
   /**
    * Guards closing the campaign: shows a warning modal when any Aufnahme is still open,
    * otherwise closes immediately.
    */
   const handleBeenden = () => {
-    const offene = aufnahmen.filter((a) => a.status !== "abgeschlossen");
-    if (offene.length > 0) {
+    if (offeneCount > 0) {
       setShowOffeneWarnung(true);
     } else {
       doBeenden();
@@ -226,7 +226,7 @@ export default function SessionDetailScreen() {
         data={aufnahmen}
         keyExtractor={(item) => String(item.id)}
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.list, { paddingHorizontal: 15 }]}
+        contentContainerStyle={styles.list}
         ListEmptyComponent={
           <Text style={styles.emptyText}>
             Noch keine Aufnahmen in dieser Kampagne.
@@ -236,206 +236,104 @@ export default function SessionDetailScreen() {
           // Distance/bearing while tracking (undefined otherwise or without
           // coordinates).
           const rowNav = nav.get(item.id);
-          const distance = rowNav?.distance ?? null;
-          const isNear = near.ids.has(item.id);
           // Bearing rotated by the device heading so the little arrow points
           // the way you'd walk to reach the Aufnahme.
           const arrowAngle =
             rowNav && heading != null ? rowNav.bearing - heading : null;
+          const subtitle = [
+            formatDate(item.erstellt_am),
+            count(item.horizontCount, "Horizont", "Horizonte"),
+            rowNav && `${formatDistance(rowNav.distance)} entfernt`,
+          ]
+            .filter(Boolean)
+            .join(" · ");
 
           return (
-            <View
-              style={[
-                styles.listRow,
-                isNear && {
-                  borderColor: colors.primary,
-                  backgroundColor: "#dff0d8",
-                },
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.listRowMain}
-                onPress={() => router.push(`/mapping/${item.id}`)}
-                onLongPress={() => setDeleteTarget(item)}
-              >
-                <View style={{ flex: 1 }}>
-                  <View style={localStyles.titleRow}>
-                    <Text style={[styles.rowTitle, localStyles.titleText]}>
-                      Aufnahme {item.nummer ?? item.id}
-                      {item.name ? ` – ${item.name}` : ""}
-                    </Text>
-                    {arrowAngle != null && (
-                      <Text
-                        style={[
-                          localStyles.miniArrow,
-                          { transform: [{ rotate: `${arrowAngle}deg` }] },
-                        ]}
-                      >
-                        ↑
-                      </Text>
-                    )}
-                  </View>
-                  <Text style={styles.rowSub}>
-                    {formatDate(item.erstellt_am)} · {item.horizontCount}{" "}
-                    Horizont
-                    {item.horizontCount !== 1 ? "e" : ""}
-                    {distance != null
-                      ? ` · Distanz: ${Math.round(distance)} m`
-                      : ""}
-                  </Text>
-                </View>
-                <StatusBadge status={item.status} />
-                <Text style={styles.chevron}>›</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.exportBtn}
-                onPress={() => handleExport(item)}
-                disabled={exportingId === item.id}
-              >
-                {exportingId === item.id ? (
-                  <ActivityIndicator color={colors.primary} size="small" />
-                ) : (
-                  <Text style={styles.exportText}>ZIP</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+            <NavRow
+              title={aufnahmeTitle(item)}
+              subtitle={subtitle}
+              titleAccessory={
+                arrowAngle != null && (
+                  <Ionicons
+                    name="arrow-up"
+                    size={20}
+                    color={colors.primary}
+                    style={{ transform: [{ rotate: `${arrowAngle}deg` }] }}
+                    accessibilityLabel="Richtung zur Aufnahme"
+                  />
+                )
+              }
+              highlighted={near.ids.has(item.id)}
+              badge={<StatusBadge status={item.status} />}
+              onPress={() => router.push(`/mapping/${item.id}`)}
+              onLongPress={() => setDeleteTarget(item)}
+              action={{
+                label: "ZIP",
+                accessibilityLabel: "Aufnahme als ZIP exportieren",
+                onPress: () => handleExport(item),
+                loading: exportingId === item.id,
+              }}
+            />
           );
         }}
       />
 
       <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            tracking && {
-              backgroundColor: colors.primary,
-              borderColor: colors.primary,
-            },
-          ]}
+        <Button
+          title={tracking ? "Standortverfolgung stoppen" : "Standort verfolgen"}
+          icon="navigate"
+          variant={tracking ? "filled" : "outline"}
+          size="lg"
           onPress={() => setTracking((t) => !t)}
-        >
-          <Text style={[styles.maintext, tracking && { color: "#fff" }]}>
-            {tracking ? "Standortverfolgung stoppen" : "Standort verfolgen"}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
+        />
+        <Button
+          title="Neue Aufnahme"
+          icon="add"
+          variant="outline"
           onPress={() => {
             const aufnahmeId = createAufnahme(id);
             router.push(`/mapping/${aufnahmeId}`);
           }}
-        >
-          <Text style={styles.maintext}>+ Neue Aufnahme</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleBeenden}>
-          <Text style={styles.maintext}>Kampagne beenden</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
+        />
+        <Button
+          title="Kampagne beenden"
+          variant="outline"
+          onPress={handleBeenden}
+        />
+        <Button
+          title="Kampagne exportieren (ZIP)"
           onPress={handleExportCampaign}
-          disabled={exportingCampaign || aufnahmen.length === 0}
-        >
-          {exportingCampaign ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.actionButtonText}>
-              Kampagne exportieren (ZIP)
-            </Text>
-          )}
-        </TouchableOpacity>
+          loading={exportingCampaign}
+          disabled={aufnahmen.length === 0}
+        />
       </View>
 
-      {/* ── Offene Aufnahmen Warnung ── */}
-      <Modal
+      <ConfirmDialog
         visible={showOffeneWarnung}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowOffeneWarnung(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Offene Aufnahmen</Text>
-            <Text style={styles.modalText}>
-              {aufnahmen.filter((a) => a.status !== "abgeschlossen").length}{" "}
-              Aufnahme
-              {aufnahmen.filter((a) => a.status !== "abgeschlossen").length !==
-              1
-                ? "n sind"
-                : " ist"}{" "}
-              noch offen. Kampagne trotzdem beenden?
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#e0a020" }]}
-                onPress={() => {
-                  setShowOffeneWarnung(false);
-                  doBeenden();
-                }}
-              >
-                <Text style={styles.modalButtonText}>Trotzdem beenden</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#888" }]}
-                onPress={() => setShowOffeneWarnung(false)}
-              >
-                <Text style={styles.modalButtonText}>Abbrechen</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title="Offene Aufnahmen"
+        message={`${count(offeneCount, "Aufnahme ist", "Aufnahmen sind")} noch offen. Kampagne trotzdem beenden?`}
+        confirmLabel="Trotzdem beenden"
+        tone="warning"
+        onConfirm={() => {
+          setShowOffeneWarnung(false);
+          doBeenden();
+        }}
+        onCancel={() => setShowOffeneWarnung(false)}
+      />
 
-      {/* ── Delete Aufnahme confirmation modal ── */}
-      <Modal
+      <ConfirmDialog
         visible={deleteTarget !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDeleteTarget(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Aufnahme löschen</Text>
-            <Text style={styles.modalText}>
-              {deleteTarget?.horizontCount
-                ? `Diese Aufnahme enthält ${deleteTarget.horizontCount} Horizont${deleteTarget.horizontCount !== 1 ? "e" : ""}, die ebenfalls gelöscht werden. Trotzdem löschen?`
-                : "Aufnahme löschen?"}
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#c0392b" }]}
-                onPress={confirmDelete}
-              >
-                <Text style={styles.modalButtonText}>Löschen</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#888" }]}
-                onPress={() => setDeleteTarget(null)}
-              >
-                <Text style={styles.modalButtonText}>Abbrechen</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title="Aufnahme löschen"
+        message={
+          deleteTarget?.horizontCount
+            ? `Diese Aufnahme enthält ${count(deleteTarget.horizontCount, "Horizont", "Horizonte")}, die ebenfalls gelöscht werden. Trotzdem löschen?`
+            : "Aufnahme löschen?"
+        }
+        confirmLabel="Löschen"
+        tone="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </View>
   );
 }
-
-const localStyles = StyleSheet.create({
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  // Lets the title shrink/wrap so the arrow always stays visible beside it.
-  titleText: {
-    flexShrink: 1,
-  },
-  miniArrow: {
-    marginLeft: 8,
-    fontSize: 18,
-    lineHeight: 20,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-});

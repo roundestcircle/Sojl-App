@@ -1,40 +1,28 @@
 import { useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
+import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import Dialog, { dialogText } from "@/components/ui/Dialog";
+import Button from "@/components/ui/Button";
+import { colors, fontSize } from "@/styles/theme";
 
+/** Small (?) next to a heading that opens an explanation popup. */
 export default function InfoButton({ text }: { text: string }) {
   const [visible, setVisible] = useState(false);
+  const close = () => setVisible(false);
   return (
     <>
       <TouchableOpacity
         onPress={() => setVisible(true)}
         style={localStyles.infoBtn}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Erklärung anzeigen"
       >
         <Text style={localStyles.infoBtnText}>?</Text>
       </TouchableOpacity>
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setVisible(false)}
-      >
-        <View style={localStyles.infoOverlay}>
-          <View style={localStyles.infoCard}>
-            <Text style={localStyles.infoText}>{text}</Text>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                { alignSelf: "stretch", marginTop: 12 },
-              ]}
-              onPress={() => setVisible(false)}
-            >
-              <Text style={styles.actionButtonText}>Schließen</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <Dialog visible={visible} onClose={close}>
+        <Text style={dialogText}>{text}</Text>
+        <Button title="Schließen" onPress={close} />
+      </Dialog>
     </>
   );
 }
@@ -51,24 +39,7 @@ const localStyles = StyleSheet.create({
   },
   infoBtnText: {
     color: colors.primary,
-    fontSize: 12,
+    fontSize: fontSize.sm,
     fontWeight: "700",
-  },
-  infoOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    padding: 32,
-  },
-  infoCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    gap: 8,
-  },
-  infoText: {
-    fontSize: 15,
-    color: "#333",
-    lineHeight: 22,
   },
 });

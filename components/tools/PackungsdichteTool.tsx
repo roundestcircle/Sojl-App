@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { styles } from "@/styles/styles";
-import { colors } from "@/styles/colors";
-import {
-  InstructionModal,
-  ResetInstructionButton,
-} from "@/components/ui/InstructionModal";
+import { colors, fontSize, radius, spacing } from "@/styles/theme";
+import Button from "@/components/ui/Button";
+import { HelpButton, useInstruction } from "@/components/ui/Instruction";
 import { ToolModal } from "@/components/ui/ToolModal";
 import SoilShareScroll from "@/components/tools/SoilShareScroll";
 import { parseDecimal } from "@/lib/number";
@@ -17,6 +15,9 @@ import {
 } from "@/lib/calc/packungsdichteScoring";
 
 type Props = { onConfirm?: (code: string) => void };
+
+const INSTRUCTION =
+  "Beantworte die fünf Fragen zur Packungsdichte (KA6, Tabelle C47). Jede Frage kann übersprungen werden. Die Wurzelverteilung wird am stärksten gewichtet, die Verfestigung am schwächsten. Beim Flächenanteil der Makroporen kannst du zusätzlich den Anteil schätzen lassen. Am Ende wird die wahrscheinlichste Packungsdichteklasse (Pd1–Pd5) angezeigt.";
 
 /**
  * Five-question Packungsdichte (Pd) classifier per KA6 Tabelle C47.
@@ -35,7 +36,10 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
   );
   // Step counter: 0..N-1 is a question, N is the result screen
   const [step, setStep] = useState(0);
-  const [modalKey, setModalKey] = useState(0);
+  const instruction = useInstruction(
+    "packungsdichteDontShowAgain",
+    INSTRUCTION,
+  );
   // SoilShareScroll fullscreen modal for the Makroporen step
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
@@ -64,105 +68,54 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
 
   return (
     <View style={{ flex: 1 }}>
-      <InstructionModal
-        key={modalKey}
-        title="Anleitung"
-        instructionText="Beantworte die fünf Fragen zur Packungsdichte (KA6, Tabelle C47). Jede Frage kann übersprungen werden. Die Wurzelverteilung wird am stärksten gewichtet, die Verfestigung am schwächsten. Beim Flächenanteil der Makroporen kannst du zusätzlich den Anteil schätzen lassen. Am Ende wird die wahrscheinlichste Packungsdichteklasse (Pd1–Pd5) angezeigt."
-        storageKey="packungsdichteDontShowAgain"
-      />
+      {instruction.modal}
 
-      <ScrollView
-        contentContainerStyle={{
-          padding: 20,
-          paddingBottom: 24,
-          alignItems: "center",
-          gap: 10,
-        }}
-      >
-        {/* Progress indicator */}
-        <Text style={{ color: "#888", fontSize: 13 }}>
+      <ScrollView contentContainerStyle={localStyles.content}>
+        <Text style={[styles.hint, localStyles.center]}>
           {isResult ? "Ergebnis" : `Frage ${step + 1} / ${totalSteps}`}
         </Text>
 
-        {/* Question */}
         {question && (
           <>
-            <Text style={[styles.maintext, { textAlign: "center" }]}>
+            <Text style={[styles.title, localStyles.center]}>
               {question.title}
             </Text>
             {question.hint && (
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: "#888",
-                  textAlign: "center",
-                  marginBottom: 8,
-                }}
-              >
+              <Text style={[styles.hint, localStyles.center]}>
                 {question.hint}
               </Text>
             )}
 
             {/* Makroporen-only: estimator button that opens SoilShareScroll */}
             {isMakroporen && (
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  { alignSelf: "stretch", marginTop: 4 },
-                ]}
+              <Button
+                title="Anteil schätzen (Scrollen)"
                 onPress={() => setShareModalOpen(true)}
-              >
-                <Text style={styles.actionButtonText}>
-                  Anteil schätzen (Scrollen)
-                </Text>
-              </TouchableOpacity>
+              />
             )}
 
-            <View style={{ gap: 10, alignSelf: "stretch", marginTop: 6 }}>
-              {question.options.map((opt, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={[styles.button, { alignItems: "flex-start" }]}
-                  onPress={() => select(idx)}
-                >
-                  <Text style={styles.maintext}>{opt.label}</Text>
-                  {opt.description && (
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        color: "#555",
-                        marginTop: 4,
-                      }}
-                    >
-                      {opt.description}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  { borderStyle: "dashed", backgroundColor: "transparent" },
-                ]}
-                onPress={() => select(null)}
-              >
-                <Text style={[styles.maintext, { color: colors.primary }]}>
-                  Überspringen
-                </Text>
-              </TouchableOpacity>
-            </View>
+            {question.options.map((opt, idx) => (
+              <Button
+                key={idx}
+                title={opt.label}
+                description={opt.description}
+                variant="outline"
+                align="left"
+                onPress={() => select(idx)}
+              />
+            ))}
+            <Button
+              title="Überspringen"
+              variant="outline"
+              style={localStyles.skip}
+              onPress={() => select(null)}
+            />
           </>
         )}
 
-        {/* Result */}
         {result && (
           <>
-            <View
-              style={[
-                styles.resultBox,
-                { alignSelf: "stretch", padding: 20, marginTop: 10 },
-              ]}
-            >
+            <View style={[styles.resultBox, localStyles.result]}>
               {result.pdClass ? (
                 <>
                   <Text style={styles.resultValue}>{result.label}</Text>
@@ -178,23 +131,12 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
 
             {/* Per-class score breakdown for transparency */}
             {result.pdClass && (
-              <View
-                style={{
-                  alignSelf: "stretch",
-                  marginTop: 12,
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: "#f5f5f5",
-                  gap: 4,
-                }}
-              >
-                <Text
-                  style={{ fontSize: 13, color: "#555", fontWeight: "600" }}
-                >
+              <View style={localStyles.scores}>
+                <Text style={[localStyles.scoreText, { fontWeight: "600" }]}>
                   Punkte je Klasse:
                 </Text>
                 {result.scores.map((s, i) => (
-                  <Text key={i} style={{ fontSize: 13, color: "#555" }}>
+                  <Text key={i} style={localStyles.scoreText}>
                     Pd{i + 1}: {s.toFixed(1)}
                   </Text>
                 ))}
@@ -202,39 +144,29 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
             )}
 
             {result.pdClass && onConfirm && (
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  { alignSelf: "stretch", marginTop: 16 },
-                ]}
+              <Button
+                title="Wert übernehmen"
                 onPress={() => onConfirm(result.code)}
-              >
-                <Text style={styles.actionButtonText}>Wert übernehmen</Text>
-              </TouchableOpacity>
+              />
             )}
 
-            <TouchableOpacity
-              style={[styles.button, { marginTop: 16 }]}
-              onPress={restart}
-            >
-              <Text style={styles.maintext}>Neu Starten</Text>
-            </TouchableOpacity>
+            <Button title="Neu starten" variant="outline" onPress={restart} />
           </>
         )}
       </ScrollView>
 
-      {/* ── Pinned bottom bar: Zurück + Anleitung (scrolling content sits behind) ── */}
-      <View style={styles.bottomBar}>
+      {/* ── Pinned bottom bar: Zurück + Anleitung ── */}
+      <View style={[styles.bottomBar, localStyles.footer]}>
         {step > 0 && (
-          <TouchableOpacity style={styles.button} onPress={goBack}>
-            <Text style={styles.maintext}>Zurück</Text>
-          </TouchableOpacity>
+          <Button
+            title="Zurück"
+            icon="arrow-back"
+            variant="outline"
+            style={localStyles.grow}
+            onPress={goBack}
+          />
         )}
-        <ResetInstructionButton
-          storageKey="packungsdichteDontShowAgain"
-          onReset={() => setModalKey((prev) => prev + 1)}
-          style={{ position: "relative", alignSelf: "stretch" }}
-        />
+        <HelpButton onPress={instruction.show} />
       </View>
 
       {/* Fullscreen SoilShareScroll estimator for the Makroporen step. */}
@@ -256,3 +188,38 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  content: {
+    padding: spacing.screen,
+    paddingBottom: spacing.xl,
+    gap: 10,
+  },
+  center: {
+    textAlign: "center",
+  },
+  skip: {
+    borderStyle: "dashed",
+    backgroundColor: "transparent",
+  },
+  result: {
+    padding: 20,
+  },
+  scores: {
+    padding: spacing.md,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceMuted,
+    gap: spacing.xs,
+  },
+  scoreText: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  grow: {
+    flex: 1,
+  },
+});

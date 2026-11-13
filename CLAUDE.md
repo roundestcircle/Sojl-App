@@ -35,7 +35,7 @@ renaming a route, start the dev server once before type-checking.
 - Pure logic → `lib/<area>/` (db, calc, color, geo, io, validation). No React or
   Expo imports in `lib/calc`, `lib/geo`, `lib/io/gpx.ts`,
   `lib/io/campaignArchive.ts`, `lib/color/munsellLookup.ts`,
-  `lib/color/colorMath.ts`, `lib/number.ts` — keep them testable.
+  `lib/color/colorMath.ts`, `lib/number.ts`, `lib/text.ts` — keep them testable.
 - Parse user-entered numbers with `parseDecimal` (`lib/number.ts`), never
   `parseFloat` — it accepts the German decimal comma ("5,5").
 - `lib/` and `data/` never import from `components/` (type-only imports excepted).
@@ -65,6 +65,10 @@ renaming a route, start the dev server once before type-checking.
 ## Conventions
 
 - Import with the `@/` alias; relative imports only inside a form folder.
+- No raw colours, font sizes or screen gutters in components: use the tokens in
+  `styles/theme.ts`. Buttons, list rows and popups are `Button`, `NavRow` and
+  `Dialog`/`ConfirmDialog` from `components/ui/`; tool instructions use
+  `useInstruction` + `HelpButton`.
 - Components PascalCase, other modules camelCase.
 - Use **Horizont** (not "Horizon") and the other German domain terms consistently.
 - Form labels carry the Aufnahmeformblatt number in parentheses, e.g. `Bodenart / Textur (44)`.

@@ -241,7 +241,8 @@ async function buildAndShareZip(
   const content = await zip.generateAsync({ type: "uint8array" });
   const zipFile = new File(Paths.cache, `${zipFilename}.zip`);
   zipFile.create({ overwrite: true });
-  zipFile.write(content);
+  // Async since SDK 58 — must finish before the share sheet reads the file.
+  await zipFile.write(content);
 
   const canShare = await Sharing.isAvailableAsync();
   if (canShare) {

@@ -31,12 +31,7 @@ export function calcGrundigkeitCm(maechtigkeiten: string[]): string {
 // KA6 defines different threshold scales per property (e.g. rateGPV/LK/FK/NFK/SWert
 // use a 5-bucket scale without "mäßig"; only rateKAK uses all 6).
 export type Rating =
-  | "sehr gering"
-  | "gering"
-  | "mäßig"
-  | "mittel"
-  | "hoch"
-  | "sehr hoch";
+  "sehr gering" | "gering" | "mäßig" | "mittel" | "hoch" | "sehr hoch";
 
 // ─── KA6 Tabelle B9 — Vol-%-Schwellen (Bezug pF 1,8) ────────────────────────
 

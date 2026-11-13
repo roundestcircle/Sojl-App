@@ -8,8 +8,9 @@
       ]
     },
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
-    },
+    "allowSyntheticDefaultImports": true,
+    "types": ["jest"]
+  },
   "include": [
     "**/*.ts",
     "**/*.tsx",

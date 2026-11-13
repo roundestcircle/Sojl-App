@@ -4,7 +4,7 @@
 Modul-Ebene gehalten: Details zu einzelnen Funktionen stehen als Kommentar im
 Code und veralten dort nicht.
 
-Stack: Expo (SDK 55) · React Native · expo-router · expo-sqlite ·
+Stack: Expo (SDK 58) · React Native 0.88 · expo-router · expo-sqlite ·
 react-hook-form · @shopify/react-native-skia · TypeScript (strict).
 
 ---

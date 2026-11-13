@@ -1,10 +1,13 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 Sojl – Expo/React-Native app (Android) for German soil mapping according to the
 KA6 (Bodenkundliche Kartieranleitung). UI, docs and domain terms are German.
 
-Read `docs/ARCHITECTURE.md` for folder layout, data model, form data flow and
-the colour-detection pipeline.
+Read `docs/ARCHITECTURE.md` for folder layout, routes, data model, form data
+flow and the colour-detection pipeline. `README.md` documents the scientific
+basis (KA6 tables, digitised diagrams) of each calculation and tool.
 
 ## Commands
 
@@ -12,8 +15,12 @@ the colour-detection pipeline.
 npm start              # Expo dev server
 npm run typecheck      # tsc --noEmit
 npm run lint           # ESLint + Prettier (prettier errors are lint errors)
+npx expo lint --fix    # auto-fix formatting
 npm test               # jest-expo unit tests (lib/**/__tests__, components/**/__tests__)
+npx jest lib/geo/__tests__/geo.test.ts   # single test file
+npx jest -t "<test name>"                # single test by name
 npm run generate:munsell   # regenerate data/munsellData.ts from scripts/data/real.dat
+npx eas build -p android --profile preview   # installable APK (see eas.json)
 ```
 
 Run typecheck, lint and tests after every change. Typed routes live in
@@ -26,8 +33,25 @@ renaming a route, start the dev server once before type-checking.
 - Reusable UI → `components/ui/`; mapping forms → `components/forms/`;
   determination tools → `components/tools/`; lexica → `components/lexikon/`.
 - Pure logic → `lib/<area>/` (db, calc, color, geo, io, validation). No React or
-  Expo imports in `lib/calc`, `lib/geo`, `lib/io/gpx.ts` — keep them testable.
+  Expo imports in `lib/calc`, `lib/geo`, `lib/io/gpx.ts`,
+  `lib/color/munsellLookup.ts` — keep them testable.
+- `lib/` and `data/` never import from `components/` (type-only imports excepted).
 - Static tables/options → `data/`; decision trees → `data/trees/`.
+- Tests → `__tests__/` next to the module.
+
+## Cross-file invariants
+
+- **New DB columns:** add an `ALTER TABLE … ADD COLUMN` migration (in try/catch)
+  in `lib/db/db.ts` and update the matching `*Queries.ts`, `lib/io/csvExport.ts`
+  and `lib/io/zipImport.ts` — otherwise the column is lost on export/import.
+- **Forms autosave:** `AufnahmeForm`/`HorizontForm` call `onSave` from a single
+  `watch` subscription; the screen writes debounced (`hooks/useDebouncedCallback`)
+  and flushes on leave. Derived Horizont fields (Humus, KAK, TRD, GPV/LK/FK/nFK …)
+  are recomputed in `useHorizontCalculations` — add new derived values there, not
+  in sections. DB row ⇄ form-value mapping lives in each form folder's `types.ts`.
+- **Colour detection:** all colour math runs in linear light; only the display
+  value is re-encoded to sRGB. `lib/color/cameraOverlay.ts` is the single source
+  of the sampling rectangles for both the camera UI and the extraction.
 
 ## Conventions
 
@@ -35,7 +59,5 @@ renaming a route, start the dev server once before type-checking.
 - Components PascalCase, other modules camelCase.
 - Use **Horizont** (not "Horizon") and the other German domain terms consistently.
 - Form labels carry the Aufnahmeformblatt number in parentheses, e.g. `Bodenart / Textur (44)`.
-- New DB columns: add an `ALTER TABLE … ADD COLUMN` migration in `lib/db/db.ts`
-  and update the matching `*Queries.ts`, `lib/io/csvExport.ts` and `lib/io/zipImport.ts`.
-- `data/munsellData.ts` is generated — never edit by hand.
-- Personal notes/screenshots go in `_local/` (git-ignored).
+- `data/munsellData.ts` is generated — never edit by hand (also lint-ignored).
+- Personal notes/screenshots go in `_local/` (git-ignored, excluded from Jest).

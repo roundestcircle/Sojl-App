@@ -11,7 +11,7 @@ module.exports = defineConfig([
   {
     // dist/* is build output; munsellData.ts is generated (see
     // scripts/generateMunsellData.js) and must not be hand-formatted.
-    ignores: ["dist/*", "data/munsellData.ts"],
+    ignores: ["dist/*", "data/munsellData.ts", "expo-env.d.ts"],
   },
   {
     rules: {

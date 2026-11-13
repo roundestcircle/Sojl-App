@@ -58,8 +58,8 @@ export default function HorizontButton({
   // The outgoing label is rendered as an overlay on top of the current one; we
   // hold it opaque, then fade it out while the current label fades in.
   const [outgoing, setOutgoing] = useState<string | null>(null);
-  const newOpacity = useRef(new Animated.Value(1)).current;
-  const oldOpacity = useRef(new Animated.Value(0)).current;
+  const [newOpacity] = useState(() => new Animated.Value(1));
+  const [oldOpacity] = useState(() => new Animated.Value(0));
   const prevLabel = useRef(label);
   const prevNonce = useRef(moveNonce);
 

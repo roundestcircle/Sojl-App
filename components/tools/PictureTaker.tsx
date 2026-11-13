@@ -86,7 +86,9 @@ export default function PictureTaker({ onConfirm }: Props) {
   // Mirror the current URI in a ref so the unmount cleanup can delete whatever
   // photo is still pending if the user navigates away without resetting.
   const uriRef = useRef<string | null>(null);
-  uriRef.current = uri;
+  useEffect(() => {
+    uriRef.current = uri;
+  }, [uri]);
   useEffect(() => () => deleteCachedPhoto(uriRef.current), []);
 
   // Store extracted RGB color values

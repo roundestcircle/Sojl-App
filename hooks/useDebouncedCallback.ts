@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useCallback } from "react";
 
 /**
  * Returns a stable callback that debounces invocations of `fn` by `delayMs`.
@@ -9,7 +9,11 @@ export function useDebouncedCallback<Args extends unknown[]>(
   delayMs: number,
 ): (...args: Args) => void {
   const fnRef = useRef(fn);
-  fnRef.current = fn;
+  // Sync the latest fn after commit (refs must not be written during render).
+  // Layout effect so it is current before any timer can fire.
+  useLayoutEffect(() => {
+    fnRef.current = fn;
+  });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastArgsRef = useRef<Args | null>(null);
 

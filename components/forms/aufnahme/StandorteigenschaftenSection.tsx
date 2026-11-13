@@ -16,11 +16,7 @@ import { formStyles, PLACEHOLDER_COLOR } from "../shared";
 import type { AufnahmeFormData } from "./types";
 
 type DropdownName =
-  | "reliefpos"
-  | "expos"
-  | "nutzung"
-  | "vegetation"
-  | "witterung";
+  "reliefpos" | "expos" | "nutzung" | "vegetation" | "witterung";
 
 /** "Standorteigenschaften" and "Klimadaten" blocks (dropdowns + climate means). */
 export default function StandorteigenschaftenSection() {

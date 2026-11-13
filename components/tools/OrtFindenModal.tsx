@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Modal,
   View,
@@ -47,15 +47,15 @@ export default function OrtFindenModal({ visible, onClose, target }: Props) {
   const posRef = useRef<{ lat: number; lon: number } | null>(null);
   const headingRef = useRef<number | null>(null);
   const targetRef = useRef(target);
-  targetRef.current = target;
 
   // Continuous (unwrapped) arrow angle so animations always take the short path.
-  const rotAnim = useRef(new Animated.Value(0)).current;
+  const [rotAnim] = useState(() => new Animated.Value(0));
   const rotValueRef = useRef(0);
 
   // Recomputes the desired arrow angle from the latest position + heading and
-  // animates toward it along the shortest rotational path.
-  const updateArrow = useRef(() => {
+  // animates toward it along the shortest rotational path. Only called from
+  // location callbacks/effects, never during render.
+  const updateArrow = useCallback(() => {
     const p = posRef.current;
     const h = headingRef.current;
     if (p == null || h == null) return;
@@ -71,7 +71,13 @@ export default function OrtFindenModal({ visible, onClose, target }: Props) {
       duration: ROTATE_DURATION_MS,
       useNativeDriver: true,
     }).start();
-  }).current;
+  }, [rotAnim]);
+
+  // Keep the target the arrow points at current and re-aim when it changes.
+  useEffect(() => {
+    targetRef.current = target;
+    updateArrow();
+  }, [target, updateArrow]);
 
   useEffect(() => {
     if (!visible) return;

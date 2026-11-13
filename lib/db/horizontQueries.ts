@@ -111,7 +111,11 @@ export function moveHorizont(
     horizonte.forEach((h, i) => {
       const newNummer = i + 1;
       if (h.nummer !== newNummer) {
-        db.runSync(`UPDATE horizonte SET nummer = ? WHERE id = ?`, newNummer, h.id);
+        db.runSync(
+          `UPDATE horizonte SET nummer = ? WHERE id = ?`,
+          newNummer,
+          h.id,
+        );
       }
     });
   });

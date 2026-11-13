@@ -15,11 +15,13 @@
  *     Intermediate inputs are trilinearly interpolated by interpolateAxis().
  */
 
+import { parseDecimal } from "@/lib/number";
+
 // ─── Grid axes ────────────────────────────────────────────────────────────────
 
-export const CLAY_GRID = [2, 8, 25, 65] as const;
-export const PH_GRID = [3, 5, 7] as const;
-export const VALUE_GRID = [1, 3, 5, 7] as const;
+const CLAY_GRID: readonly number[] = [2, 8, 25, 65];
+const PH_GRID: readonly number[] = [3, 5, 7];
+const VALUE_GRID: readonly number[] = [1, 3, 5, 7];
 
 // Type: [valueIdx][pHIdx][clayIdx]
 type HumusTable = number[][][];
@@ -165,25 +167,12 @@ export function estimateHumus(
 ): number {
   const table = TABLES[chromaClass];
 
-  // Value axis: grid is 1–7, index 0–6
-  const vGrid = VALUE_GRID as unknown as readonly number[];
-  const { lo: vLo, hi: vHi, t: vT } = interpolateAxis(vGrid, value);
-
-  const {
-    lo: pLo,
-    hi: pHi,
-    t: pT,
-  } = interpolateAxis(PH_GRID as unknown as readonly number[], pH);
-  const {
-    lo: cLo,
-    hi: cHi,
-    t: cT,
-  } = interpolateAxis(CLAY_GRID as unknown as readonly number[], clay);
+  const { lo: vLo, hi: vHi, t: vT } = interpolateAxis(VALUE_GRID, value);
+  const { lo: pLo, hi: pHi, t: pT } = interpolateAxis(PH_GRID, pH);
+  const { lo: cLo, hi: cHi, t: cT } = interpolateAxis(CLAY_GRID, clay);
 
   // Trilinear interpolation: value × pH × clay
-  function sample(vi: number, pi: number, ci: number) {
-    return table[vi]?.[pi]?.[ci] ?? 0.5;
-  }
+  const sample = (vi: number, pi: number, ci: number) => table[vi][pi][ci];
 
   const v0 = lerp(
     lerp(
@@ -204,13 +193,55 @@ export function estimateHumus(
 
 // ─── Munsell parser ───────────────────────────────────────────────────────────
 
-/** Parses "10YR 4/3" → { value: 4, chroma: 3 }. Returns null if unparseable. */
+/**
+ * Parses the Value/Chroma part of a Munsell notation:
+ * "10YR 4/3" → { value: 4, chroma: 3 }, "10YR 2,5/1" → { value: 2.5, chroma: 1 },
+ * "N 3/" → { value: 3, chroma: 0 } (neutral). Returns null if unparseable.
+ */
 export function parseMunsell(
   s: string,
 ): { value: number; chroma: number } | null {
-  const m = s.match(/([\d.]+)\s*\/\s*([\d.]+)/);
+  const m = s.match(/(\d+(?:[.,]\d+)?)\s*\/\s*(\d+(?:[.,]\d+)?)?\s*$/);
   if (!m) return null;
-  return { value: parseFloat(m[1]), chroma: parseFloat(m[2]) };
+  const value = parseDecimal(m[1]);
+  const chroma = m[2] === undefined ? 0 : parseDecimal(m[2]);
+  if (value === null || chroma === null) return null;
+  return { value, chroma };
+}
+
+export type HumusEstimate = {
+  /** Humusgehalt in %, rounded to 0.1. */
+  pct: number;
+  /** True when an input lay outside the digitised diagram and was clamped to its edge. */
+  clamped: boolean;
+};
+
+/**
+ * Humusgehalt nach Renger (1987) from the raw form/tool inputs (Munsell notation,
+ * pH and Tonanteil as text, decimal comma allowed). Returns null when an input
+ * is missing or outside the accepted range (Value 1–8, pH 2–9, Ton 0–100 %).
+ * Shared by the Horizont form and the Humusgehalt tool.
+ */
+export function estimateHumusFromInputs(
+  munsell: string,
+  phText: string,
+  clayText: string,
+): HumusEstimate | null {
+  const parsed = parseMunsell(munsell);
+  const pH = parseDecimal(phText);
+  const clay = parseDecimal(clayText);
+  if (!parsed || pH === null || clay === null) return null;
+  if (parsed.value < 1 || parsed.value > 8) return null;
+  if (pH < 2 || pH > 9 || clay < 0 || clay > 100) return null;
+  const outside = (grid: readonly number[], x: number) =>
+    x < grid[0] || x > grid[grid.length - 1];
+  return {
+    pct: estimateHumus(parsed.value, chromaToClass(parsed.chroma), pH, clay),
+    clamped:
+      outside(VALUE_GRID, parsed.value) ||
+      outside(PH_GRID, pH) ||
+      outside(CLAY_GRID, clay),
+  };
 }
 
 // ─── Humus class ─────────────────────────────────────────────────────────────

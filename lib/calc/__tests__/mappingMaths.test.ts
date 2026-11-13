@@ -19,6 +19,11 @@ describe("calcMaechtigkeitDm", () => {
     expect(calcMaechtigkeitDm("30", "45")).toBe("1.5");
   });
 
+  it("accepts a decimal comma", () => {
+    expect(calcMaechtigkeitDm("12,5", "40")).toBe("2.8");
+    expect(calcMaechtigkeitDm("0", "32,5")).toBe("3.3");
+  });
+
   it("is empty for missing, non-numeric or inverted depths", () => {
     expect(calcMaechtigkeitDm("", "30")).toBe("");
     expect(calcMaechtigkeitDm("a", "30")).toBe("");
@@ -28,12 +33,18 @@ describe("calcMaechtigkeitDm", () => {
 });
 
 describe("calcGrundigkeitCm", () => {
-  it("sums Mächtigkeiten (dm) and returns cm", () => {
-    expect(calcGrundigkeitCm(["3.0", "1.5", "4"])).toBe("85");
+  it("is the deepest lower boundary in cm", () => {
+    expect(calcGrundigkeitCm(["30", "45", "85"])).toBe("85");
+  });
+
+  it("is not fooled by gaps or overlaps between horizons", () => {
+    // 0–30, (missing), 60–90 → 90; overlapping 0–30 / 20–50 → 50
+    expect(calcGrundigkeitCm(["30", null, "90"])).toBe("90");
+    expect(calcGrundigkeitCm(["30", "50"])).toBe("50");
   });
 
   it("skips invalid entries and is empty when nothing is valid", () => {
-    expect(calcGrundigkeitCm(["3.0", "", "x"])).toBe("30");
+    expect(calcGrundigkeitCm(["30", "", "x"])).toBe("30");
     expect(calcGrundigkeitCm([])).toBe("");
   });
 });
@@ -57,9 +68,35 @@ describe("calcProfileFKOrNFK", () => {
   it("returns null without a valid limit or contributing horizon", () => {
     expect(calcProfileFKOrNFK(profile, NaN, "fk_lm2")).toBeNull();
     expect(calcProfileFKOrNFK(profile, 0, "fk_lm2")).toBeNull();
-    expect(
-      calcProfileFKOrNFK([h({ tiefe_oben: "0" })], 100, "fk_lm2"),
-    ).toBeNull();
+    expect(calcProfileFKOrNFK([], 100, "fk_lm2")).toBeNull();
+  });
+
+  it("allows a profile that ends above the limit (e.g. on bedrock)", () => {
+    expect(calcProfileFKOrNFK(profile.slice(0, 2), 100, "fk_lm2")).toBeCloseTo(
+      250,
+      6,
+    );
+  });
+
+  it("is 'unvollständig' for missing values, gaps, overlaps or bad depths", () => {
+    const missingValue = [profile[0], { ...profile[1], fk_lm2: null }];
+    const gap = [profile[0], profile[2]];
+    const overlap = [
+      profile[0],
+      h({ tiefe_oben: "20", tiefe_unten: "60", fk_lm2: "100" }),
+    ];
+    const notFromZero = [profile[1]];
+    const noDepth = [h({ tiefe_oben: "0", fk_lm2: "10" })];
+    for (const p of [missingValue, gap, overlap, notFromZero, noDepth]) {
+      expect(calcProfileFKOrNFK(p, 100, "fk_lm2")).toBe("unvollständig");
+    }
+  });
+
+  it("is independent of the horizon order and accepts decimal commas", () => {
+    const reversed = [...profile].reverse();
+    expect(calcProfileFKOrNFK(reversed, 100, "fk_lm2")).toBeCloseTo(290, 6);
+    const comma = [h({ tiefe_oben: "0", tiefe_unten: "30", fk_lm2: "100,5" })];
+    expect(calcProfileFKOrNFK(comma, 100, "fk_lm2")).toBeCloseTo(100.5, 6);
   });
 });
 
@@ -98,11 +135,11 @@ describe("calcProfileSWert", () => {
     expect(calcProfileSWert(profile, 20)).toBeCloseTo(3000, 6);
   });
 
-  it("returns null when a horizon lacks KAK, BS or TRD", () => {
+  it("is 'unvollständig' when a horizon lacks KAK, BS or TRD", () => {
     const profile = [
       h({ horizontname: "Ah", tiefe_oben: "0", tiefe_unten: "20", kak: "20" }),
     ];
-    expect(calcProfileSWert(profile, 100)).toBeNull();
+    expect(calcProfileSWert(profile, 100)).toBe("unvollständig");
   });
 });
 

@@ -5,10 +5,10 @@ import {
   InstructionModal,
   ResetInstructionButton,
 } from "@/components/ui/InstructionModal";
-import type {
-  DecisionTreeData,
-  ResultNode,
-  TreeNode,
+import {
+  isResultNode,
+  type DecisionTreeData,
+  type TreeNode,
 } from "@/data/trees/types";
 
 type Props = {
@@ -29,58 +29,24 @@ export default function DecisionTree({
   instructionText,
   storageKey,
 }: Props) {
-  // ID of the currently displayed node
-  const [currentNode, setCurrentNode] = useState(tree.id);
-  // Breadcrumb stack enabling the Back button to reverse navigation
-  const [history, setHistory] = useState<string[]>([]);
+  // Visited node ids from the root to the current node; the last one is shown.
+  const [path, setPath] = useState<string[]>([tree.root]);
   // Key to force remount of InstructionModal after user clicks "Anleitung erneut zeigen"
   const [modalKey, setModalKey] = useState(0);
 
-  /**
-   * Looks up a node by id.
-   * The root node lives directly on the tree object rather than in nodes map,
-   * so it needs a special-case check. Falls back to a stub when an id is
-   * missing — that indicates a malformed tree, so we warn loudly in dev.
-   */
-  const getNode = (id: string): TreeNode => {
-    if (id === tree.id) return tree as TreeNode;
-    const found = tree.nodes[id];
-    if (!found) {
-      console.warn(
-        `DecisionTree: node id "${id}" not found in tree "${tree.id}".`,
-      );
-      return { id, question: "?", options: [] };
-    }
-    return found;
+  const currentId = path[path.length - 1];
+  const node: TreeNode = tree.nodes[currentId] ?? {
+    // Malformed tree (caught by data/trees/__tests__); show a stub, not a crash.
+    question: `Knoten "${currentId}" fehlt.`,
+    options: [],
   };
 
-  const node = getNode(currentNode);
-  const isResult = "result" in node;
-
-  /**
-   * Navigates forward to a child node.
-   * Pushes the current node id onto the history stack so the user can go back.
-   */
-  const handlePress = (nextId: string) => {
-    setHistory((h) => [...h, currentNode]);
-    setCurrentNode(nextId);
-  };
-
-  /**
-   * Navigates back one step by popping the history stack.
-   * No-op if already at the root.
-   */
-  const handleBack = () => {
-    setHistory((h) => {
-      if (h.length === 0) return h;
-      const next = h.slice(0, -1);
-      setCurrentNode(h[h.length - 1]);
-      return next;
-    });
-  };
+  const goTo = (nextId: string) => setPath((p) => [...p, nextId]);
+  const goBack = () => setPath((p) => (p.length > 1 ? p.slice(0, -1) : p));
+  const restart = () => setPath([tree.root]);
 
   return (
-    <View style={{ flex: 1, padding: 20, alignItems: "center" }}>
+    <View style={{ flex: 1 }}>
       <InstructionModal
         key={modalKey}
         title="Anleitung"
@@ -88,91 +54,88 @@ export default function DecisionTree({
         storageKey={storageKey}
       />
 
-      {/* ── Question text and optional hint ── */}
-      <View style={{ alignItems: "center", marginTop: 10, marginBottom: 16 }}>
-        <Text style={styles.maintext}>{node.question}</Text>
-        {"hint" in node && node.hint && (
-          <Text
-            style={{
-              fontSize: 12,
-              color: "#888",
-              marginTop: 6,
-              textAlign: "center",
-            }}
-          >
-            {node.hint}
-          </Text>
-        )}
-      </View>
-
-      {/* ── Answer option buttons (only shown on inner nodes) ── */}
-      {!isResult && "options" in node && (
-        <View style={{ gap: 10, alignSelf: "stretch" }}>
-          {node.options.map((option, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[styles.button, { minWidth: "100%" }]}
-              onPress={() => handlePress(option.next)}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, alignItems: "center" }}
+      >
+        {/* ── Question text and optional hint ── */}
+        <View style={{ alignItems: "center", marginTop: 10, marginBottom: 16 }}>
+          <Text style={styles.maintext}>{node.question}</Text>
+          {!isResultNode(node) && node.hint && (
+            <Text
+              style={{
+                fontSize: 12,
+                color: "#888",
+                marginTop: 6,
+                textAlign: "center",
+              }}
             >
-              <Text style={styles.maintext}>{option.text}</Text>
+              {node.hint}
+            </Text>
+          )}
+        </View>
+
+        {isResultNode(node) ? (
+          <>
+            {/* ── Result display ── */}
+            <View
+              style={[
+                styles.resultBox,
+                { alignSelf: "stretch", padding: 20, marginTop: 10 },
+              ]}
+            >
+              <Text style={styles.resultValue}>{node.result.title}</Text>
+              <Text style={styles.resultLabel}>{node.result.description}</Text>
+            </View>
+
+            {onConfirm && (
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  { alignSelf: "stretch", marginTop: 16 },
+                ]}
+                onPress={() => onConfirm(node.result.title)}
+              >
+                <Text style={styles.actionButtonText}>Wert übernehmen</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={[styles.button, { marginTop: 16 }]}
+              onPress={restart}
+            >
+              <Text style={styles.maintext}>Neu Starten</Text>
             </TouchableOpacity>
-          ))}
-        </View>
-      )}
+          </>
+        ) : (
+          /* ── Answer option buttons ── */
+          <View style={{ gap: 10, alignSelf: "stretch" }}>
+            {node.options.map((option) => (
+              <TouchableOpacity
+                key={option.next}
+                style={styles.button}
+                onPress={() => goTo(option.next)}
+              >
+                <Text style={styles.maintext}>{option.text}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScrollView>
 
-      {/* ── Result display (only shown on leaf nodes) ── */}
-      {isResult && (
-        <View
-          style={[
-            styles.resultBox,
-            { minWidth: "100%", padding: 20, marginTop: 10 },
-          ]}
-        >
-          <Text style={styles.resultValue}>
-            {(node as ResultNode).result.title}
-          </Text>
-          <Text style={styles.resultLabel}>
-            {(node as ResultNode).result.description}
-          </Text>
-        </View>
-      )}
-
-      {/* ── Back navigation button ── */}
-      {history.length > 0 && (
-        <TouchableOpacity
-          style={[styles.button, { position: "absolute", bottom: 70 }]}
-          onPress={handleBack}
-        >
-          <Text style={styles.maintext}>Zurück</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* ── Confirm and restart actions (result node only) ── */}
-      {isResult && onConfirm && (
-        <TouchableOpacity
-          style={[styles.actionButton, { alignSelf: "stretch", marginTop: 16 }]}
-          onPress={() => onConfirm((node as ResultNode).result.title)}
-        >
-          <Text style={styles.actionButtonText}>Wert übernehmen</Text>
-        </TouchableOpacity>
-      )}
-
-      {isResult && (
-        <TouchableOpacity
-          style={[styles.button, { marginTop: 16 }]}
-          onPress={() => {
-            setCurrentNode(tree.id);
-            setHistory([]);
-          }}
-        >
-          <Text style={styles.maintext}>Neu Starten</Text>
-        </TouchableOpacity>
-      )}
-
-      <ResetInstructionButton
-        storageKey={storageKey}
-        onReset={() => setModalKey((prev) => prev + 1)}
-      />
+      {/* ── Footer: Zurück + Anleitung (below the scrolling content) ── */}
+      <View style={styles.bottomBar}>
+        {path.length > 1 && (
+          <TouchableOpacity style={styles.button} onPress={goBack}>
+            <Text style={styles.maintext}>Zurück</Text>
+          </TouchableOpacity>
+        )}
+        <ResetInstructionButton
+          storageKey={storageKey}
+          onReset={() => setModalKey((prev) => prev + 1)}
+          style={{ position: "relative", alignSelf: "stretch" }}
+        />
+      </View>
     </View>
   );
 }

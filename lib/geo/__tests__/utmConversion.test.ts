@@ -57,3 +57,29 @@ describe("utmToLatLon ∘ latLonToUTM", () => {
     expect(haversineMeters(lat, lon, back.lat, back.lon)).toBeLessThan(1);
   });
 });
+
+describe("latLonToUTM zone range", () => {
+  it.each([
+    [-180, 1],
+    [-174.0001, 1],
+    [-174, 2],
+    [179.9999, 60],
+    [180, 60], // antimeridian: eastern edge of zone 60, never zone 61
+  ])("lon %p → zone %p", (lon, zone) => {
+    const utm = latLonToUTM(10, lon);
+    expect(utm.zone).toBe(zone);
+    expect(utm.label).toBe(`${zone}N`);
+  });
+
+  it("round-trips lon = 180 through zone 60", () => {
+    const utm = latLonToUTM(-20, 180);
+    const back = utmToLatLon(
+      utm.easting,
+      utm.northing,
+      utm.zone,
+      utm.hemisphere,
+    );
+    expect(back.lat).toBeCloseTo(-20, 4);
+    expect(back.lon).toBeCloseTo(180, 4);
+  });
+});

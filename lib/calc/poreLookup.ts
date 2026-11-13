@@ -288,31 +288,33 @@ const HUMUS_MIDPOINTS: Record<HumusClass, number> = {
   h5: 12.5,
 };
 
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
+/**
+ * Piecewise-linear interpolation of ys over the ascending support points xs;
+ * x outside [xs[0], xs[last]] is clamped to the nearest end value.
+ */
+function interp(
+  xs: readonly number[],
+  ys: readonly number[],
+  x: number,
+): number {
+  const last = xs.length - 1;
+  if (x <= xs[0]) return ys[0];
+  if (x >= xs[last]) return ys[last];
+  const i = xs.findIndex((xi) => x <= xi);
+  const t = (x - xs[i - 1]) / (xs[i] - xs[i - 1]);
+  return ys[i - 1] + (ys[i] - ys[i - 1]) * t;
 }
 
+const HUMUS_MIDS = [
+  HUMUS_MIDPOINTS.h2,
+  HUMUS_MIDPOINTS.h3,
+  HUMUS_MIDPOINTS.h4,
+  HUMUS_MIDPOINTS.h5,
+];
+
 /** Linear interpolation among the 4 humus midpoints (1.5 / 3.5 / 7.5 / 12.5 %). */
-function interpHumus(
-  values: [number, number, number, number],
-  humusPct: number,
-): number {
-  const mids = [
-    HUMUS_MIDPOINTS.h2,
-    HUMUS_MIDPOINTS.h3,
-    HUMUS_MIDPOINTS.h4,
-    HUMUS_MIDPOINTS.h5,
-  ];
-  if (humusPct <= mids[0]) return values[0];
-  if (humusPct >= mids[3]) return values[3];
-  for (let i = 0; i < 3; i++) {
-    if (humusPct <= mids[i + 1]) {
-      const t = (humusPct - mids[i]) / (mids[i + 1] - mids[i]);
-      return lerp(values[i], values[i + 1], t);
-    }
-  }
-  return values[3];
-}
+const interpHumus = (values: readonly number[], humusPct: number) =>
+  interp(HUMUS_MIDS, values, humusPct);
 
 /**
  * Korrigiert die Basis-Porenkennwerte um den Humuszuschlag (KA6 Tabelle B6).
@@ -329,8 +331,7 @@ export function applyHumusCorrection(
   base: SoilHydraulics,
   humusPct: number,
 ): SoilHydraulics {
-  if (!(humusPct > 0)) return base;
-  const key = bodenartToHumusKey(bodenart);
+  const key = humusPct > 0 ? bodenartToHumusKey(bodenart) : null;
   if (!key) return base;
   const row = HUMUS_ADJ_TABLE[key];
 
@@ -358,18 +359,20 @@ export function applyHumusCorrection(
 export function bodenartToLookupKey(bodenart: string): string | null {
   const s = bodenart.trim();
   if (s in SOIL_TABLE) return s;
-  const bareFallback: Record<string, string[]> = {
-    Sl: ["Sl2", "Sl3", "Sl4"],
-    Su: ["Su2", "Su3", "Su4"],
-    St: ["St2", "St3"],
-    Ls: ["Ls2", "Ls3", "Ls4"],
-    Lt: ["Lt2", "Lt3"],
-    Ts: ["Ts2", "Ts3", "Ts4"],
-    Tu: ["Tu2", "Tu3", "Tu4"],
-    Ut: ["Ut2", "Ut3", "Ut4"],
-  };
-  return bareFallback[s]?.[0] ?? null;
+  return BARE_GROUP_FALLBACK[s] ?? null;
 }
+
+/** Bare group code → first subdivision (see bodenartToLookupKey; open item B1.2). */
+const BARE_GROUP_FALLBACK: Record<string, string> = {
+  Sl: "Sl2",
+  Su: "Su2",
+  St: "St2",
+  Ls: "Ls2",
+  Lt: "Lt2",
+  Ts: "Ts2",
+  Tu: "Tu2",
+  Ut: "Ut2",
+};
 
 /** Wie `bodenartToLookupKey`, aber gegen `HUMUS_ADJ_TABLE` (gleiche Keys). */
 function bodenartToHumusKey(bodenart: string): string | null {
@@ -397,25 +400,6 @@ export function parseDensityMidpoint(density: string): number | null {
   return null;
 }
 
-/** Linearer Interpolations-Helper über die TRD-Stützstellen einer Bodenart. */
-function interpTrd(
-  rows: TrdRow[],
-  trd: number,
-  pick: (r: TrdRow) => number,
-): number {
-  if (trd <= rows[0].trd) return pick(rows[0]);
-  if (trd >= rows[rows.length - 1].trd) return pick(rows[rows.length - 1]);
-  for (let i = 0; i < rows.length - 1; i++) {
-    const a = rows[i];
-    const b = rows[i + 1];
-    if (trd <= b.trd) {
-      const t = (trd - a.trd) / (b.trd - a.trd);
-      return lerp(pick(a), pick(b), t);
-    }
-  }
-  return pick(rows[rows.length - 1]);
-}
-
 /**
  * Liefert die Basis-Porenkennwerte (Vol-%) für eine Bodenart und einen
  * Trockenrohdichte-String. Zwischen den TRD-Spalten (1.1 / 1.3 / 1.5 / 1.7 /
@@ -427,14 +411,25 @@ export function lookupPoreValues(
   density: string,
 ): SoilHydraulics | null {
   const key = bodenartToLookupKey(bodenart);
-  if (!key) return null;
-  const rows = SOIL_TABLE[key];
-  if (!rows || rows.length === 0) return null;
   const trd = parseDensityMidpoint(density);
-  if (trd === null || isNaN(trd)) return null;
-  const lk = interpTrd(rows, trd, (r) => r.lk);
-  const fk = interpTrd(rows, trd, (r) => r.fk);
-  const nfk = interpTrd(rows, trd, (r) => r.nfk);
+  if (!key || trd === null) return null;
+  const rows = SOIL_TABLE[key];
+  const trds = rows.map((r) => r.trd);
+  const lk = interp(
+    trds,
+    rows.map((r) => r.lk),
+    trd,
+  );
+  const fk = interp(
+    trds,
+    rows.map((r) => r.fk),
+    trd,
+  );
+  const nfk = interp(
+    trds,
+    rows.map((r) => r.nfk),
+    trd,
+  );
   return {
     airCapacity: lk,
     fieldCapacity: fk,

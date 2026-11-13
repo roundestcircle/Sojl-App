@@ -1,11 +1,6 @@
-import { View } from "react-native";
-import GefuegeTool from "@/components/tools/GefuegeTool";
+import TreeTool from "@/components/tools/TreeTool";
 
-/** Standalone screen wrapper for the soil structure (Gefüge) determination tool. */
+/** Standalone screen for the Gefüge determination tool. */
 export default function GefuegeScreen() {
-  return (
-    <View style={{ flex: 1 }}>
-      <GefuegeTool />
-    </View>
-  );
+  return <TreeTool kind="gefuege" />;
 }

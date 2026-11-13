@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   View,
   Text,
@@ -28,7 +28,10 @@ import {
   tiefeOrderInvalid,
   TIEFE_ORDER_SUGGESTION,
 } from "@/lib/validation/fieldValidation";
-import { bodenartToClay, type ClayRange } from "@/lib/calc/bodenartClay";
+import {
+  bodenartToClay,
+  bodenartToClayMidpoint,
+} from "@/lib/calc/bodenartClay";
 import { Section, formStyles, PLACEHOLDER_COLOR } from "../shared";
 import type { HorizontFormData, HorizontTool } from "./types";
 
@@ -48,21 +51,20 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
     control,
     name: ["tiefe_oben", "tiefe_unten", "bodenart"],
   });
-  // KA6 clay range shown under Tonanteil after "Abschätzen"
-  const [tonanteilRange, setTonanteilRange] = useState<ClayRange | null>(null);
+  // KA6 clay range of the current Bodenart, shown under Tonanteil
+  const tonanteilRange = bodenartToClay(bodenart ?? "");
   const tiefeInvalid = tiefeOrderInvalid(tiefeOben, tiefeUnten);
 
   const estimateTonanteil = () => {
-    const range = bodenartToClay(bodenart);
-    if (range === null) {
+    const mid = bodenartToClayMidpoint(bodenart ?? "");
+    if (mid === null) {
       Alert.alert(
         "Bodenart nicht erkannt",
         "Bitte zuerst eine gültige KA5-Bodenart eingeben.",
       );
       return;
     }
-    setValue("tonanteil", String(Math.round((range.min + range.max) / 2)));
-    setTonanteilRange(range);
+    setValue("tonanteil", String(mid));
   };
 
   return (
@@ -248,7 +250,7 @@ export default function GrunddatenSections({ onOpenTool }: Props) {
             render={({ field: { onChange, value } }) => (
               <TextInput
                 style={[styles.input, { flex: 1 }]}
-                placeholder="z.B. Ei, Sub"
+                placeholder="z.B. ein, sub"
                 placeholderTextColor={PLACEHOLDER_COLOR}
                 onChangeText={onChange}
                 value={value}

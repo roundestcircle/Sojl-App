@@ -1,167 +1,101 @@
-import { Skia } from "@shopify/react-native-skia";
+import {
+  AlphaType,
+  ColorType,
+  Skia,
+  type SkImage,
+} from "@shopify/react-native-skia";
 import { linearRgbToMunsell } from "@/lib/color/munsellLookup";
-import { getSamplingRect, type OverlayRect } from "@/lib/color/cameraOverlay";
+import {
+  getSamplingRect,
+  orientationMatches,
+  type OverlayRect,
+} from "@/lib/color/cameraOverlay";
+import {
+  averageLinearRgba,
+  linearToSrgb255,
+  srgbToLinear,
+  type RGB,
+} from "@/lib/color/colorMath";
 
-/**
- * RGB color object (sRGB, 0-255).
- */
-interface RGBColor {
-  r: number;
-  g: number;
-  b: number;
+/** Error whose (German) message is meant to be shown to the user as is. */
+export class ColorExtractionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ColorExtractionError";
+  }
 }
 
-/**
- * Linear-light RGB (0..1). Color math (averaging, white balance) is done here
- * because averaging gamma-encoded sRGB bytes biases the result; only the final
- * value is re-encoded back to sRGB.
- */
-interface LinearRGB {
-  r: number;
-  g: number;
-  b: number;
-}
-
-/**
- * Munsell color object
- */
-interface MunsellColor {
-  full: string; // e.g., "7.5YR 6/4"
-}
-
-// sRGB <-> linear transfer functions (per channel, operating on 0..1 values).
-const srgbToLinear = (c: number): number =>
-  c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-
-const linearToSrgb = (c: number): number =>
-  c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
-
-// Precomputed sRGB-byte -> linear lookup. Pixel data is 8-bit, so there are
-// only 256 possible inputs; this turns a Math.pow per channel per pixel
-// (millions over the grey-card region) into a single array index. Values are
-// identical to srgbToLinear(byte / 255).
-const SRGB8_TO_LINEAR = new Float32Array(256);
-for (let i = 0; i < 256; i++) SRGB8_TO_LINEAR[i] = srgbToLinear(i / 255);
-
-// Target neutral for the 18% grey card, kept equivalent to sRGB 128 but
-// expressed in linear light so the correction is applied photometrically.
+// Target neutral for the grey card: sRGB 128 expressed in linear light, so
+// the correction is applied photometrically.
 const TARGET_GREY_LINEAR = srgbToLinear(128 / 255);
 
-/** Encode a linear-light color back to an sRGB 0-255 integer triplet. */
-const linearToSrgb255 = (c: LinearRGB): RGBColor => {
-  const enc = (v: number) =>
-    Math.max(
-      0,
-      Math.min(
-        255,
-        Math.round(linearToSrgb(Math.max(0, Math.min(1, v))) * 255),
-      ),
-    );
-  return { r: enc(c.r), g: enc(c.g), b: enc(c.b) };
-};
+/**
+ * Per-channel white-balance factors in linear light, scaling the measured grey
+ * card onto TARGET_GREY_LINEAR.
+ */
+const calculateCorrectionFactors = (greyCardLinear: RGB): RGB => ({
+  r: greyCardLinear.r > 0 ? TARGET_GREY_LINEAR / greyCardLinear.r : 1,
+  g: greyCardLinear.g > 0 ? TARGET_GREY_LINEAR / greyCardLinear.g : 1,
+  b: greyCardLinear.b > 0 ? TARGET_GREY_LINEAR / greyCardLinear.b : 1,
+});
+
+/** Apply linear-light correction factors to a linear colour (clamped 0..1). */
+const applyCorrection = (color: RGB, factors: RGB): RGB => ({
+  r: Math.max(0, Math.min(1, color.r * factors.r)),
+  g: Math.max(0, Math.min(1, color.g * factors.g)),
+  b: Math.max(0, Math.min(1, color.b * factors.b)),
+});
 
 /**
- * Calculate per-channel correction factors in linear light, based on the grey
- * card. An 18% grey card should sit at TARGET_GREY_LINEAR after correction.
+ * Mean linear-light colour of one rectangle of the image. Only that rectangle
+ * is copied out of Skia (not the whole 12 MP photo), explicitly as
+ * non-premultiplied RGBA_8888 so the byte order does not depend on the
+ * platform's native N32 format.
  */
-const calculateCorrectionFactors = (greyCardLinear: LinearRGB): LinearRGB => {
-  return {
-    r: greyCardLinear.r > 0 ? TARGET_GREY_LINEAR / greyCardLinear.r : 1,
-    g: greyCardLinear.g > 0 ? TARGET_GREY_LINEAR / greyCardLinear.g : 1,
-    b: greyCardLinear.b > 0 ? TARGET_GREY_LINEAR / greyCardLinear.b : 1,
-  };
-};
-
-/**
- * Apply linear-light correction factors to a linear-light color (clamped 0..1).
- */
-const applyCorrectionToColor = (
-  color: LinearRGB,
-  factors: LinearRGB,
-): LinearRGB => {
-  return {
-    r: Math.max(0, Math.min(1, color.r * factors.r)),
-    g: Math.max(0, Math.min(1, color.g * factors.g)),
-    b: Math.max(0, Math.min(1, color.b * factors.b)),
-  };
-};
-
-/**
- * Extract the average color of an image region in linear light.
- * Each sRGB byte is linearized before being summed, so the mean is a true
- * radiometric average rather than a gamma-biased one.
- */
-const extractColorFromRegion = async (
-  pixels: Uint8Array | Float32Array,
-  rect: OverlayRect,
-  imageWidth: number,
-  imageHeight: number,
-): Promise<LinearRGB> => {
-  try {
-    if (!pixels) {
-      throw new Error("Pixels data is null or undefined");
-    }
-
-    let rSum = 0,
-      gSum = 0,
-      bSum = 0;
-    let pixelCount = 0;
-
-    // Ensure rect is within bounds
-    const startY = Math.max(0, rect.top);
-    const endY = Math.min(imageHeight, rect.top + rect.height);
-    const startX = Math.max(0, rect.left);
-    const endX = Math.min(imageWidth, rect.left + rect.width);
-
-    // Assumes RGBA byte order from Skia.Image.readPixels(). This is the
-    // documented default for react-native-skia on iOS and Android — if a
-    // future Skia/platform returns BGRA the channel mapping below would
-    // need to swap pixels[i] and pixels[i+2].
-    for (let y = startY; y < endY; y++) {
-      for (let x = startX; x < endX; x++) {
-        // Each pixel is 4 bytes (RGBA); linearize (via LUT) before accumulating.
-        const pixelIndex = (y * imageWidth + x) * 4;
-        rSum += SRGB8_TO_LINEAR[pixels[pixelIndex]];
-        gSum += SRGB8_TO_LINEAR[pixels[pixelIndex + 1]];
-        bSum += SRGB8_TO_LINEAR[pixels[pixelIndex + 2]];
-        // pixels[pixelIndex + 3] is alpha channel (ignored)
-        pixelCount++;
-      }
-    }
-
-    if (pixelCount === 0) {
-      return { r: 0, g: 0, b: 0 };
-    }
-
-    return {
-      r: rSum / pixelCount,
-      g: gSum / pixelCount,
-      b: bSum / pixelCount,
-    };
-  } catch (error) {
-    console.error("Error extracting color from region:", error);
-    throw error;
+const readRegionLinear = (image: SkImage, rect: OverlayRect): RGB => {
+  const left = Math.max(0, rect.left);
+  const top = Math.max(0, rect.top);
+  const width = Math.min(image.width(), rect.left + rect.width) - left;
+  const height = Math.min(image.height(), rect.top + rect.height) - top;
+  if (width <= 0 || height <= 0) {
+    throw new Error("Sampling region lies outside the image");
   }
+
+  const pixels = image.readPixels(left, top, {
+    width,
+    height,
+    colorType: ColorType.RGBA_8888,
+    alphaType: AlphaType.Unpremul,
+  });
+  if (!pixels) {
+    throw new Error("Failed to read image pixels");
+  }
+  return averageLinearRgba(pixels);
+};
+
+export type SoilColorResult = {
+  /** White-balanced colour as sRGB 0–255, for display only. */
+  rgb: RGB;
+  /** Nearest Munsell chip, e.g. "7.5YR 4/4". */
+  munsell: string;
+  /** CIEDE2000 distance to that chip (see POOR_MATCH_DELTA_E00). */
+  distance: number;
 };
 
 /**
- * Main function: Color correct image and extract soil sample color.
+ * Colour-correct a photo with the grey card and determine the soil colour.
  *
- * @param imageUri     URI of the captured photo.
- * @param previewAspect Width/height of the on-screen camera preview. The preview
- *   is center-cropped ("cover") to fill the screen, so the analyzed frame is
- *   constrained to this aspect ratio to make the sampled pixels match the guide
- *   boxes the user lined up against.
+ * @param imageUri      URI of the captured photo.
+ * @param previewAspect Width/height of the on-screen camera preview. The
+ *   preview is centre-cropped ("cover"), so the analysed frame is constrained
+ *   to this aspect ratio to make the sampled pixels match the guide boxes.
+ * @throws ColorExtractionError with a user-facing message when the photo
+ *   orientation does not match the preview.
  */
 export const extractSoilColor = async (
   imageUri: string,
-  previewAspect?: number,
-): Promise<{
-  correctedColor: RGBColor;
-  correctedColorMunsell: MunsellColor;
-  greyCardColor: RGBColor;
-  correctionFactors: LinearRGB;
-}> => {
+  previewAspect: number,
+): Promise<SoilColorResult> => {
   const data = await Skia.Data.fromURI(imageUri);
   const image = Skia.Image.MakeImageFromEncoded(data);
 
@@ -170,62 +104,36 @@ export const extractSoilColor = async (
   }
 
   try {
-    const pixels = image.readPixels();
+    const width = image.width();
+    const height = image.height();
 
-    if (!pixels) {
-      throw new Error("Failed to read image pixels");
+    if (!orientationMatches(width, height, previewAspect)) {
+      throw new ColorExtractionError(
+        previewAspect > 1
+          ? "Das Foto ist im Hochformat, die Vorschau im Querformat. Bitte im Querformat fotografieren."
+          : "Das Foto ist im Querformat. Bitte im Hochformat fotografieren (Handy aufrecht halten).",
+      );
     }
 
-    const actualWidth = image.width();
-    const actualHeight = image.height();
-
-    // Get grey card region color (linear light)
-    const greyCardRect = getSamplingRect(
-      "greyCard",
-      actualWidth,
-      actualHeight,
-      previewAspect,
+    const greyCardLinear = readRegionLinear(
+      image,
+      getSamplingRect("greyCard", width, height, previewAspect),
     );
-    const greyCardLinear = await extractColorFromRegion(
-      pixels,
-      greyCardRect,
-      actualWidth,
-      actualHeight,
+    const soilLinear = readRegionLinear(
+      image,
+      getSamplingRect("soilSample", width, height, previewAspect),
     );
 
-    // Calculate correction factors (linear light)
-    const correctionFactors = calculateCorrectionFactors(greyCardLinear);
-
-    // Get soil sample region color (linear light)
-    const soilSampleRect = getSamplingRect(
-      "soilSample",
-      actualWidth,
-      actualHeight,
-      previewAspect,
-    );
-    const soilLinear = await extractColorFromRegion(
-      pixels,
-      soilSampleRect,
-      actualWidth,
-      actualHeight,
-    );
-
-    // Apply white-balance correction in linear light. Match directly from the
-    // linear color (no 8-bit re-encode, which would quantize dark colors and
-    // inflate their chroma); the sRGB triplet is only for display.
-    const correctedLinear = applyCorrectionToColor(
+    // White balance in linear light. Match directly from the linear colour
+    // (no 8-bit re-encode, which would quantise dark colours and inflate their
+    // chroma); the sRGB triplet is only for display.
+    const correctedLinear = applyCorrection(
       soilLinear,
-      correctionFactors,
+      calculateCorrectionFactors(greyCardLinear),
     );
-    const correctedMunsell = linearRgbToMunsell(correctedLinear);
-    const correctedRGB = linearToSrgb255(correctedLinear);
+    const { munsell, distance } = linearRgbToMunsell(correctedLinear);
 
-    return {
-      correctedColor: correctedRGB,
-      correctedColorMunsell: correctedMunsell,
-      greyCardColor: linearToSrgb255(greyCardLinear),
-      correctionFactors,
-    };
+    return { rgb: linearToSrgb255(correctedLinear), munsell, distance };
   } finally {
     // Release native image memory so repeated captures don't leak.
     image.dispose();

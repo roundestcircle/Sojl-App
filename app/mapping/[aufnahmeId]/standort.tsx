@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -8,15 +8,15 @@ import {
   getAufnahme,
   saveAufnahmeDetails,
   type AufnahmeDetails,
-  Aufnahme,
 } from "@/lib/db/aufnahmeQueries";
 import {
   getHorizonteForAufnahme,
+  setHorizontKak,
   type Horizont,
 } from "@/lib/db/horizontQueries";
-import { calcGrundigkeitCm } from "@/lib/calc/mappingMaths";
+import { calcGrundigkeitCm, calcKAK } from "@/lib/calc/mappingMaths";
 import AufnahmeForm from "@/components/forms/aufnahme/AufnahmeForm";
-import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import { useAutosave } from "@/hooks/useAutosave";
 
 /**
  * Standortdaten screen.
@@ -27,36 +27,50 @@ export default function StandortScreen() {
   const { aufnahmeId: param } = useLocalSearchParams<{ aufnahmeId: string }>();
   const aufnahmeId = parseInt(param, 10);
 
-  // The Aufnahme record loaded from the database, used to seed form defaults
-  const [aufnahme, setAufnahme] = useState<Aufnahme | null>(null);
-  const [calcGrundigkeit, setCalcGrundigkeit] = useState("");
-  const [horizonte, setHorizonte] = useState<Horizont[]>([]);
-
-  // Reload the record and recalculate derived values whenever the screen comes back into focus
-  useFocusEffect(
-    useCallback(() => {
-      setAufnahme(getAufnahme(aufnahmeId));
-      const h = getHorizonteForAufnahme(aufnahmeId);
-      setHorizonte(h);
-      setCalcGrundigkeit(
-        calcGrundigkeitCm(h.map((hz) => hz.maechtigk_dm ?? "")),
-      );
-    }, [aufnahmeId]),
+  // The form only uses the record as initial values, so read it once.
+  const [aufnahme] = useState(() => getAufnahme(aufnahmeId));
+  // Seeded synchronously so the first render already has the right Gründigkeit
+  // (the form saves it on mount).
+  const [horizonte, setHorizonte] = useState<Horizont[]>(() =>
+    getHorizonteForAufnahme(aufnahmeId),
   );
 
+  // Horizonte (for Gründigkeit and the profile sums) may change while this
+  // screen is in the background, so reload them on focus.
+  useFocusEffect(
+    useCallback(() => {
+      setHorizonte(getHorizonteForAufnahme(aufnahmeId));
+    }, [aufnahmeId]),
+  );
+  const calcGrundigkeit = calcGrundigkeitCm(
+    horizonte.map((h) => h.tiefe_unten),
+  );
+
+  const humusformRef = useRef(aufnahme?.humusform ?? null);
+
   /**
-   * Persists partial form data on every watch callback from AufnahmeForm.
-   * Called on every keystroke/change, so no explicit save button is needed.
+   * Persists the form. The KAK of every Horizont depends on the Aufnahme's
+   * Humusform, so it is recomputed for all Horizonte when that changes.
    */
   const handleSave = useCallback(
     (data: AufnahmeDetails) => {
       saveAufnahmeDetails(aufnahmeId, data);
+      if (data.humusform === humusformRef.current) return;
+      humusformRef.current = data.humusform;
+      const hs = getHorizonteForAufnahme(aufnahmeId);
+      for (const h of hs) {
+        const kak = calcKAK(
+          h.bodenart ?? "",
+          data.humusform ?? "",
+          h.humus_pct ?? "",
+        );
+        if (kak !== (h.kak ?? "")) setHorizontKak(h.id, kak || null);
+      }
+      setHorizonte(getHorizonteForAufnahme(aufnahmeId));
     },
     [aufnahmeId],
   );
-
-  // Debounce saves so per-keystroke writes don't hit SQLite with a full UPDATE on every character.
-  const debouncedSave = useDebouncedCallback(handleSave, 250);
+  const autosave = useAutosave(handleSave);
 
   if (!aufnahme) {
     return (
@@ -76,7 +90,7 @@ export default function StandortScreen() {
     >
       <AufnahmeForm
         initialData={aufnahme}
-        onSave={debouncedSave}
+        onSave={autosave}
         calcGrundigkeit={calcGrundigkeit}
         horizonte={horizonte}
       />

@@ -44,7 +44,6 @@ export default function ValidatedField({
   containerStyle,
   fieldLabel,
   style,
-  onFocus,
   ...rest
 }: Props) {
   const [touched, setTouched] = useState(false);
@@ -76,11 +75,6 @@ export default function ValidatedField({
         value={value}
         onChangeText={onChangeText}
         onBlur={handleBlur}
-        onFocus={(e) => {
-          // Reset touched when the user comes back to fix the field so the
-          // icon doesn't disappear mid-edit; we re-check on next blur.
-          onFocus?.(e);
-        }}
       />
 
       {showIcon && (

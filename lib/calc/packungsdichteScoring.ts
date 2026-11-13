@@ -122,7 +122,7 @@ export const PACKUNGSDICHTE_QUESTIONS: readonly PackungsdichteQuestion[] = [
     options: [
       {
         label: "sehr hoch",
-        description: "Flächenanteil 10 bis < 30 % (Klasse f5).",
+        description: "Flächenanteil ≥ 10 % (Klasse f5 und höher).",
         pdClasses: [1],
       },
       {

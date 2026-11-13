@@ -1,11 +1,6 @@
-import { View } from "react-native";
-import LagerungsdichteTool from "@/components/tools/LagerungsdichteTool";
+import TreeTool from "@/components/tools/TreeTool";
 
-/** Standalone screen wrapper for the Lagerungsdichte determination tool. */
+/** Standalone screen for the Lagerungsdichte determination tool. */
 export default function LagerungsdichteScreen() {
-  return (
-    <View style={{ flex: 1 }}>
-      <LagerungsdichteTool />
-    </View>
-  );
+  return <TreeTool kind="lagerungsdichte" />;
 }

@@ -1,7 +1,5 @@
-import { colors } from "@/styles/colors";
-import { Stack, router } from "expo-router";
-import { TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Stack } from "expo-router";
+import { stackScreenOptions } from "@/components/ui/stackScreenOptions";
 
 /**
  * Stack layout for the /mapping section.
@@ -9,21 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
  */
 export default function MappingLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.primary },
-        headerTintColor: "#fff",
-        headerTitleStyle: { fontWeight: "bold", fontSize: 25 },
-        headerRight: () => (
-          <TouchableOpacity
-            onPress={() => router.replace("/")}
-            style={{ marginRight: 4 }}
-          >
-            <Ionicons name="home" size={24} color="#fff" />
-          </TouchableOpacity>
-        ),
-      }}
-    >
+    <Stack screenOptions={stackScreenOptions}>
       <Stack.Screen name="index" options={{ title: "Feldkampagnen" }} />
       <Stack.Screen
         name="kampagne/[kampagneId]/index"

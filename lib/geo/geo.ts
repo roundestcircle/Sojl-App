@@ -46,6 +46,16 @@ export function normalizeAngle(deg: number): number {
 }
 
 /**
+ * Signed shortest rotation from `from` to `to`, in degrees within (−180, 180].
+ * Works for any (also negative or unbounded) inputs, e.g. for an unwrapped
+ * arrow rotation: angleDelta(360, −350) = +10.
+ */
+export function angleDelta(from: number, to: number): number {
+  const d = normalizeAngle(to - from);
+  return d > 180 ? d - 360 : d;
+}
+
+/**
  * Exponentially smooths a heading toward `next`, always taking the shortest path
  * around the 0/360 wrap. `factor` ∈ (0, 1]: higher follows the raw value more
  * closely (less smoothing), lower is steadier (more smoothing). A null `prev`
@@ -57,7 +67,28 @@ export function smoothHeading(
   factor: number,
 ): number {
   if (prev == null) return normalizeAngle(next);
-  // Shortest signed delta in (−180, 180].
-  const delta = ((next - prev + 540) % 360) - 180;
-  return normalizeAngle(prev + delta * factor);
+  return normalizeAngle(prev + angleDelta(prev, next) * factor);
+}
+
+/** Smallest radius at which a stored point counts as "reached", in metres. */
+export const PROXIMITY_MIN_RADIUS_M = 5;
+/** Extra margin before a reached point is released again (hysteresis), in metres. */
+export const PROXIMITY_HYSTERESIS_M = 3;
+
+/**
+ * Proximity test with hysteresis, so a highlight does not flicker while the
+ * GPS fix jitters around the radius. A point is entered within
+ * max(5 m, accuracy) and only left beyond that radius + 3 m. `wasNear` is the
+ * previous result for the same point.
+ */
+export function isWithinProximity(
+  distance: number,
+  accuracy: number | null | undefined,
+  wasNear: boolean,
+): boolean {
+  const enter = Math.max(
+    PROXIMITY_MIN_RADIUS_M,
+    accuracy ?? PROXIMITY_MIN_RADIUS_M,
+  );
+  return distance <= (wasNear ? enter + PROXIMITY_HYSTERESIS_M : enter);
 }

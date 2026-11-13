@@ -1,146 +1,60 @@
-import { latLonToUTM, utmToLatLon } from "@/lib/geo/utmConversion";
 import type { Aufnahme, AufnahmeDetails } from "@/lib/db/aufnahmeQueries";
+import {
+  AUFNAHME_DETAIL_COLUMNS,
+  AUFNAHME_REAL_COLUMNS,
+  type AufnahmeDetailColumn,
+} from "@/lib/db/columns";
+import {
+  degreeStringsToUtm,
+  isUtmLatLon,
+  parseZone,
+  utmStringsToDegrees,
+} from "@/lib/geo/coordinates";
+import { latLonToUTM, utmToLatLon } from "@/lib/geo/utmConversion";
+import { parseDecimal } from "@/lib/number";
 
-export type AufnahmeFormData = {
+/** DB coordinate columns; the form edits them through the string fields below. */
+type CoordColumn =
+  "gps_lat" | "gps_lon" | "utm_easting" | "utm_northing" | "utm_zone";
+
+/** Every non-coordinate detail column as a string field, plus both coordinate formats. */
+export type AufnahmeFormData = Record<
+  Exclude<AufnahmeDetailColumn, CoordColumn>,
+  string
+> & {
   easting: string;
   northing: string;
   zone: string;
   lat: string;
   lon: string;
-  notizen: string;
-  bodentyp: string;
-  bodtyp_abk: string;
-  humusform: string;
-  humsfrm_abk: string;
-  m_ue_nn: string;
-  witterung: string;
-  mittl_n: string;
-  mittl_temp: string;
-  nutzung: string;
-  vegetation: string;
-  reliefpos: string;
-  expos: string;
-  ausgangsgestein: string;
-  grundigkeit: string;
-  effektiver_wurzelraum: string;
-  hangneigung: string;
-  reliefformtyp: string;
-  mikrorelief: string;
-  nat_bodenabtrag: string;
-  kuenstl_bodenabtrag: string;
-  anthropogene_veraend: string;
-  bodenoberflaeche: string;
-  versiegelungsart: string;
-  regenwuermer: string;
-  substratsyst_einheit: string;
-  hydrogeniet_moortyp: string;
-  durchwurzelbarer_bodenraum: string;
-  wasserstand_gof: string;
-  grundnaessestufe: string;
-  besond_wasserverh: string;
-  stau_haftnaessestufe: string;
-  erosionsgrad: string;
 };
 
-/** Which coordinate input is shown (and therefore authoritative when saving). */
+/** Which coordinate input is shown in the form. */
 export type CoordMode = "utm" | "degrees";
 
-/** Text columns stored 1:1 (empty string ⇄ null). */
-const TEXT_FIELDS = [
-  "notizen",
-  "bodentyp",
-  "bodtyp_abk",
-  "humusform",
-  "humsfrm_abk",
-  "witterung",
-  "nutzung",
-  "vegetation",
-  "reliefpos",
-  "expos",
-  "ausgangsgestein",
-  "hangneigung",
-  "reliefformtyp",
-  "mikrorelief",
-  "nat_bodenabtrag",
-  "kuenstl_bodenabtrag",
-  "anthropogene_veraend",
-  "bodenoberflaeche",
-  "versiegelungsart",
-  "regenwuermer",
-  "substratsyst_einheit",
-  "hydrogeniet_moortyp",
-  "durchwurzelbarer_bodenraum",
-  "wasserstand_gof",
-  "grundnaessestufe",
-  "besond_wasserverh",
-  "stau_haftnaessestufe",
-  "erosionsgrad",
-] as const satisfies readonly (keyof AufnahmeFormData &
-  keyof AufnahmeDetails)[];
+/**
+ * Where the saved coordinates come from: the values stored in the DB
+ * (untouched since loading — never re-derived, so they keep full precision),
+ * or whichever field set the user edited last.
+ */
+export type CoordSource = "stored" | CoordMode;
 
-/** Numeric columns (string in the form, number | null in the DB). */
-const NUMBER_FIELDS = [
-  "m_ue_nn",
-  "mittl_n",
-  "mittl_temp",
-  "grundigkeit",
-  "effektiver_wurzelraum",
-] as const satisfies readonly (keyof AufnahmeFormData &
-  keyof AufnahmeDetails)[];
+export const UTM_FIELDS = ["easting", "northing", "zone"] as const;
+export const DEGREE_FIELDS = ["lat", "lon"] as const;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const COORD_COLUMNS: ReadonlySet<string> = new Set<CoordColumn>([
+  "gps_lat",
+  "gps_lon",
+  "utm_easting",
+  "utm_northing",
+  "utm_zone",
+]);
 
-/** Parses a UTM zone string like "32N" into its numeric zone and hemisphere components. */
-export function parseZone(
-  s: string,
-): { number: number; hemisphere: "N" | "S" } | null {
-  const m = s
-    .trim()
-    .toUpperCase()
-    .match(/^(\d+)([NS])$/);
-  if (!m) return null;
-  return { number: parseInt(m[1], 10), hemisphere: m[2] as "N" | "S" };
-}
+const FIELD_COLUMNS = AUFNAHME_DETAIL_COLUMNS.filter(
+  (c): c is Exclude<AufnahmeDetailColumn, CoordColumn> => !COORD_COLUMNS.has(c),
+);
 
-/** Parses a string to a float, returning null if the result is NaN. */
-export const parseNum = (s: string | undefined): number | null => {
-  const n = parseFloat(s ?? "");
-  return isNaN(n) ? null : n;
-};
-
-/** Converts UTM strings to decimal-degree strings (6 decimals), or null if invalid. */
-export function utmStringsToDegrees(
-  easting: string,
-  northing: string,
-  zone: string,
-): { lat: string; lon: string } | null {
-  const e = parseFloat(easting);
-  const n = parseFloat(northing);
-  const z = parseZone(zone);
-  if (isNaN(e) || isNaN(n) || !z) return null;
-  try {
-    const { lat, lon } = utmToLatLon(e, n, z.number, z.hemisphere);
-    return { lat: lat.toFixed(6), lon: lon.toFixed(6) };
-  } catch {
-    return null;
-  }
-}
-
-/** Converts decimal-degree strings to UTM strings, or null if invalid. */
-export function degreeStringsToUtm(
-  lat: string,
-  lon: string,
-): { easting: string; northing: string; zone: string } | null {
-  const la = parseFloat(lat);
-  const lo = parseFloat(lon);
-  if (isNaN(la) || isNaN(lo)) return null;
-  const utm = latLonToUTM(la, lo);
-  return {
-    easting: String(utm.easting),
-    northing: String(utm.northing),
-    zone: utm.label,
-  };
-}
+type StoredCoords = Pick<Aufnahme, CoordColumn>;
 
 // ─── DB row ⇄ form values ─────────────────────────────────────────────────────
 
@@ -172,60 +86,81 @@ export function toAufnahmeFormDefaults(a: Aufnahme): AufnahmeFormData {
     lat: deg?.lat ?? "",
     lon: deg?.lon ?? "",
   } as AufnahmeFormData;
-  for (const f of TEXT_FIELDS) values[f] = a[f] ?? "";
-  for (const f of NUMBER_FIELDS) values[f] = a[f] != null ? String(a[f]) : "";
+  for (const c of FIELD_COLUMNS) {
+    const v = a[c];
+    values[c] = v == null ? "" : String(v);
+  }
   return values;
+}
+
+/** Coordinates from the form's UTM or degree fields, converted into the other format. */
+function coordsFrom(
+  data: Partial<AufnahmeFormData>,
+  source: CoordMode,
+): StoredCoords {
+  const none: StoredCoords = {
+    gps_lat: null,
+    gps_lon: null,
+    utm_easting: null,
+    utm_northing: null,
+    utm_zone: null,
+  };
+  if (source === "utm") {
+    const e = parseDecimal(data.easting);
+    const n = parseDecimal(data.northing);
+    const z = parseZone(data.zone ?? "");
+    if (e === null || n === null || !z) return none;
+    const { lat, lon } = utmToLatLon(e, n, z.number, z.hemisphere);
+    const valid = isUtmLatLon(lat, lon);
+    return {
+      gps_lat: valid ? lat : null,
+      gps_lon: valid ? lon : null,
+      utm_easting: e,
+      utm_northing: n,
+      utm_zone: `${z.number}${z.hemisphere}`,
+    };
+  }
+  const lat = parseDecimal(data.lat);
+  const lon = parseDecimal(data.lon);
+  if (lat === null || lon === null || !isUtmLatLon(lat, lon)) return none;
+  const utm = latLonToUTM(lat, lon);
+  return {
+    gps_lat: lat,
+    gps_lon: lon,
+    utm_easting: utm.easting,
+    utm_northing: utm.northing,
+    utm_zone: utm.label,
+  };
 }
 
 /**
  * Converts (partial) form values into the DB update payload. Coordinates are
- * taken from the input mode currently shown and converted into the other format.
+ * kept as stored until the user edits them; then they are taken from the edited
+ * format and converted into the other one.
  */
 export function toAufnahmeDetails(
   data: Partial<AufnahmeFormData>,
-  mode: CoordMode,
+  source: CoordSource,
+  stored: StoredCoords,
 ): AufnahmeDetails {
-  let gps_lat: number | null = null;
-  let gps_lon: number | null = null;
-  let utm_easting: number | null = null;
-  let utm_northing: number | null = null;
-  let utm_zone: string | null = null;
-
-  if (mode === "utm") {
-    const e = parseFloat(data.easting ?? "");
-    const n = parseFloat(data.northing ?? "");
-    const z = parseZone(data.zone ?? "");
-    if (!isNaN(e) && !isNaN(n) && z) {
-      utm_easting = e;
-      utm_northing = n;
-      utm_zone = (data.zone ?? "").trim().toUpperCase();
-      try {
-        const res = utmToLatLon(e, n, z.number, z.hemisphere);
-        gps_lat = res.lat;
-        gps_lon = res.lon;
-      } catch {}
-    }
-  } else {
-    const lat = parseFloat(data.lat ?? "");
-    const lon = parseFloat(data.lon ?? "");
-    if (!isNaN(lat) && !isNaN(lon)) {
-      gps_lat = lat;
-      gps_lon = lon;
-      const utm = latLonToUTM(lat, lon);
-      utm_easting = utm.easting;
-      utm_northing = utm.northing;
-      utm_zone = utm.label;
+  const coords: StoredCoords =
+    source === "stored"
+      ? {
+          gps_lat: stored.gps_lat,
+          gps_lon: stored.gps_lon,
+          utm_easting: stored.utm_easting,
+          utm_northing: stored.utm_northing,
+          utm_zone: stored.utm_zone,
+        }
+      : coordsFrom(data, source);
+  const details = { ...coords } as AufnahmeDetails;
+  for (const c of FIELD_COLUMNS) {
+    const v = data[c];
+    if (AUFNAHME_REAL_COLUMNS.has(c)) {
+      (details as Record<string, unknown>)[c] = parseDecimal(v);
+    } else {
+      (details as Record<string, unknown>)[c] = v || null;
     }
   }
-
-  const details = {
-    gps_lat,
-    gps_lon,
-    utm_easting,
-    utm_northing,
-    utm_zone,
-  } as AufnahmeDetails;
-  for (const f of TEXT_FIELDS) details[f] = data[f] || null;
-  for (const f of NUMBER_FIELDS) details[f] = parseNum(data[f]);
   return details;
 }

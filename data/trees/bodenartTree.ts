@@ -1,25 +1,31 @@
-import type { DecisionTreeData } from "@/data/trees/types";
+import { leaf, type DecisionTreeData } from "@/data/trees/types";
 
+const Q = "Die Bodenart ist";
+
+// NOTE (review item B1.1): the "Nein" answers of tex1a, tex1c and tex3a lead
+// back to an earlier question, and the Ts3-4 / Tu3-4 leaves are not single
+// KA5 codes. The key needs a redesign; see data/trees/__tests__/trees.test.ts.
 export const BodenartTree: DecisionTreeData = {
-  id: "start",
-  question: "Wie gut lässt sich der Boden ausrollen?",
-  options: [
-    {
-      text: "Nicht zwischen den Handtellern zu einer bleistiftdicken Wurst ausrollbar",
-      next: "tex1",
-    },
-    {
-      text: "Gerade zu einer Bleistiftdicken Wurst ausrollbar, aber nicht auf halbe Bleistiftstärke",
-      next: "tex2",
-    },
-    {
-      text: "Auf halbe Bleistiftsärke ausrollbar",
-      next: "tex3",
-    },
-  ],
+  root: "start",
   nodes: {
+    start: {
+      question: "Wie gut lässt sich der Boden ausrollen?",
+      options: [
+        {
+          text: "Nicht zwischen den Handtellern zu einer bleistiftdicken Wurst ausrollbar",
+          next: "tex1",
+        },
+        {
+          text: "Gerade zu einer bleistiftdicken Wurst ausrollbar, aber nicht auf halbe Bleistiftstärke",
+          next: "tex2",
+        },
+        {
+          text: "Auf halbe Bleistiftstärke ausrollbar",
+          next: "tex3",
+        },
+      ],
+    },
     tex1: {
-      id: "tex1",
       question:
         "Wie fühlt sich der Boden zwischen den Fingern an? Wie sieht er aus?",
       options: [
@@ -28,7 +34,7 @@ export const BodenartTree: DecisionTreeData = {
           next: "tex1a",
         },
         {
-          text: "schmutzend, Feinsubstanz in den Fingerrillen, kaum bindig",
+          text: "Schmutzend, Feinsubstanz in den Fingerrillen, kaum bindig",
           next: "tex1b",
         },
         {
@@ -38,101 +44,61 @@ export const BodenartTree: DecisionTreeData = {
       ],
     },
     tex2: {
-      id: "tex2",
-      question: "Wie verhält sich eine Kugel mit 1cm Durchmesser?",
+      question: "Wie verhält sich eine Kugel mit 1 cm Durchmesser?",
       options: [
-        {
-          text: "Haftet gut am Finger",
-          next: "tex2a",
-        },
-        {
-          text: "Haftet kaum am Finger",
-          next: "tex2b",
-        },
+        { text: "Haftet gut am Finger", next: "tex2a" },
+        { text: "Haftet kaum am Finger", next: "tex2b" },
       ],
     },
     tex3: {
-      id: "tex3",
       question: "Wie gut lässt sich die Wurst weiterformen?",
       options: [
+        { text: "Ein Ring mit 3 cm Durchmesser ist möglich", next: "tex3b" },
         {
-          text: "Ein Ring mit 3cm Durchmesser ist möglich",
-          next: "tex3b",
-        },
-        {
-          text: "Ein Ring mit 3cm Durchmesser ist nicht möglich, ohne dass die Wurst bricht",
+          text: "Ein Ring mit 3 cm Durchmesser ist nicht möglich, ohne dass die Wurst bricht",
           next: "tex3a",
         },
       ],
     },
     tex3b: {
-      id: "tex3b",
       question:
-        "Wie verhält sich der Boden nach quetschen zwischen Daumen und Zeigefinger?",
+        "Wie verhält sich der Boden nach Quetschen zwischen Daumen und Zeigefinger?",
       options: [
-        {
-          text: "Er ist rau und schwach glänzend",
-          next: "tex3ba",
-        },
-        {
-          text: "Er ist rau und deutlich glänzend",
-          next: "tex3bb",
-        },
-        {
-          text: "Er ist glatt und stark glänzend",
-          next: "tex3bc",
-        },
+        { text: "Er ist rau und schwach glänzend", next: "tex3ba" },
+        { text: "Er ist rau und deutlich glänzend", next: "tex3bb" },
+        { text: "Er ist glatt und stark glänzend", next: "tex3bc" },
       ],
     },
     tex1a: {
-      id: "tex1a",
       question: "Der Boden enthält über 85% Sand",
       options: [
-        {
-          text: "Ja",
-          next: "Ss",
-        },
-        {
-          text: "Nein",
-          next: "tex1",
-        },
+        { text: "Ja", next: "Ss" },
+        { text: "Nein", next: "tex1" },
       ],
     },
     tex1b: {
-      id: "tex1b",
       question: "Wie verhält sich der Boden weiter?",
       options: [
         {
-          text: "sehr sandig (>52%), kaum bindig, schwach formbar, Kugel von 1cm haftet kaum am Finger",
+          text: "sehr sandig (>52%), kaum bindig, schwach formbar, Kugel von 1 cm haftet kaum am Finger",
           next: "Su",
         },
         {
-          text: "Sandkörner noch sicht und fühlbar (12-50%), stumpf-mehlig",
+          text: "Sandkörner noch sicht- und fühlbar (12-50%), stumpf-mehlig",
           next: "Us",
         },
-        {
-          text: "Kaum Sandkörner, stumpf-mehlig",
-          next: "Uu",
-        },
+        { text: "Kaum Sandkörner, stumpf-mehlig", next: "Uu" },
       ],
     },
     tex1c: {
-      id: "tex1c",
       question:
-        "Sind die Sandkörner noch sicht- und fühlbar (8-25%), ist der Boden stumpf-mehlig, etwas bindig, schwach formbar, und eine Kugel mit 1cm Durchmesser haftet leich am Finger?",
+        "Sind die Sandkörner noch sicht- und fühlbar (8-25%), ist der Boden stumpf-mehlig, etwas bindig, schwach formbar, und eine Kugel mit 1 cm Durchmesser haftet leicht am Finger?",
       options: [
-        {
-          text: "Ja",
-          next: "Ut",
-        },
-        {
-          text: "Nein",
-          next: "tex1",
-        },
+        { text: "Ja", next: "Ut" },
+        { text: "Nein", next: "tex1" },
       ],
     },
     tex2a: {
-      id: "tex2a",
       question: "Wie verhält sich der Boden weiter?",
       options: [
         {
@@ -146,7 +112,6 @@ export const BodenartTree: DecisionTreeData = {
       ],
     },
     tex2b: {
-      id: "tex2b",
       question: "Wie verhält sich der Boden weiter?",
       options: [
         {
@@ -164,21 +129,13 @@ export const BodenartTree: DecisionTreeData = {
       ],
     },
     tex3a: {
-      id: "tex3a",
       question: "Der Boden ist mehlig und enthält wenig Sandkörner (<33%)",
       options: [
-        {
-          text: "Ja",
-          next: "Lu",
-        },
-        {
-          text: "Nein",
-          next: "tex3",
-        },
+        { text: "Ja", next: "Lu" },
+        { text: "Nein", next: "tex3" },
       ],
     },
     tex3ba: {
-      id: "tex3ba",
       question: "Wie verhält sich der Boden weiter?",
       options: [
         {
@@ -193,22 +150,20 @@ export const BodenartTree: DecisionTreeData = {
       ],
     },
     tex3bb: {
-      id: "tex3bb",
       question: "Wie verhält sich der Boden weiter?",
       options: [
         {
-          text: "Sandkörner deutlcih sicht- und fühlbar (25-60%)",
+          text: "Sandkörner deutlich sicht- und fühlbar (25-60%)",
           next: "Lts",
         },
         {
-          text: "zähplastisch. Sandkörner sicht- und fühlbar (20-55%)",
+          text: "zähplastisch, Sandkörner sicht- und fühlbar (20-55%)",
           next: "Ts2",
         },
         { text: "zähplastisch, kaum Sandkörner (<20%)", next: "Tu2" },
       ],
     },
     tex3bc: {
-      id: "tex3bc",
       question: "Wie verhält sich der Boden weiter?",
       options: [
         {
@@ -221,100 +176,24 @@ export const BodenartTree: DecisionTreeData = {
         },
       ],
     },
-    Ss: {
-      id: "Ss",
-      question: "Die Bodenart ist",
-      result: { title: "Ss", description: "Sandiger Sand" },
-    },
-    Su: {
-      id: "Su",
-      question: "Die Bodenart ist",
-      result: { title: "Su", description: "Schluffiger Sand" },
-    },
-    Us: {
-      id: "Us",
-      question: "Die Bodenart ist",
-      result: { title: "Us", description: "Sandiger Schluff" },
-    },
-    Uu: {
-      id: "Uu",
-      question: "Die Bodenart ist",
-      result: { title: "Uu", description: "Schluffiger Schluff" },
-    },
-    Ut: {
-      id: "Ut",
-      question: "Die Bodenart ist",
-      result: { title: "Ut", description: "Toniger Schluff" },
-    },
-    St: {
-      id: "St",
-      question: "Die Bodenart ist",
-      result: { title: "St", description: "Toniger Sand" },
-    },
-    Ls: {
-      id: "Ls",
-      question: "Die Bodenart ist",
-      result: { title: "Ls", description: "Sandiger Lehm" },
-    },
-    Sl: {
-      id: "Sl",
-      question: "Die Bodenart ist",
-      result: { title: "Sl", description: "Lehmiger Sand" },
-    },
-    Slu: {
-      id: "Slu",
-      question: "Die Bodenart ist",
-      result: { title: "Slu", description: "Schluffiger Lehmiger Sand" },
-    },
-    Uls: {
-      id: "Uls",
-      question: "Die Bodenart ist",
-      result: { title: "Uls", description: "Lehmiger Sandiger Schluff" },
-    },
-    Lu: {
-      id: "Lu",
-      question: "Die Bodenart ist",
-      result: { title: "Lu", description: "Schluffiger Lehm" },
-    },
-    "Ts3-4": {
-      id: "Ts3-4",
-      question: "Die Bodenart ist",
-      result: { title: "Ts3-4", description: "sehr Sandiger Ton" },
-    },
-    Lt: {
-      id: "Lt",
-      question: "Die Bodenart ist",
-      result: { title: "Lt", description: "Toniger Lehm" },
-    },
-    "Tu3-4": {
-      id: "Tu3-4",
-      question: "Die Bodenart ist",
-      result: { title: "Tu3-4", description: "sehr Schluffiger Ton" },
-    },
-    Lts: {
-      id: "Lts",
-      question: "Die Bodenart ist",
-      result: { title: "Lts", description: "Sandiger Toniger Lehm" },
-    },
-    Ts2: {
-      id: "Ts2",
-      question: "Die Bodenart ist",
-      result: { title: "Ts2", description: "Sandiger Ton" },
-    },
-    Tu2: {
-      id: "Tu2",
-      question: "Die Bodenart ist",
-      result: { title: "Tu2", description: "Schluffiger Ton" },
-    },
-    Tl: {
-      id: "Tl",
-      question: "Die Bodenart ist",
-      result: { title: "Tl", description: "Lehmiger Ton" },
-    },
-    Tt: {
-      id: "Tt",
-      question: "Die Bodenart ist",
-      result: { title: "Tt", description: "Toniger Ton" },
-    },
+    Ss: leaf("Ss", "Reinsand", Q),
+    Su: leaf("Su", "Schluffiger Sand", Q),
+    Us: leaf("Us", "Sandiger Schluff", Q),
+    Uu: leaf("Uu", "Reinschluff", Q),
+    Ut: leaf("Ut", "Toniger Schluff", Q),
+    St: leaf("St", "Toniger Sand", Q),
+    Ls: leaf("Ls", "Sandiger Lehm", Q),
+    Sl: leaf("Sl", "Lehmiger Sand", Q),
+    Slu: leaf("Slu", "Schluffig-lehmiger Sand", Q),
+    Uls: leaf("Uls", "Sandig-lehmiger Schluff", Q),
+    Lu: leaf("Lu", "Schluffiger Lehm", Q),
+    "Ts3-4": leaf("Ts3-4", "Sehr sandiger Ton", Q),
+    Lt: leaf("Lt", "Toniger Lehm", Q),
+    "Tu3-4": leaf("Tu3-4", "Sehr schluffiger Ton", Q),
+    Lts: leaf("Lts", "Sandig-toniger Lehm", Q),
+    Ts2: leaf("Ts2", "Sandiger Ton", Q),
+    Tu2: leaf("Tu2", "Schluffiger Ton", Q),
+    Tl: leaf("Tl", "Lehmiger Ton", Q),
+    Tt: leaf("Tt", "Reinton", Q),
   },
 };

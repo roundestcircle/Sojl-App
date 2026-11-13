@@ -1,20 +1,14 @@
 import { useState } from "react";
-import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import {
   InstructionModal,
   ResetInstructionButton,
 } from "@/components/ui/InstructionModal";
+import { ToolModal } from "@/components/ui/ToolModal";
 import SoilShareScroll from "@/components/tools/SoilShareScroll";
+import { parseDecimal } from "@/lib/number";
 import {
   PACKUNGSDICHTE_QUESTIONS,
   makroporenPercentToOptionIndex,
@@ -244,46 +238,21 @@ export default function PackungsdichteTool({ onConfirm }: Props) {
       </View>
 
       {/* Fullscreen SoilShareScroll estimator for the Makroporen step. */}
-      <Modal
+      <ToolModal
         visible={shareModalOpen}
-        animationType="slide"
-        onRequestClose={() => setShareModalOpen(false)}
+        onClose={() => setShareModalOpen(false)}
+        padded
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View style={localStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setShareModalOpen(false)}>
-              <Text style={localStyles.modalClose}>✕ Schließen</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ flex: 1, padding: 20 }}>
-            <SoilShareScroll
-              onConfirm={(percent) => {
-                const pct = parseFloat(percent);
-                if (!isNaN(pct)) {
-                  select(makroporenPercentToOptionIndex(pct));
-                }
-                setShareModalOpen(false);
-              }}
-            />
-          </View>
-        </SafeAreaView>
-      </Modal>
+        <SoilShareScroll
+          onConfirm={(percent) => {
+            const pct = parseDecimal(percent);
+            if (pct !== null) {
+              select(makroporenPercentToOptionIndex(pct));
+            }
+            setShareModalOpen(false);
+          }}
+        />
+      </ToolModal>
     </View>
   );
 }
-
-const localStyles = StyleSheet.create({
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ccc",
-  },
-  modalClose: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});

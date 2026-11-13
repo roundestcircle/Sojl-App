@@ -13,7 +13,9 @@ export default function StatusBadge({ status }: Props) {
   return (
     <Badge
       label={status}
-      color={status === "abgeschlossen" ? colors.primary : "#e0a020"}
+      color={
+        status === "abgeschlossen" ? colors.statusDone : colors.statusStarted
+      }
     />
   );
 }

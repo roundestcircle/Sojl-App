@@ -1,15 +1,8 @@
 import { useState } from "react";
-import {
-  Linking,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Linking, Text, View } from "react-native";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import FunktionsweiseContent from "@/components/lexikon/FunktionsweiseContent";
-import { colors } from "../styles/colors";
-import { styles } from "../styles/styles";
+import { styles } from "@/styles/styles";
 
 export default function AboutScreen() {
   const [allgemeinesExpanded, setAllgemeinesExpanded] = useState(true);
@@ -33,11 +26,11 @@ export default function AboutScreen() {
           <Text style={styles.text}>
             Ich studiere irgendwas mit Boden im Bachelor, bin aber kein Experte
             und bestimmt kein Programmierer. Ich habe für die App viel Claude
-            Code verwendet, aber so gut es geht überprüft dass der Code sinnvoll
-            und die Ergebnisse korrekt sind. Dennnoch ist die App noch ein
-            Prototyp und kann noch Fehler enthalten, die ich übersehen habe.
+            Code verwendet, aber so gut es geht überprüft, dass der Code
+            sinnvoll und die Ergebnisse korrekt sind. Dennoch ist die App noch
+            ein Prototyp und kann noch Fehler enthalten, die ich übersehen habe.
             Vielleicht hilft sie euch trotzdem schon in der Praxis. Sie ist
-            kostenlos und Open Source, und soll das auch bleiben.
+            kostenlos und Open Source und soll das auch bleiben.
           </Text>
           <Text style={styles.text}>
             Schaut euch gerne den Quellcode{" "}
@@ -47,7 +40,7 @@ export default function AboutScreen() {
                 Linking.openURL("https://github.com/roundestcircle/Sojl-App")
               }
             >
-              auf Github
+              auf GitHub
             </Text>{" "}
             an oder schreibt mir eine{" "}
             <Text
@@ -63,40 +56,24 @@ export default function AboutScreen() {
                 Linking.openURL("https://www.youtube.com/@SojlBodenkunde")
               }
             >
-              hier auf Youtube
+              hier auf YouTube
             </Text>{" "}
-            auch ein paar Tutorials geben. Schickt mir gerne alle Vorschläge die
-            ihr habt, Fehler die euch aufgefallen sind oder sonstiges Feedback.
+            auch ein paar Tutorials geben. Schickt mir gerne alle Vorschläge,
+            die ihr habt, Fehler, die euch aufgefallen sind, oder sonstiges
+            Feedback.
           </Text>
         </CollapsibleSection>
 
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={localStyles.header}
-            onPress={() => setFunktionsweiseExpanded((v) => !v)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.sectionTitle}>Funktionsweise der Tools</Text>
-            <Text style={localStyles.chevron}>
-              {funktionsweiseExpanded ? "▲" : "▼"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* The list needs the remaining screen height to scroll, so it is
+            rendered below the section instead of as its child. */}
+        <CollapsibleSection
+          title="Funktionsweise der Tools"
+          expanded={funktionsweiseExpanded}
+          onToggle={() => setFunktionsweiseExpanded((v) => !v)}
+        />
       </View>
 
       {funktionsweiseExpanded && <FunktionsweiseContent />}
     </View>
   );
 }
-
-const localStyles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  chevron: {
-    fontSize: 12,
-    color: colors.primary,
-  },
-});

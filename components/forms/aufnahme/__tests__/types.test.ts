@@ -1,12 +1,10 @@
 import {
-  parseZone,
-  parseNum,
-  utmStringsToDegrees,
-  degreeStringsToUtm,
   toAufnahmeFormDefaults,
   toAufnahmeDetails,
 } from "@/components/forms/aufnahme/types";
 import type { Aufnahme } from "@/lib/db/aufnahmeQueries";
+
+// Coordinate parsing/conversion helpers are tested in lib/geo/__tests__/coordinates.test.ts.
 
 const emptyAufnahme = (fields: Partial<Aufnahme> = {}): Aufnahme =>
   ({
@@ -18,41 +16,7 @@ const emptyAufnahme = (fields: Partial<Aufnahme> = {}): Aufnahme =>
     ...fields,
   }) as Aufnahme;
 
-describe("parseZone", () => {
-  it("parses number and hemisphere case-insensitively", () => {
-    expect(parseZone(" 32n ")).toEqual({ number: 32, hemisphere: "N" });
-    expect(parseZone("33S")).toEqual({ number: 33, hemisphere: "S" });
-  });
-
-  it("rejects labels without hemisphere or with a latitude band", () => {
-    expect(parseZone("32")).toBeNull();
-    expect(parseZone("32U")).toBeNull();
-  });
-});
-
-describe("parseNum", () => {
-  it("returns null for empty or non-numeric input", () => {
-    expect(parseNum("")).toBeNull();
-    expect(parseNum(undefined)).toBeNull();
-    expect(parseNum("abc")).toBeNull();
-    expect(parseNum("12.5")).toBe(12.5);
-  });
-});
-
-describe("coordinate string conversion", () => {
-  it("round-trips degrees → UTM → degrees", () => {
-    const utm = degreeStringsToUtm("51.533000", "9.935000");
-    expect(utm?.zone).toBe("32N");
-    const deg = utmStringsToDegrees(utm!.easting, utm!.northing, utm!.zone);
-    expect(parseFloat(deg!.lat)).toBeCloseTo(51.533, 4);
-    expect(parseFloat(deg!.lon)).toBeCloseTo(9.935, 4);
-  });
-
-  it("returns null for incomplete input", () => {
-    expect(degreeStringsToUtm("51.5", "")).toBeNull();
-    expect(utmStringsToDegrees("560000", "5710000", "32")).toBeNull();
-  });
-});
+const noCoords = emptyAufnahme();
 
 describe("toAufnahmeFormDefaults", () => {
   it("derives UTM fields when only GPS is stored", () => {
@@ -83,20 +47,45 @@ describe("toAufnahmeFormDefaults", () => {
 });
 
 describe("toAufnahmeDetails", () => {
-  it("takes coordinates from the UTM fields in UTM mode", () => {
+  it("keeps the stored coordinates unchanged until a coordinate is edited", () => {
+    const stored = emptyAufnahme({
+      gps_lat: 51.5123456,
+      gps_lon: 9.9345678,
+      utm_easting: 1,
+      utm_northing: 2,
+      utm_zone: "32N",
+    });
+    // Form strings are rounded (6 decimals / whole metres) — must not be re-derived.
+    const d = toAufnahmeDetails(
+      { lat: "51.512346", easting: "999" },
+      "stored",
+      stored,
+    );
+    expect(d).toMatchObject({
+      gps_lat: 51.5123456,
+      gps_lon: 9.9345678,
+      utm_easting: 1,
+      utm_northing: 2,
+      utm_zone: "32N",
+    });
+  });
+
+  it("takes coordinates from the UTM fields after a UTM edit", () => {
     const d = toAufnahmeDetails(
       { easting: "500000", northing: "0", zone: "32n", lat: "1", lon: "1" },
       "utm",
+      noCoords,
     );
     expect(d.utm_zone).toBe("32N");
     expect(d.gps_lat).toBeCloseTo(0, 6);
     expect(d.gps_lon).toBeCloseTo(9, 6);
   });
 
-  it("takes coordinates from the degree fields in degree mode", () => {
+  it("takes coordinates from the degree fields after a degree edit", () => {
     const d = toAufnahmeDetails(
       { lat: "0", lon: "9", easting: "1" },
       "degrees",
+      noCoords,
     );
     expect(d).toMatchObject({
       gps_lat: 0,
@@ -107,15 +96,36 @@ describe("toAufnahmeDetails", () => {
     });
   });
 
-  it("stores empty text as null and parses numbers", () => {
+  it("accepts decimal commas and rejects out-of-range degrees", () => {
+    const comma = toAufnahmeDetails(
+      { lat: "51,5074", lon: "9,3456" },
+      "degrees",
+      noCoords,
+    );
+    expect(comma.gps_lat).toBeCloseTo(51.5074, 6);
+    expect(comma.gps_lon).toBeCloseTo(9.3456, 6);
+    const bad = toAufnahmeDetails({ lat: "95", lon: "9" }, "degrees", noCoords);
+    expect(bad.gps_lat).toBeNull();
+    expect(bad.utm_zone).toBeNull();
+  });
+
+  it("stores empty text as null and parses numbers (decimal comma too)", () => {
     const d = toAufnahmeDetails(
-      { notizen: "", bodentyp: "Braunerde", mittl_temp: "9.5", m_ue_nn: "" },
-      "utm",
+      {
+        notizen: "",
+        bodentyp: "Braunerde",
+        mittl_temp: "9,5",
+        m_ue_nn: "",
+        mittl_n: "ca. 700",
+      },
+      "stored",
+      noCoords,
     );
     expect(d.notizen).toBeNull();
     expect(d.bodentyp).toBe("Braunerde");
     expect(d.mittl_temp).toBe(9.5);
     expect(d.m_ue_nn).toBeNull();
+    expect(d.mittl_n).toBeNull();
     expect(d.gps_lat).toBeNull();
   });
 });

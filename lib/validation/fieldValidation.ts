@@ -191,7 +191,9 @@ function validateRange(
   if (!Number.isFinite(n)) return fail;
   if (opts.integer && !Number.isInteger(n)) return fail;
   if (n < opts.min || n > opts.max) return fail;
-  return { valid: true };
+  // Hand back the dot-decimal form so the field (and everything parsing it later)
+  // never keeps a German decimal comma: "5,5" → "5.5".
+  return { valid: true, normalized: cleaned };
 }
 
 // ─── Field validators ─────────────────────────────────────────────────────────

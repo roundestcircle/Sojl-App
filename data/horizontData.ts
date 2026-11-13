@@ -84,7 +84,7 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "M",
         description:
-          "(v. migrare = wandern) Min. Unterbodenhoriz., aus fortlaufend sedimentiertem Soummaterial und dadurch bedingt regelmäßiger Sediment- und Stoffzufuhr im aktuellen oder früheren Auenbereich eines Fließgewässers entstanden.",
+          "(v. migrare = wandern) Min. Unterbodenhoriz., aus fortlaufend sedimentiertem Solummaterial und dadurch bedingt regelmäßiger Sediment- und Stoffzufuhr im aktuellen oder früheren Auenbereich eines Fließgewässers entstanden.",
       },
       {
         symbol: "N",
@@ -94,12 +94,12 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "P",
         description:
-          "(v. Pelosol) Min. Unterbodenhoriz., aus primär tonigem, tonmergeligen oder tonig verwitterndem Ausgangsgestein entstanden, mit >45 Gew.-% Ton, ausgeprägte Quellungs- und Schrumpfungsdynamik (zeitweilig Trockenrisse), besonders im unteren Bereich grobes in sich dichtes Prismen- und Polyedergefüge (oft Gleitharnische).",
+          "(v. Pelosol) Min. Unterbodenhoriz., aus primär tonigem, tonmergeligem oder tonig verwitterndem Ausgangsgestein entstanden, mit >45 Gew.-% Ton, ausgeprägte Quellungs- und Schrumpfungsdynamik (zeitweilig Trockenrisse), besonders im unteren Bereich grobes in sich dichtes Prismen- und Polyedergefüge (oft Gleitharnische).",
       },
       {
         symbol: "R",
         description:
-          "Min. Haupthor., durch tiefreichende wendende oder mischende Bodenbearbeitung entstanden.",
+          "Min. Haupthoriz., durch tiefreichende wendende oder mischende Bodenbearbeitung entstanden.",
       },
       {
         symbol: "S",
@@ -109,7 +109,7 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "T",
         description:
-          "(v. Terra) Min. Unterbodenhoriz., aus dem Lösungsrückstand von Kalk- und Dolomitgesteinen entstanden, die über 75 Gew.-% Karbonat enthalten, >65 Gew.-% Ton (in Übergangshorizonten 45-60 Gew.-% Ton), leuchtend braungelbe bis braunrote Farben und ausgeprägte Polyedergefüge haben.",
+          "(v. Terra) Min. Unterbodenhoriz., aus dem Lösungsrückstand von Kalk- und Dolomitgesteinen entstanden, die über 75 Gew.-% Carbonat enthalten, >65 Gew.-% Ton (in Übergangshorizonten 45-60 Gew.-% Ton), leuchtend braungelbe bis braunrote Farben und ausgeprägte Polyedergefüge haben.",
       },
       {
         symbol: "V",
@@ -129,13 +129,13 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       { symbol: "b...", description: "braun (nur kombinierbar mit De)." },
       {
         symbol: "b...",
-        description: "brackisch (el. Lf.: ≥4 und ≤15 dS m⁻¹).",
+        description: "brackisch (el. Lf.: ≥4 und <15 dS m⁻¹).",
       },
       {
         symbol: "c...",
-        description: "carbonatisch, >75 Gew.-% Karbonat oder Gips.",
+        description: "carbonatisch, >75 Gew.-% Carbonat oder Gips.",
       },
-      { symbol: "e...", description: "mergelig, 2-75 Gew.-% Karb. od. Gips." },
+      { symbol: "e...", description: "mergelig, 2–75 Gew.-% Carb. od. Gips." },
       {
         symbol: "f...",
         description: "Begrabener (fossiler) Horizont (z.B. IIfAh).",
@@ -147,27 +147,27 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       },
       {
         symbol: "i...",
-        description: "kieselig, silikatisch, <2 Gew.-% Karbonat oder Gips.",
+        description: "kieselig, silikatisch, <2 Gew.-% Carbonat oder Gips.",
       },
       {
         symbol: "j...",
         description:
-          "juvenil, anthropogen umgelagertes Natursubstrat, <25% techn. Substrate.",
+          "juvenil, anthropogen umgelagertes Natursubstrat, Anteil technogener Komponenten <25%.",
+      },
+      {
+        symbol: "yj...",
+        description:
+          "anthropogen umgelagertes Natursubstrat, Anteil technogener Komponenten 25–<50%.",
       },
       {
         symbol: "jy...",
         description:
-          "anthropogen umgelagertes Natursubstrat, ≥25-50% techn. Substrate.",
-      },
-      {
-        symbol: "jy...",
-        description:
-          "Hor., aus vorwiegend künstlichem Substrat bestehend, Anteil technogener Komponenten 50-75%.",
+          "Horiz. aus vorwiegend künstlichem Substrat bestehend, Anteil technogener Komponenten 50–<75%.",
       },
       {
         symbol: "w...",
         description:
-          "Hor., dessen Bodenbildungsprozess irreversibel nicht mehr aktiv ist (z.B. wGo).",
+          "Horiz., dessen Bodenbildungsprozess irreversibel nicht mehr aktiv ist (z.B. wGo).",
       },
       {
         symbol: "x...",
@@ -179,7 +179,7 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
         description:
           "anthropogen umgelagertes künstliches Substrat, Anteil technogener Komponenten ≥75%.",
       },
-      { symbol: "IC", description: "Lockersubstrat, mit Spaten grabbar." },
+      { symbol: "lC", description: "Lockersubstrat, mit Spaten grabbar." },
       { symbol: "mC", description: "massives Festgestein." },
       {
         symbol: "nH",
@@ -201,9 +201,9 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "t...",
         description:
-          "Hor. aus litoralen, epilitoralen oder lagunären Ablagerungen der Nordsee, komb. mit A, C, F, G, S.",
+          "Horiz. aus litoralen, epilitoralen oder lagunären Ablagerungen der Nordsee, komb. mit A, C, F, G, S.",
       },
-      { symbol: "uH", description: "(Uebergangsmoor) H-Horiz." },
+      { symbol: "uH", description: "(Übergangsmoor) H-Horiz." },
       {
         symbol: "z...",
         description:
@@ -222,12 +222,12 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "Of",
         description:
-          "(schwed. Förmultningsskiktet) Fermentierung der org. Substanz, ca. 10-70 Vol.% der organischen Feinsubstanz sind geschwärzte Streureste.",
+          "(schwed. Förmultningsskiktet) Fermentierung der org. Substanz, Anteil organischer Feinsubstanz 10–<70 Vol.%.",
       },
       {
         symbol: "Oh",
         description:
-          "(humos) O-Horizont, mit organische Feinsubstanz >70 Vol.%.",
+          "(humos) O-Horizont, Anteil organischer Feinsubstanz ≥70 Vol.%.",
       },
       {
         symbol: "Ai",
@@ -237,7 +237,7 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "Ah, Kh, Gh",
         description:
-          "(Humus) Akkum. von org. Subst. in Mineralbodenhorizont (≥0,5-8% Corg).",
+          "(Humus) Akkum. von org. Subst. in Mineralbodenhorizont (≥0,5–<8% Corg).",
       },
       { symbol: "Ax", description: "(gemixt) biogen durchmischt." },
       {
@@ -248,12 +248,12 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "Aa",
         description:
-          "(anmoorig) Akkumulation von organischer Substanz (8-<15% Corg).",
+          "(anmoorig) Akkumulation von organischer Substanz (8–<15% Corg).",
       },
       {
         symbol: "Ab",
         description:
-          "(abmoorig) durch Entwässerung und Abbau der organischen Substanz oder durch Einmischung mineralischen Materials aus H- und U-Horizonten entstanden (8-<15% Corg).",
+          "(abmoorig) durch Entwässerung und Abbau der organischen Substanz oder durch Einmischung mineralischen Materials aus H- und U-Horizonten entstanden (8–<15% Corg).",
       },
       {
         symbol: "Kbh",
@@ -287,7 +287,7 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "Tu",
         description:
-          "Rubefizierter (rötlich gefärbter) Unterbodenh. (in Deutschland fossil oder reliktisch).",
+          "Rubefizierter (rötlich gefärbter) Unterbodenhoriz. (in Deutschland fossil oder reliktisch).",
       },
       {
         symbol: "Bj",
@@ -332,14 +332,14 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "Ee",
         description:
-          "(eluvial) Sauerbleichung, fahl, violettstictig/fleckig oder gebleichte Quarzkörner, kaum organische Substanz, Munsell-Value oft ≥4/ (≥5/ wenn trocken) sowie Quotient von Value: Chroma > 2,5 und über einem Kh, Ksh, Ks oder Ksv liegend.",
+          "(eluvial) Sauerbleichung, fahl, violettstichig/fleckig oder gebleichte Quarzkörner, kaum organische Substanz, Munsell-Value oft ≥4/ (≥5/ wenn trocken) sowie Quotient von Value: Chroma > 2,5 und über einem Kh, Ksh, Ks oder Ksv liegend.",
       },
       {
         symbol: "Ks",
         description:
           "(Sesquioxid) Mit Sesquioxiden (Aluminium- und Eisen(hydr)oxide) durch Umlagerung angereichert.",
       },
-      { symbol: "Kbs", description: "Gebänderte Sesquioxid Anreicherung." },
+      { symbol: "Kbs", description: "Gebänderte Sesquioxidanreicherung." },
     ],
   },
   {
@@ -374,7 +374,7 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "Sg",
         description:
-          "Haftnasser S-Horizont mit >80 Flächen-% diffuse Nassbleichungs- und Oxidationsmerkmale, Luftmangel bereits bei Feldkapazität, sehr niedrige Luftkapazität, hoher Gehalt an U und feinem fS.",
+          "Haftnasser S-Horizont mit >80 Flächen-% diffusen Nassbleichungs- und Oxidationsmerkmale, Luftmangel bereits bei Feldkapazität, sehr niedrige Luftkapazität, hoher Gehalt an U und feinem fS.",
       },
     ],
   },
@@ -384,12 +384,12 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "Go, (Fo, Yo)",
         description:
-          "(oxidiert) Im GW-Schwankungsbereich (einschl. Bereich des Kapillarsaumes) entstanden und >5 Flächen-% Rost- oder/und Karbonatflecken, besonders an Aggregatoberflächen.",
+          "(oxidiert) Im GW-Schwankungsbereich (einschl. Bereich des Kapillarsaumes) entstanden und >5 Flächen-% Rost- oder/und Carbonatflecken, besonders an Aggregatoberflächen.",
       },
       {
         symbol: "Gr, (Fr, Hr, Sr, Yr)",
         description:
-          "(reduziert) >300 Tage im Jahr nass wenn nicht entwässert, und mit einem Munsell Farbton von N1 (schwarz) bis N8 (weiß) oder von 5Y (grau), 5G (graugrün) bzw. 5B (blaugrau) bei einem Chroma <1,5 (bei 5G <2,5), <5 Flächen-% Rostfl., ≥95 Flächen-% Reduktionsfarben.",
+          "(reduziert) >300 Tage im Jahr nass, wenn nicht entwässert, und mit einem Munsell-Farbton von N1 (schwarz) bis N8 (weiß) oder von 5Y (grau), 5G (graugrün) bzw. 5B (blaugrau) bei einem Chroma <1,5 (bei 5G <2,5), <5 Flächen-% Rostfl., ≥95 Flächen-% Reduktionsfarben.",
       },
       {
         symbol: "Gor, ...",
@@ -408,7 +408,7 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
     data: [
       {
         symbol: "...c",
-        description: "((K)Carbonat) Erkennbare sekundäre Karbonatanreicherung.",
+        description: "(Carbonat) Erkennbare sekundäre Carbonatanreicherung.",
       },
       {
         symbol: "Hz, Az, Gz",
@@ -418,11 +418,11 @@ export const HORIZONT_SECTIONS: HorizontSection[] = [
       {
         symbol: "Bk, Ck, Gk",
         description:
-          "(Konkretion) Konkretionäre Karbonat- (...kc), Eisen- (...ks) Anreicherung.",
+          "(Konkretion) Konkretionäre Carbonat- (...kc), Eisen- (...ks) Anreicherung.",
       },
       {
         symbol: "Km, Gm",
-        description: "(massiv) Verfestigte (Sesquioxid) Anreicherung.",
+        description: "(massiv) Verfestigte (Sesquioxid-)Anreicherung.",
       },
       {
         symbol: "Vf",

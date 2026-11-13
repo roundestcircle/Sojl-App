@@ -1,14 +1,11 @@
 import type { ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
 import PictureTaker from "@/components/tools/PictureTaker";
-import BodenartTool from "@/components/tools/BodenartTool";
 import SoilShareScroll from "@/components/tools/SoilShareScroll";
-import CarbonatTool from "@/components/tools/CarbonatTool";
+import TreeTool from "@/components/tools/TreeTool";
 import PackungsdichteTool from "@/components/tools/PackungsdichteTool";
-import FeinwurzelnTool from "@/components/tools/FeinwurzelnTool";
-import GefuegeTool from "@/components/tools/GefuegeTool";
 import HorizontLexikonContent from "@/components/lexikon/HorizontLexikonContent";
-import { ToolModal } from "../shared";
+import { ToolModal } from "@/components/ui/ToolModal";
 import type { HorizontFormData, HorizontTool } from "./types";
 
 type Accept = (value: string) => void;
@@ -27,14 +24,18 @@ const TOOLS: Record<
     render: (accept) => <PictureTaker onConfirm={accept("farbe_munsell")} />,
   },
   bodenart: {
-    render: (accept) => <BodenartTool onConfirm={accept("bodenart")} />,
+    render: (accept) => (
+      <TreeTool kind="bodenart" onConfirm={accept("bodenart")} />
+    ),
   },
   anteil: {
     padded: true,
     render: (accept) => <SoilShareScroll onConfirm={accept("anteil")} />,
   },
   carbonat: {
-    render: (accept) => <CarbonatTool onConfirm={accept("carbonat")} />,
+    render: (accept) => (
+      <TreeTool kind="carbonat" onConfirm={accept("carbonat")} />
+    ),
   },
   packungsdichte: {
     render: (accept) => (
@@ -42,10 +43,14 @@ const TOOLS: Record<
     ),
   },
   feinwurzeln: {
-    render: (accept) => <FeinwurzelnTool onConfirm={accept("feinwurzeln")} />,
+    render: (accept) => (
+      <TreeTool kind="feinwurzeln" onConfirm={accept("feinwurzeln")} />
+    ),
   },
   gefuege: {
-    render: (accept) => <GefuegeTool onConfirm={accept("gefuege")} />,
+    render: (accept) => (
+      <TreeTool kind="gefuege" onConfirm={accept("gefuege")} />
+    ),
   },
   lexikon: { render: () => <HorizontLexikonContent /> },
 };

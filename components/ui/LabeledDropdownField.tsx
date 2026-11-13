@@ -24,6 +24,11 @@ type Props = {
   onChange: (code: string) => void;
 };
 
+/** True when the option's code or label contains the (lowercased) query. */
+function matches(o: LabeledOption, q: string): boolean {
+  return `${o.code} ${o.label ?? ""}`.toLowerCase().includes(q);
+}
+
 function normalize(
   options: LabeledOption[] | readonly string[] | undefined,
 ): LabeledOption[] | undefined {
@@ -47,19 +52,14 @@ export default function LabeledDropdownField({
   onChange,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const flatOptions = normalize(options);
+  const flatOptions = useMemo(() => normalize(options), [options]);
   const [query, setQuery] = useState("");
 
   const filteredFlat = useMemo(() => {
     if (!flatOptions) return undefined;
     const q = query.trim().toLowerCase();
     if (!q) return flatOptions;
-    return flatOptions.filter((o) => {
-      const label = (o.label ?? "") + " " + o.code;
-      return (
-        label.toLowerCase().includes(q) || o.code.toLowerCase().includes(q)
-      );
-    });
+    return flatOptions.filter((o) => matches(o, q));
   }, [flatOptions, query]);
 
   const filteredSections = useMemo(() => {
@@ -69,12 +69,7 @@ export default function LabeledDropdownField({
     return sections
       .map((s) => ({
         ...s,
-        data: s.data.filter((o) => {
-          const label = (o.label ?? "") + " " + o.code;
-          return (
-            label.toLowerCase().includes(q) || o.code.toLowerCase().includes(q)
-          );
-        }),
+        data: s.data.filter((o) => matches(o, q)),
       }))
       .filter((s) => s.data.length > 0);
   }, [sections, query]);

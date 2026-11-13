@@ -9,15 +9,21 @@ import ProfilSection from "./ProfilSection";
 import StandorteigenschaftenSection from "./StandorteigenschaftenSection";
 import ErweiterteSection from "./ErweiterteSection";
 import BerechneteWerteSection from "./BerechneteWerteSection";
+import { degreeStringsToUtm, utmStringsToDegrees } from "@/lib/geo/coordinates";
+import { useFormAutosave } from "@/hooks/useFormAutosave";
 import { PLACEHOLDER_COLOR } from "../shared";
 import {
   toAufnahmeFormDefaults,
   toAufnahmeDetails,
-  utmStringsToDegrees,
-  degreeStringsToUtm,
+  DEGREE_FIELDS,
+  UTM_FIELDS,
   type AufnahmeFormData,
   type CoordMode,
+  type CoordSource,
 } from "./types";
+
+const UTM_FIELD_SET: ReadonlySet<string> = new Set(UTM_FIELDS);
+const DEGREE_FIELD_SET: ReadonlySet<string> = new Set(DEGREE_FIELDS);
 
 type Props = {
   initialData: Aufnahme;
@@ -31,7 +37,9 @@ type Props = {
 /**
  * Site data ("Standortdaten") form for an Aufnahme.
  * Supports UTM and decimal-degree coordinate entry with conversion on toggle.
- * All field changes autosave via onSave (no explicit save button).
+ * All field changes autosave via onSave (no explicit save button). Stored
+ * coordinates are saved unchanged until the user edits a coordinate field
+ * (typing or the GPS button), so toggling the input mode never rounds them.
  *
  * Scrolling (incl. keyboard avoidance) is handled by the surrounding screen.
  */
@@ -44,40 +52,32 @@ export default function AufnahmeForm({
   const methods = useForm<AufnahmeFormData>({
     defaultValues: toAufnahmeFormDefaults(initialData),
   });
-  const { control, setValue, getValues, watch } = methods;
+  const { control, setValue, getValues } = methods;
 
-  // Which coordinate input mode is shown. The ref mirrors it so the autosave
-  // subscription (a long-lived closure) always sees the current value.
   const [mode, setMode] = useState<CoordMode>("utm");
-  const modeRef = useRef<CoordMode>("utm");
-  const isFirstWatch = useRef(true);
-  const onSaveRef = useRef(onSave);
-  onSaveRef.current = onSave;
+  // Source of the coordinates to save (see CoordSource); the flag suppresses
+  // source tracking while the toggle writes converted values.
+  const coordSourceRef = useRef<CoordSource>("stored");
+  const convertingRef = useRef(false);
+
+  // Declared before the Gründigkeit effect so its mount-time write is saved too.
+  useFormAutosave(methods, (values, changed) => {
+    if (changed && !convertingRef.current) {
+      if (UTM_FIELD_SET.has(changed)) coordSourceRef.current = "utm";
+      else if (DEGREE_FIELD_SET.has(changed))
+        coordSourceRef.current = "degrees";
+    }
+    onSave(toAufnahmeDetails(values, coordSourceRef.current, initialData));
+  });
 
   useEffect(() => {
     if (calcGrundigkeit !== undefined) setValue("grundigkeit", calcGrundigkeit);
   }, [calcGrundigkeit, setValue]);
 
-  // Autosave: subscribe once and dispatch through onSaveRef so the subscription
-  // survives onSave identity changes (would otherwise drop the first tick after resub).
-  useEffect(() => {
-    const { unsubscribe } = watch((data) => {
-      if (isFirstWatch.current) {
-        isFirstWatch.current = false;
-        return;
-      }
-      onSaveRef.current(
-        toAufnahmeDetails(data as Partial<AufnahmeFormData>, modeRef.current),
-      );
-    });
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   /** Switches coordinate input mode, converting the current values so nothing is lost. */
   const handleToggleMode = () => {
     const newMode: CoordMode = mode === "utm" ? "degrees" : "utm";
-    modeRef.current = newMode;
+    convertingRef.current = true;
     if (newMode === "degrees") {
       const deg = utmStringsToDegrees(
         getValues("easting"),
@@ -96,6 +96,7 @@ export default function AufnahmeForm({
         setValue("zone", utm.zone);
       }
     }
+    convertingRef.current = false;
     setMode(newMode);
   };
 

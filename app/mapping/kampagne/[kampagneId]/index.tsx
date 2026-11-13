@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -21,8 +15,13 @@ import {
   useLocalSearchParams,
   useNavigation,
 } from "expo-router";
-import * as Location from "expo-location";
-import { haversineMeters, bearingDegrees, smoothHeading } from "@/lib/geo/geo";
+import {
+  haversineMeters,
+  bearingDegrees,
+  isWithinProximity,
+} from "@/lib/geo/geo";
+import { storedLatLon } from "@/lib/geo/coordinates";
+import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import {
@@ -42,11 +41,28 @@ import {
 // Extends Aufnahme with a derived horizon count used in the list subtitle
 type AufnahmeRow = Aufnahme & { horizontCount: number };
 
-// A row is highlighted green once the user is within this many metres of it.
-const PROXIMITY_RADIUS_M = 5;
+// Distance (m) and bearing (° from true north) from the user to an Aufnahme.
+type RowNav = { distance: number; bearing: number };
 
-// Light smoothing for the per-row compass; only re-render the list when the
-// heading has moved at least this many degrees, to keep the FlatList calm.
+/**
+ * Ids of the Aufnahmen the user is currently at. Each row keeps its previous
+ * state for the hysteresis in `isWithinProximity`, so the highlight does not
+ * flicker while the GPS fix jitters around the radius.
+ */
+function nextNearIds(
+  prev: ReadonlySet<number>,
+  nav: ReadonlyMap<number, RowNav>,
+  accuracy: number | null | undefined,
+): ReadonlySet<number> {
+  const ids = new Set<number>();
+  for (const [id, { distance }] of nav) {
+    if (isWithinProximity(distance, accuracy, prev.has(id))) ids.add(id);
+  }
+  return ids;
+}
+
+// Per-row compass: light heading smoothing, list re-render only on changes of
+// at least this many degrees.
 const ROW_HEADING_SMOOTHING = 0.2;
 const ROW_HEADING_THRESHOLD_DEG = 2;
 
@@ -74,101 +90,57 @@ export default function SessionDetailScreen() {
   const [showOffeneWarnung, setShowOffeneWarnung] = useState(false);
   // Whether the live proximity detector is active
   const [tracking, setTracking] = useState(false);
-  // The user's current position while tracking (null when off or not yet fixed)
-  const [currentPos, setCurrentPos] = useState<{
-    lat: number;
-    lon: number;
-  } | null>(null);
-  // The device's smoothed compass heading while tracking (null when unavailable)
-  const [heading, setHeading] = useState<number | null>(null);
-  // Active position/heading subscriptions; removed when tracking stops
-  const watchRef = useRef<Location.LocationSubscription | null>(null);
-  const headingRef = useRef<Location.LocationSubscription | null>(null);
-  // Smoothed heading accumulator (decoupled from the throttled state above)
-  const smoothedHeadingRef = useRef<number | null>(null);
-  // True between a start request and its matching stop. Lets the async
-  // startTracking bail (and tear down any watch it just created) if tracking was
-  // switched off while a watchPosition/watchHeading promise was still in flight.
-  const wantTrackingRef = useRef(false);
+  const { pos: currentPos, heading } = useLiveLocation(tracking, {
+    headingSmoothing: ROW_HEADING_SMOOTHING,
+    headingThresholdDeg: ROW_HEADING_THRESHOLD_DEG,
+    onError: (_status, message) => {
+      setTracking(false);
+      Alert.alert("Standort nicht verfügbar", message);
+    },
+  });
 
-  /** Stops the location/heading watches and clears the current position. */
-  const stopTracking = useCallback(() => {
-    wantTrackingRef.current = false;
-    watchRef.current?.remove();
-    watchRef.current = null;
-    headingRef.current?.remove();
-    headingRef.current = null;
-    smoothedHeadingRef.current = null;
-    setTracking(false);
-    setCurrentPos(null);
-    setHeading(null);
-  }, []);
-
-  /** Requests permission and starts watching the device position + heading. */
-  const startTracking = useCallback(async () => {
-    wantTrackingRef.current = true;
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (!wantTrackingRef.current) return;
-    if (status !== "granted") {
-      wantTrackingRef.current = false;
-      Alert.alert(
-        "Standort nicht verfügbar",
-        "Bitte erlaube den Zugriff auf den Standort, um Aufnahmen in der Nähe zu erkennen.",
-      );
-      return;
-    }
-    const posSub = await Location.watchPositionAsync(
-      { accuracy: Location.Accuracy.High, distanceInterval: 1 },
-      (loc) =>
-        setCurrentPos({
-          lat: loc.coords.latitude,
-          lon: loc.coords.longitude,
-        }),
-    );
-    if (!wantTrackingRef.current) {
-      posSub.remove();
-      return;
-    }
-    watchRef.current = posSub;
-    const headSub = await Location.watchHeadingAsync((h) => {
-      // trueHeading is -1 when unavailable; fall back to magnetic heading.
-      const raw = h.trueHeading >= 0 ? h.trueHeading : h.magHeading;
-      const smoothed = smoothHeading(
-        smoothedHeadingRef.current,
-        raw,
-        ROW_HEADING_SMOOTHING,
-      );
-      smoothedHeadingRef.current = smoothed;
-      // Only push to state (re-rendering the list) on meaningful changes.
-      setHeading((prev) => {
-        if (prev == null) return smoothed;
-        const delta = Math.abs(((smoothed - prev + 540) % 360) - 180);
-        return delta >= ROW_HEADING_THRESHOLD_DEG ? smoothed : prev;
-      });
-    });
-    if (!wantTrackingRef.current) {
-      headSub.remove();
-      watchRef.current?.remove();
-      watchRef.current = null;
-      return;
-    }
-    headingRef.current = headSub;
-    setTracking(true);
-  }, []);
-
-  /** Toggles the proximity detector on/off. */
-  const handleToggleTracking = () => {
-    if (tracking) stopTracking();
-    else startTracking();
-  };
-
-  // Stop tracking when leaving the screen (blur) and on unmount.
+  // Stop tracking when leaving the screen (the hook also cleans up on unmount).
   useFocusEffect(
     useCallback(() => {
-      return () => stopTracking();
-    }, [stopTracking]),
+      return () => setTracking(false);
+    }, []),
   );
-  useEffect(() => () => stopTracking(), [stopTracking]);
+
+  // WGS84 position of each Aufnahme: GPS, else derived from UTM (CSV imports).
+  const targets = useMemo(
+    () => aufnahmen.map((a) => ({ id: a.id, ll: storedLatLon(a) })),
+    [aufnahmen],
+  );
+
+  // Distance and bearing to every located Aufnahme while tracking.
+  const nav = useMemo(() => {
+    const m = new Map<number, RowNav>();
+    if (!currentPos) return m;
+    for (const { id, ll } of targets) {
+      if (!ll) continue;
+      m.set(id, {
+        distance: haversineMeters(
+          currentPos.lat,
+          currentPos.lon,
+          ll.lat,
+          ll.lon,
+        ),
+        bearing: bearingDegrees(currentPos.lat, currentPos.lon, ll.lat, ll.lon),
+      });
+    }
+    return m;
+  }, [currentPos, targets]);
+
+  // Rows within reach; recomputed from the previous set whenever `nav` changes
+  // (state adjusted during render, see React docs "storing information from
+  // previous renders").
+  const [near, setNear] = useState<{
+    nav: ReadonlyMap<number, RowNav>;
+    ids: ReadonlySet<number>;
+  }>(() => ({ nav, ids: new Set() }));
+  if (near.nav !== nav) {
+    setNear({ nav, ids: nextNearIds(near.ids, nav, currentPos?.accuracy) });
+  }
 
   // Update header title whenever the session name is loaded
   useLayoutEffect(() => {
@@ -232,7 +204,9 @@ export default function SessionDetailScreen() {
   /** Marks the campaign as abgeschlossen and navigates back to the campaign list. */
   const doBeenden = () => {
     closeFeldkampagne(id);
-    router.replace("/mapping");
+    // Pop back to the campaign list instead of pushing a second copy of it;
+    // replaces this screen when the list is not in the stack (e.g. after import).
+    router.dismissTo("/mapping");
   };
 
   /**
@@ -259,32 +233,15 @@ export default function SessionDetailScreen() {
           </Text>
         }
         renderItem={({ item }) => {
-          // Distance to this row's coordinates while tracking (null otherwise).
-          const distance =
-            currentPos && item.gps_lat != null && item.gps_lon != null
-              ? haversineMeters(
-                  currentPos.lat,
-                  currentPos.lon,
-                  item.gps_lat,
-                  item.gps_lon,
-                )
-              : null;
-          const isNear = distance != null && distance <= PROXIMITY_RADIUS_M;
-          // Bearing to this row, rotated by the device heading so the little
-          // arrow points the way you'd walk to reach the Aufnahme.
+          // Distance/bearing while tracking (undefined otherwise or without
+          // coordinates).
+          const rowNav = nav.get(item.id);
+          const distance = rowNav?.distance ?? null;
+          const isNear = near.ids.has(item.id);
+          // Bearing rotated by the device heading so the little arrow points
+          // the way you'd walk to reach the Aufnahme.
           const arrowAngle =
-            distance != null &&
-            heading != null &&
-            currentPos &&
-            item.gps_lat != null &&
-            item.gps_lon != null
-              ? bearingDegrees(
-                  currentPos.lat,
-                  currentPos.lon,
-                  item.gps_lat,
-                  item.gps_lon,
-                ) - heading
-              : null;
+            rowNav && heading != null ? rowNav.bearing - heading : null;
 
           return (
             <View
@@ -356,7 +313,7 @@ export default function SessionDetailScreen() {
               borderColor: colors.primary,
             },
           ]}
-          onPress={handleToggleTracking}
+          onPress={() => setTracking((t) => !t)}
         >
           <Text style={[styles.maintext, tracking && { color: "#fff" }]}>
             {tracking ? "Standortverfolgung stoppen" : "Standort verfolgen"}
@@ -365,7 +322,7 @@ export default function SessionDetailScreen() {
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            const aufnahmeId = createAufnahme(0, id);
+            const aufnahmeId = createAufnahme(id);
             router.push(`/mapping/${aufnahmeId}`);
           }}
         >

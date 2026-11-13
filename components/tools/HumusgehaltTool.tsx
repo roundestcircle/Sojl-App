@@ -2,13 +2,13 @@ import { useState, useMemo } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   Modal,
 } from "react-native";
 import ValidatedField from "@/components/ui/ValidatedField";
+import { ToolModal } from "@/components/ui/ToolModal";
 import {
   validateTonanteil,
   validatePh,
@@ -19,72 +19,71 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import PictureTaker from "@/components/tools/PictureTaker";
-import BodenartTool from "@/components/tools/BodenartTool";
+import TreeTool from "@/components/tools/TreeTool";
 import {
-  estimateHumus,
+  estimateHumusFromInputs,
   humusKlasse,
   parseMunsell,
   chromaToClass,
   type ChromaClass,
 } from "@/lib/calc/renger1987";
-import { bodenartToClay } from "@/lib/calc/bodenartClay";
+import {
+  bodenartToClay,
+  bodenartToClayMidpoint,
+} from "@/lib/calc/bodenartClay";
+import { parseDecimal } from "@/lib/number";
 
 type Props = {
-  onConfirm?: (klasse: string, pct: string) => void;
-  /** Pre-fill from HorizontForm: farbe_munsell string e.g. "10YR 4/3" */
-  initialFarbeMunsell?: string;
-  /** Pre-fill from HorizontForm: ph_cacl2 string */
-  initialPH?: string;
-  /** Pre-fill from HorizontForm: bodenart string e.g. "Su2" */
-  initialBodenart?: string;
+  /** Receives the estimated Humusgehalt in % (dot decimal, e.g. "2.4"). */
+  onConfirm?: (pct: string) => void;
 };
 
-const CHROMA_OPTIONS: { label: string; value: ChromaClass; sub: string }[] = [
-  { label: "> 6", value: "high", sub: "leuchtend" },
-  { label: "3,5 – 6", value: "mid", sub: "mittel" },
-  { label: "< 3,5", value: "low", sub: "matt / grau" },
+/**
+ * Chroma classes of the Renger (1987) diagram. `chroma` is a representative
+ * Munsell Chroma inside the class, used to build the notation passed to
+ * `estimateHumusFromInputs`.
+ */
+const CHROMA_OPTIONS: {
+  label: string;
+  value: ChromaClass;
+  sub: string;
+  chroma: number;
+}[] = [
+  { label: "> 6", value: "high", sub: "leuchtend", chroma: 8 },
+  { label: "3,5 – 6", value: "mid", sub: "mittel", chroma: 4 },
+  { label: "< 3,5", value: "low", sub: "matt / grau", chroma: 2 },
 ];
 
-function initFromMunsell(s?: string): {
-  valueStr: string;
-  chroma: ChromaClass | null;
-} {
-  if (!s) return { valueStr: "", chroma: null };
-  const parsed = parseMunsell(s);
-  if (!parsed) return { valueStr: "", chroma: null };
-  return {
-    valueStr: String(parsed.value),
-    chroma: chromaToClass(parsed.chroma),
-  };
-}
+/** Valid KA5/KA6 Bodenart codes, grouped by Hauptbodenart (error hint). */
+const BODENART_HINT = [
+  "Ss, Su2, Su3, Su4, Sl2, Sl3, Sl4, Slu, St2, St3",
+  "Uu, Us, Uls, Ut2, Ut3, Ut4",
+  "Ls2, Ls3, Ls4, Lu, Lt2, Lt3, Lts",
+  "Ts2, Ts3, Ts4, Tl, Tu2, Tu3, Tu4, Tt",
+].join("\n");
 
-export default function HumusgehaltTool({
-  onConfirm,
-  initialFarbeMunsell,
-  initialPH,
-  initialBodenart,
-}: Props) {
-  const { valueStr: initValue, chroma: initChroma } =
-    initFromMunsell(initialFarbeMunsell);
-
-  const [chroma, setChroma] = useState<ChromaClass | null>(initChroma);
-  const [valueStr, setValueStr] = useState(initValue);
-  const [bodenart, setBodenart] = useState(initialBodenart ?? "");
+export default function HumusgehaltTool({ onConfirm }: Props) {
+  const [chroma, setChroma] = useState<ChromaClass | null>(null);
+  const [valueStr, setValueStr] = useState("");
+  const [bodenart, setBodenart] = useState("");
   const [clayStr, setClayStr] = useState("");
   const [clayRange, setClayRange] = useState<{
     min: number;
     max: number;
   } | null>(null);
-  const [phStr, setPhStr] = useState(initialPH ?? "");
+  const [phStr, setPhStr] = useState("");
   const [bodenartError, setBodenartError] = useState(false);
   const [activeModal, setActiveModal] = useState<"farbe" | "bodenart" | null>(
     null,
   );
 
   function estimateClayFromBodenart() {
-    const range = bodenartToClay(bodenart);
-    if (range !== null) {
-      setClayStr(String(Math.round((range.min + range.max) / 2)));
+    const check = validateBodenart(bodenart);
+    const canonical = check.valid ? (check.normalized ?? "") : "";
+    const midpoint = bodenartToClayMidpoint(canonical);
+    const range = bodenartToClay(canonical);
+    if (midpoint !== null && range !== null) {
+      setClayStr(String(midpoint));
       setClayRange(range);
     } else {
       setBodenartError(true);
@@ -92,15 +91,16 @@ export default function HumusgehaltTool({
   }
 
   const result = useMemo(() => {
-    const value = parseFloat(valueStr);
-    const pH = parseFloat(phStr);
-    const clay = parseFloat(clayStr);
-    if (!chroma || isNaN(value) || isNaN(pH) || isNaN(clay)) return null;
-    if (value < 1 || value > 8) return null;
-    if (pH < 2 || pH > 9) return null;
-    if (clay < 0 || clay > 100) return null;
-    const humus = estimateHumus(value, chroma, pH, clay);
-    return { humus, ...humusKlasse(humus) };
+    const value = parseDecimal(valueStr);
+    const opt = CHROMA_OPTIONS.find((o) => o.value === chroma);
+    if (!opt || value === null) return null;
+    const estimate = estimateHumusFromInputs(
+      `${value}/${opt.chroma}`,
+      phStr,
+      clayStr,
+    );
+    if (!estimate) return null;
+    return { ...estimate, ...humusKlasse(estimate.pct) };
   }, [valueStr, chroma, phStr, clayStr]);
 
   return (
@@ -173,9 +173,7 @@ export default function HumusgehaltTool({
               placeholder="z.B. Su2"
               placeholderTextColor={colors.primary + "66"}
               value={bodenart}
-              onChangeText={(t) => {
-                setBodenart(t);
-              }}
+              onChangeText={setBodenart}
               validate={validateBodenart}
               fieldLabel="Bodenart"
             />
@@ -191,7 +189,7 @@ export default function HumusgehaltTool({
         {/* ── Tongehalt ── */}
         <View style={localStyles.fieldGroup}>
           <Text style={localStyles.label}>Tongehalt (%)</Text>
-          <View style={localStyles.rowWithBtn}>
+          <View style={localStyles.fieldWithTool}>
             <ValidatedField
               style={[styles.input, { flex: 1 }]}
               keyboardType="decimal-pad"
@@ -234,10 +232,15 @@ export default function HumusgehaltTool({
         {/* ── Result ── */}
         {result ? (
           <View style={styles.resultBox}>
-            <Text style={styles.resultValue}>{result.humus} %</Text>
+            <Text style={styles.resultValue}>{result.pct} %</Text>
             <Text style={styles.resultLabel}>
               {result.klasse} — {result.label}
             </Text>
+            {result.clamped && (
+              <Text style={localStyles.hint}>
+                Eingabe außerhalb des Diagramms – Wert am Rand abgelesen
+              </Text>
+            )}
           </View>
         ) : (
           <View style={styles.resultBox}>
@@ -252,7 +255,7 @@ export default function HumusgehaltTool({
               styles.actionButton,
               { alignSelf: "stretch", marginTop: 8 },
             ]}
-            onPress={() => onConfirm(result.klasse, String(result.humus))}
+            onPress={() => onConfirm(String(result.pct))}
           >
             <Text style={styles.actionButtonText}>
               Wert übernehmen ({result.klasse})
@@ -262,52 +265,36 @@ export default function HumusgehaltTool({
       </ScrollView>
 
       {/* ── Farbe modal ── */}
-      <Modal
+      <ToolModal
         visible={activeModal === "farbe"}
-        animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
+        onClose={() => setActiveModal(null)}
+        padded
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View style={localStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setActiveModal(null)}>
-              <Text style={localStyles.modalClose}>✕ Schließen</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ flex: 1, padding: 20 }}>
-            <PictureTaker
-              onConfirm={(munsell) => {
-                const parsed = parseMunsell(munsell);
-                if (parsed) {
-                  setValueStr(String(parsed.value));
-                  setChroma(chromaToClass(parsed.chroma));
-                }
-                setActiveModal(null);
-              }}
-            />
-          </View>
-        </SafeAreaView>
-      </Modal>
+        <PictureTaker
+          onConfirm={(munsell) => {
+            const parsed = parseMunsell(munsell);
+            if (parsed) {
+              setValueStr(String(parsed.value));
+              setChroma(chromaToClass(parsed.chroma));
+            }
+            setActiveModal(null);
+          }}
+        />
+      </ToolModal>
 
       {/* ── Bodenart modal ── */}
-      <Modal
+      <ToolModal
         visible={activeModal === "bodenart"}
-        animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
+        onClose={() => setActiveModal(null)}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View style={localStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setActiveModal(null)}>
-              <Text style={localStyles.modalClose}>✕ Schließen</Text>
-            </TouchableOpacity>
-          </View>
-          <BodenartTool
-            onConfirm={(result) => {
-              setBodenart(result);
-              setActiveModal(null);
-            }}
-          />
-        </SafeAreaView>
-      </Modal>
+        <TreeTool
+          kind="bodenart"
+          onConfirm={(result) => {
+            setBodenart(result);
+            setActiveModal(null);
+          }}
+        />
+      </ToolModal>
 
       <Modal
         visible={bodenartError}
@@ -319,16 +306,10 @@ export default function HumusgehaltTool({
           <SafeAreaView style={localStyles.modalCard}>
             <Text style={localStyles.modalTitle}>Ungültige Bodenart</Text>
             <Text style={localStyles.modalBody}>
-              „{bodenart}“ wurde nicht erkannt. Gültige Bodenarten (mit
-              optionaler Nummer, z.B. Su2):
+              „{bodenart}“ wurde nicht erkannt. Gültige Bodenarten (KA6-Code,
+              z.B. Su2):
             </Text>
-            <Text style={localStyles.modalList}>
-              S, Su, U, Sl, Slu{"\n"}
-              Us, Ut, St{"\n"}
-              Ls, Lu{"\n"}
-              Ts, Lts, Lt{"\n"}
-              Tl, Tu, T
-            </Text>
+            <Text style={localStyles.modalList}>{BODENART_HINT}</Text>
             <TouchableOpacity
               style={[
                 styles.actionButton,
@@ -398,11 +379,6 @@ const localStyles = StyleSheet.create({
   chromaBtnTextActive: {
     color: "#fff",
   },
-  rowWithBtn: {
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "center",
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
@@ -444,18 +420,5 @@ const localStyles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     alignItems: "center",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ccc",
-  },
-  modalClose: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

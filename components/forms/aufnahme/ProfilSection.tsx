@@ -11,11 +11,13 @@ import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import LabeledDropdownField from "@/components/ui/LabeledDropdownField";
 import ValidatedField from "@/components/ui/ValidatedField";
-import BodentypTool from "@/components/tools/BodentypTool";
+import TreeTool from "@/components/tools/TreeTool";
 import HorizontLexikonContent from "@/components/lexikon/HorizontLexikonContent";
 import HumusformLexikonContent from "@/components/lexikon/HumusformLexikonContent";
 import { validateEffektiverWurzelraum } from "@/lib/validation/fieldValidation";
-import { ToolModal, formStyles, PLACEHOLDER_COLOR } from "../shared";
+import { ToolModal } from "@/components/ui/ToolModal";
+import { HUMUSFORMEN } from "@/lib/calc/mappingMaths";
+import { formStyles, PLACEHOLDER_COLOR } from "../shared";
 import type { AufnahmeFormData } from "./types";
 
 type ProfilModal = "bodentyp" | "horizontLexikon" | "humusformLexikon";
@@ -92,7 +94,7 @@ export default function ProfilSection() {
             render={({ field: { onChange, value } }) => (
               <LabeledDropdownField
                 value={value}
-                options={["Mull", "Moder", "Rohhumus"]}
+                options={HUMUSFORMEN}
                 placeholder="Auswählen…"
                 onChange={onChange}
               />
@@ -173,7 +175,8 @@ export default function ProfilSection() {
           </TouchableOpacity>
         }
       >
-        <BodentypTool
+        <TreeTool
+          kind="bodentyp"
           onConfirm={(v) => {
             const [typPart, name] = v.split(" – ");
             setValue("bodtyp_abk", typPart.replace(/^Typ\s+/, ""));

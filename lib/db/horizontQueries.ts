@@ -1,4 +1,8 @@
 import db from "@/lib/db/db";
+import {
+  HORIZONT_DATA_COLUMNS,
+  type HorizontDataColumn,
+} from "@/lib/db/columns";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,36 +65,138 @@ export type Horizont = {
   tonanteil: string | null;
 };
 
+/** Every stored data column of a Horizont (see lib/db/columns.ts). */
+export type HorizontData = Pick<Horizont, HorizontDataColumn>;
+
+export type HorizontStatus = Horizont["status"];
+
+// ─── Status ───────────────────────────────────────────────────────────────────
+
+/**
+ * Fields that all must be filled for a Horizont to be considered `vollstaendig`.
+ * Only user-entered fields: derived values (Humusklasse, TRD, …) depend on these
+ * and would otherwise block completion when an input is "nb".
+ */
+export const HORIZONT_REQUIRED_FOR_VOLLSTAENDIG = [
+  "horizontname",
+  "tiefe_oben",
+  "tiefe_unten",
+  "bodenart",
+  "tonanteil",
+  "anteil",
+  "ph_cacl2",
+  "farbe_munsell",
+  "carbonat",
+  "packungsdichte",
+  "feinwurzeln",
+  "gefuege",
+] as const satisfies readonly HorizontDataColumn[];
+
+/** Automatically calculated columns; they never count as user input. */
+const DERIVED_COLUMNS: ReadonlySet<HorizontDataColumn> = new Set([
+  "maechtigk_dm",
+  "humus",
+  "humus_pct",
+  "trockenrohdichte",
+  "gpv_pct",
+  "gpv_lm2",
+  "lk_pct",
+  "lk_lm2",
+  "fk_pct",
+  "fk_lm2",
+  "nfk_pct",
+  "nfk_lm2",
+  "kak",
+  "basensaettigung",
+] as const);
+
+function isFilled(v: unknown): boolean {
+  return v !== null && v !== undefined && v !== "" && v !== "[]";
+}
+
+/**
+ * Derives the Horizont status from its data: `leer` when no user field is
+ * filled, `vollstaendig` when every required field is filled ("nb" counts as
+ * filled), otherwise `angefangen`.
+ */
+export function horizontStatus(data: Partial<HorizontData>): HorizontStatus {
+  if (HORIZONT_REQUIRED_FOR_VOLLSTAENDIG.every((f) => isFilled(data[f]))) {
+    return "vollstaendig";
+  }
+  const anyInput = HORIZONT_DATA_COLUMNS.some(
+    (c) => !DERIVED_COLUMNS.has(c) && isFilled(data[c]),
+  );
+  return anyInput ? "angefangen" : "leer";
+}
+
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
-/** Appends a new empty Horizont to an Aufnahme, numbered after the current last one. */
-export function addHorizont(aufnahmeId: number): void {
+const SET_CLAUSE = HORIZONT_DATA_COLUMNS.map((c) => `${c} = ?`).join(", ");
+const bindValues = (data: Partial<HorizontData>) =>
+  HORIZONT_DATA_COLUMNS.map((c) => data[c] ?? null);
+
+/**
+ * Appends a new empty Horizont to an Aufnahme, numbered after the current last
+ * one. Returns the new row id.
+ */
+export function addHorizont(aufnahmeId: number): number {
   // Single statement so concurrent inserts can't produce duplicate nummern.
-  db.runSync(
+  return db.runSync(
     `INSERT INTO horizonte (aufnahme_id, nummer, status)
      SELECT ?, COALESCE(MAX(nummer), 0) + 1, 'leer'
        FROM horizonte WHERE aufnahme_id = ?`,
     aufnahmeId,
     aufnahmeId,
-  );
+  ).lastInsertRowId;
 }
 
 /**
- * Overrides a Horizont's status by id. Used by ZIP import to restore the exported
- * status exactly (saveHorizont only ever derives 'angefangen'/'vollstaendig', never 'leer').
+ * Inserts a complete Horizont with an explicit nummer and status (ZIP import,
+ * which restores the exported state exactly). Returns the new row id.
  */
-export function setHorizontStatus(id: number, status: string): void {
-  db.runSync(`UPDATE horizonte SET status = ? WHERE id = ?`, status, id);
+export function insertHorizont(
+  aufnahmeId: number,
+  nummer: number,
+  status: HorizontStatus,
+  data: Partial<HorizontData>,
+): number {
+  const cols = HORIZONT_DATA_COLUMNS.join(", ");
+  const marks = HORIZONT_DATA_COLUMNS.map(() => "?").join(", ");
+  return db.runSync(
+    `INSERT INTO horizonte (aufnahme_id, nummer, status, ${cols})
+     VALUES (?, ?, ?, ${marks})`,
+    aufnahmeId,
+    nummer,
+    status,
+    ...bindValues(data),
+  ).lastInsertRowId;
 }
 
-/** Deletes a Horizont by id. */
+/**
+ * Deletes a Horizont and closes the gap in the numbering of the following ones,
+ * so `nummer` always runs 1..n in visual order.
+ */
 export function deleteHorizont(id: number): void {
-  db.runSync(`DELETE FROM horizonte WHERE id = ?`, id);
+  db.withTransactionSync(() => {
+    const row = db.getFirstSync<{ aufnahme_id: number; nummer: number }>(
+      `SELECT aufnahme_id, nummer FROM horizonte WHERE id = ?`,
+      id,
+    );
+    if (!row) return;
+    db.runSync(`DELETE FROM horizonte WHERE id = ?`, id);
+    db.runSync(
+      `UPDATE horizonte SET nummer = nummer - 1
+        WHERE aufnahme_id = ? AND nummer > ?`,
+      row.aufnahme_id,
+      row.nummer,
+    );
+  });
 }
 
 /**
  * Moves a Horizont one position up or down within its Aufnahme and renumbers all
- * horizons sequentially (1..n) so `nummer` always matches the visual order.
+ * horizons sequentially (1..n) so `nummer` always matches the visual order (this
+ * also repairs gaps left by older app versions).
  * No-op if the horizon is already at the top (up) or bottom (down).
  */
 export function moveHorizont(
@@ -104,18 +210,11 @@ export function moveHorizont(
   const target = direction === "up" ? index - 1 : index + 1;
   if (target < 0 || target >= horizonte.length) return;
 
-  // Swap the two rows, then renumber everyone sequentially by stable id so the
-  // renumbering can't transiently collide on `nummer`.
   [horizonte[index], horizonte[target]] = [horizonte[target], horizonte[index]];
   db.withTransactionSync(() => {
     horizonte.forEach((h, i) => {
-      const newNummer = i + 1;
-      if (h.nummer !== newNummer) {
-        db.runSync(
-          `UPDATE horizonte SET nummer = ? WHERE id = ?`,
-          newNummer,
-          h.id,
-        );
+      if (h.nummer !== i + 1) {
+        db.runSync(`UPDATE horizonte SET nummer = ? WHERE id = ?`, i + 1, h.id);
       }
     });
   });
@@ -143,203 +242,23 @@ export function getHorizont(
   );
 }
 
-/**
- * Fields that all must be filled for a Horizont to be considered `vollstaendig`.
- * Excludes Erweiterte Bodenaufnahme fields and Automatisch berechnete Werte.
- */
-export const HORIZONT_REQUIRED_FOR_VOLLSTAENDIG = [
-  "horizontname",
-  "tiefe_oben",
-  "tiefe_unten",
-  "bodenart",
-  "anteil",
-  "ph_cacl2",
-  "farbe_munsell",
-  "humus",
-  "carbonat",
-  "packungsdichte",
-  "feinwurzeln",
-  "gefuege",
-] as const satisfies readonly (keyof Horizont)[];
-
-/**
- * Saves form data for a Horizont and updates its status.
- * Status: vollstaendig if every field in HORIZONT_REQUIRED_FOR_VOLLSTAENDIG is filled, else angefangen.
- */
+/** Saves all data columns of a Horizont and re-derives its status. */
 export function saveHorizont(
   aufnahmeId: number,
   nummer: number,
-  data: Partial<
-    Pick<
-      Horizont,
-      | "horizontname"
-      | "farbe_munsell"
-      | "bodenart"
-      | "anteil"
-      | "notizen"
-      | "tiefe_oben"
-      | "tiefe_unten"
-      | "ph_cacl2"
-      | "humus"
-      | "humus_pct"
-      | "carbonat"
-      | "packungsdichte"
-      | "trockenrohdichte"
-      | "feinwurzeln"
-      | "gefuege"
-      | "maechtigk_dm"
-      | "bodenfeuchte"
-      | "konsistenz"
-      | "oxidationsmerkmale"
-      | "reduktionsmerkmale"
-      | "pedogene_merkmale"
-      | "lagerungsart_erw"
-      | "lagerungsform"
-      | "verfestigungsdichte"
-      | "hohlraeume"
-      | "zersetzungsstufe"
-      | "wurzelverteilung"
-      | "pilzmycel"
-      | "grobbodenanbindung"
-      | "geog_org_kohlenstoff"
-      | "geogenese"
-      | "periglaziaere_lagen"
-      | "stratigraphie"
-      | "grobkomponenten"
-      | "feinkomponenten"
-      | "beimengungen"
-      | "bes_strukturen"
-      | "geruch"
-      | "substratart"
-      | "probennummern"
-      | "gpv_pct"
-      | "gpv_lm2"
-      | "lk_pct"
-      | "lk_lm2"
-      | "fk_pct"
-      | "fk_lm2"
-      | "nfk_pct"
-      | "nfk_lm2"
-      | "kak"
-      | "basensaettigung"
-      | "tonanteil"
-    >
-  >,
+  data: Partial<HorizontData>,
 ) {
-  const isFull = HORIZONT_REQUIRED_FOR_VOLLSTAENDIG.every((f) => {
-    const v = data[f];
-    return v !== null && v !== undefined && v !== "";
-  });
-  const status = isFull ? "vollstaendig" : "angefangen";
-
   db.runSync(
-    `UPDATE horizonte
-     SET horizontname       = ?,
-         farbe_munsell      = ?,
-         bodenart           = ?,
-         anteil             = ?,
-         notizen            = ?,
-         tiefe_oben         = ?,
-         tiefe_unten        = ?,
-         ph_cacl2           = ?,
-         humus              = ?,
-         humus_pct          = ?,
-         carbonat           = ?,
-         packungsdichte     = ?,
-         trockenrohdichte   = ?,
-         feinwurzeln        = ?,
-         gefuege            = ?,
-         maechtigk_dm       = ?,
-         bodenfeuchte       = ?,
-         konsistenz         = ?,
-         oxidationsmerkmale = ?,
-         reduktionsmerkmale = ?,
-         pedogene_merkmale  = ?,
-         lagerungsart_erw   = ?,
-         lagerungsform      = ?,
-         verfestigungsdichte = ?,
-         hohlraeume         = ?,
-         zersetzungsstufe   = ?,
-         wurzelverteilung   = ?,
-         pilzmycel          = ?,
-         grobbodenanbindung = ?,
-         geog_org_kohlenstoff = ?,
-         geogenese          = ?,
-         periglaziaere_lagen = ?,
-         stratigraphie      = ?,
-         grobkomponenten    = ?,
-         feinkomponenten    = ?,
-         beimengungen       = ?,
-         bes_strukturen     = ?,
-         geruch             = ?,
-         substratart        = ?,
-         probennummern      = ?,
-         gpv_pct            = ?,
-         gpv_lm2            = ?,
-         lk_pct             = ?,
-         lk_lm2             = ?,
-         fk_pct             = ?,
-         fk_lm2             = ?,
-         nfk_pct            = ?,
-         nfk_lm2            = ?,
-         kak                = ?,
-         basensaettigung    = ?,
-         tonanteil          = ?,
-         status             = ?
-     WHERE aufnahme_id = ? AND nummer = ?`,
-    data.horizontname ?? null,
-    data.farbe_munsell ?? null,
-    data.bodenart ?? null,
-    data.anteil ?? null,
-    data.notizen ?? null,
-    data.tiefe_oben ?? null,
-    data.tiefe_unten ?? null,
-    data.ph_cacl2 ?? null,
-    data.humus ?? null,
-    data.humus_pct ?? null,
-    data.carbonat ?? null,
-    data.packungsdichte ?? null,
-    data.trockenrohdichte ?? null,
-    data.feinwurzeln ?? null,
-    data.gefuege ?? null,
-    data.maechtigk_dm ?? null,
-    data.bodenfeuchte ?? null,
-    data.konsistenz ?? null,
-    data.oxidationsmerkmale ?? null,
-    data.reduktionsmerkmale ?? null,
-    data.pedogene_merkmale ?? null,
-    data.lagerungsart_erw ?? null,
-    data.lagerungsform ?? null,
-    data.verfestigungsdichte ?? null,
-    data.hohlraeume ?? null,
-    data.zersetzungsstufe ?? null,
-    data.wurzelverteilung ?? null,
-    data.pilzmycel ?? null,
-    data.grobbodenanbindung ?? null,
-    data.geog_org_kohlenstoff ?? null,
-    data.geogenese ?? null,
-    data.periglaziaere_lagen ?? null,
-    data.stratigraphie ?? null,
-    data.grobkomponenten ?? null,
-    data.feinkomponenten ?? null,
-    data.beimengungen ?? null,
-    data.bes_strukturen ?? null,
-    data.geruch ?? null,
-    data.substratart ?? null,
-    data.probennummern ?? null,
-    data.gpv_pct ?? null,
-    data.gpv_lm2 ?? null,
-    data.lk_pct ?? null,
-    data.lk_lm2 ?? null,
-    data.fk_pct ?? null,
-    data.fk_lm2 ?? null,
-    data.nfk_pct ?? null,
-    data.nfk_lm2 ?? null,
-    data.kak ?? null,
-    data.basensaettigung ?? null,
-    data.tonanteil ?? null,
-    status,
+    `UPDATE horizonte SET ${SET_CLAUSE}, status = ?
+      WHERE aufnahme_id = ? AND nummer = ?`,
+    ...bindValues(data),
+    horizontStatus(data),
     aufnahmeId,
     nummer,
   );
+}
+
+/** Updates only the stored KAK of a Horizont (after the Aufnahme's Humusform changed). */
+export function setHorizontKak(id: number, kak: string | null): void {
+  db.runSync(`UPDATE horizonte SET kak = ? WHERE id = ?`, kak, id);
 }

@@ -4,4 +4,8 @@ export const colors = {
   brown: "#b45f06",
   /** Light tinted background for result boxes — primary at ~7 % opacity. */
   resultBackground: "#14560012",
+  /** Status badge backgrounds: nothing entered / started / complete. */
+  statusEmpty: "#6c757d",
+  statusStarted: "#e0a020",
+  statusDone: "#145600",
 };

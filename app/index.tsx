@@ -14,6 +14,16 @@ import { colors } from "../styles/colors";
 import { pickAndImportCampaignZip } from "@/lib/io/zipImport";
 import { pickAndImportGpx } from "@/lib/io/gpxImport";
 
+/** "1 Aufnahme" / "3 Aufnahmen". */
+function count(n: number, singular: string, plural: string): string {
+  return `${n} ${n === 1 ? singular : plural}`;
+}
+
+/** The message of a thrown error without the "Error: " prefix. */
+function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
 export default function Index() {
   // True while a ZIP import is in progress (picker + reconstruction).
   const [importing, setImporting] = useState(false);
@@ -22,7 +32,7 @@ export default function Index() {
 
   /**
    * Picks a previously exported campaign ZIP and reconstructs it as a new campaign,
-   * then navigates into it. No-ops on cancel; alerts on failure.
+   * then navigates into it and reports the counts. No-ops on cancel; alerts on failure.
    */
   const handleImport = async () => {
     try {
@@ -30,8 +40,15 @@ export default function Index() {
       const result = await pickAndImportCampaignZip();
       if (!result) return; // cancelled
       router.push(`/mapping/kampagne/${result.campaignId}` as any);
+      let message = `${count(result.aufnahmen, "Aufnahme", "Aufnahmen")}, ${count(result.horizonte, "Horizont", "Horizonte")} importiert.`;
+      if (result.skippedHorizonte > 0) {
+        message += `
+
+${count(result.skippedHorizonte, "Horizont", "Horizonte")} ohne zugehörige Aufnahme übersprungen.`;
+      }
+      Alert.alert("Import abgeschlossen", message);
     } catch (e) {
-      Alert.alert("Import fehlgeschlagen", String(e));
+      Alert.alert("Import fehlgeschlagen", errorMessage(e));
     } finally {
       setImporting(false);
     }
@@ -39,7 +56,8 @@ export default function Index() {
 
   /**
    * Picks a GPX file, creates a planned campaign with one Aufnahme per waypoint,
-   * then navigates into it. No-ops on cancel; alerts on error or empty file.
+   * then navigates into it and reports the count. No-ops on cancel; alerts on
+   * error or empty file.
    */
   const handleImportGpx = async () => {
     try {
@@ -47,8 +65,12 @@ export default function Index() {
       const result = await pickAndImportGpx();
       if (!result) return; // cancelled
       router.push(`/mapping/kampagne/${result.campaignId}` as any);
+      Alert.alert(
+        "Import abgeschlossen",
+        `${count(result.count, "Wegpunkt", "Wegpunkte")} importiert.`,
+      );
     } catch (e) {
-      Alert.alert("Import fehlgeschlagen", String(e));
+      Alert.alert("Import fehlgeschlagen", errorMessage(e));
     } finally {
       setImportingGpx(false);
     }

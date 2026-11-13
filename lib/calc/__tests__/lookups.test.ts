@@ -171,9 +171,13 @@ describe("calcKAK", () => {
     expect(calcKAK("Lu", "Rohhumus", "2")).toBe("18.0"); // 15 + 1.5 × 2
   });
 
-  it("uses only the mineral base without Humusform or humus %", () => {
-    expect(calcKAK("Lu", "", "2")).toBe("15.0");
-    expect(calcKAK("Lu", "Mull", "")).toBe("15.0");
+  it("is empty without Humusform or humus % (would be mineral-only)", () => {
+    expect(calcKAK("Lu", "", "2")).toBe("");
+    expect(calcKAK("Lu", "Mull", "")).toBe("");
+  });
+
+  it("accepts a decimal comma in humus %", () => {
+    expect(calcKAK("Lu", "Mull", "2,5")).toBe("21.3"); // 15 + 2.5 × 2.5 = 21.25
   });
 
   it("is empty for unknown Bodenart", () => {

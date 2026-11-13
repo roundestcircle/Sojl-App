@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import BodentypTool from "@/components/tools/BodentypTool";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { ToolModal } from "@/components/ui/ToolModal";
+import TreeTool from "@/components/tools/TreeTool";
 import HorizontLexikonContent from "@/components/lexikon/HorizontLexikonContent";
 import { colors } from "@/styles/colors";
 
 /**
- * Standalone screen wrapper for the BodentypTool.
+ * Standalone screen for the Bodentyp decision tree.
  * Accessible from the Tools overview without a form context (no onConfirm callback).
  * Includes a button to open the Horizontlexikon as a modal reference.
  */
@@ -25,23 +25,15 @@ export default function BodentypScreen() {
         </TouchableOpacity>
       </View>
 
-      <BodentypTool />
+      <TreeTool kind="bodentyp" />
 
       {/* ── Horizontlexikon modal ── */}
-      <Modal
+      <ToolModal
         visible={lexikonVisible}
-        animationType="slide"
-        onRequestClose={() => setLexikonVisible(false)}
+        onClose={() => setLexikonVisible(false)}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View style={localStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setLexikonVisible(false)}>
-              <Text style={localStyles.modalClose}>✕ Schließen</Text>
-            </TouchableOpacity>
-          </View>
-          <HorizontLexikonContent />
-        </SafeAreaView>
-      </Modal>
+        <HorizontLexikonContent />
+      </ToolModal>
     </View>
   );
 }
@@ -64,19 +56,6 @@ const localStyles = StyleSheet.create({
   lexikonBtnText: {
     color: colors.primary,
     fontSize: 13,
-    fontWeight: "600",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ccc",
-  },
-  modalClose: {
-    color: colors.primary,
-    fontSize: 16,
     fontWeight: "600",
   },
 });

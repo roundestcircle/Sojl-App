@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 import { useForm, FormProvider } from "react-hook-form";
-import type { Horizont } from "@/lib/db/horizontQueries";
+import type { HorizontData } from "@/lib/db/horizontQueries";
+import { useFormAutosave } from "@/hooks/useFormAutosave";
 import GrunddatenSections from "./GrunddatenSections";
 import ErweiterteSection from "./ErweiterteSection";
 import BerechneteWerteSection from "./BerechneteWerteSection";
@@ -9,6 +10,7 @@ import HorizontToolModals from "./HorizontToolModals";
 import { useHorizontCalculations } from "./useHorizontCalculations";
 import {
   toHorizontFormDefaults,
+  toHorizontData,
   type HorizontFormData,
   type HorizontTool,
 } from "./types";
@@ -16,8 +18,9 @@ import {
 export type { HorizontFormData } from "./types";
 
 type Props = {
-  initialData?: Partial<Horizont>;
-  onSave: (data: HorizontFormData) => void;
+  initialData?: Partial<HorizontData> | null;
+  /** Called with the DB payload on every change (user input and derived values). */
+  onSave: (data: HorizontData) => void;
   /** Humusform of the parent Aufnahme; needed for the KAK calculation. */
   humusform?: string;
 };
@@ -40,25 +43,10 @@ export default function HorizontForm({
     defaultValues: toHorizontFormDefaults(initialData),
   });
   const [activeTool, setActiveTool] = useState<HorizontTool | null>(null);
-  const isFirstWatch = useRef(true);
-  const onSaveRef = useRef(onSave);
-  onSaveRef.current = onSave;
 
-  // Autosave: subscribe once and dispatch through a ref so the subscription
-  // survives onSave identity changes (would otherwise drop the first tick after resub).
-  // Must stay declared before useHorizontCalculations so it sees their first writes.
-  useEffect(() => {
-    const { unsubscribe } = methods.watch((data) => {
-      if (isFirstWatch.current) {
-        isFirstWatch.current = false;
-        return;
-      }
-      onSaveRef.current(data as HorizontFormData);
-    });
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  // Declared before useHorizontCalculations so derived values it corrects on
+  // mount are saved as well.
+  useFormAutosave(methods, (values) => onSave(toHorizontData(values)));
   useHorizontCalculations(methods, humusform);
 
   return (

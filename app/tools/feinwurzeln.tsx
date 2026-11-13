@@ -1,11 +1,6 @@
-import { View } from "react-native";
-import FeinwurzelnTool from "@/components/tools/FeinwurzelnTool";
+import TreeTool from "@/components/tools/TreeTool";
 
-/** Standalone screen wrapper for the fine root intensity (Feinwurzeln) determination tool. */
+/** Standalone screen for the Feinwurzeln determination tool. */
 export default function FeinwurzelnScreen() {
-  return (
-    <View style={{ flex: 1 }}>
-      <FeinwurzelnTool />
-    </View>
-  );
+  return <TreeTool kind="feinwurzeln" />;
 }

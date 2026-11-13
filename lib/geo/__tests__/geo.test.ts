@@ -3,6 +3,8 @@ import {
   bearingDegrees,
   normalizeAngle,
   smoothHeading,
+  angleDelta,
+  isWithinProximity,
 } from "@/lib/geo/geo";
 
 describe("haversineMeters", () => {
@@ -67,5 +69,57 @@ describe("smoothHeading", () => {
 
   it("follows the raw value completely with factor 1", () => {
     expect(smoothHeading(100, 140, 1)).toBeCloseTo(140, 6);
+  });
+});
+
+describe("angleDelta", () => {
+  it.each([
+    [0, 10, 10],
+    [10, 0, -10],
+    [350, 10, 20],
+    [10, 350, -20],
+    [0, 180, 180],
+    [180, 0, 180],
+    [0, 181, -179],
+    // Unbounded / negative inputs (unwrapped arrow rotation).
+    [360, -350, 10],
+    [-350, 360, -10],
+    [720, 5, 5],
+    [-1000, -1000, 0],
+    [-170, 170, -20],
+  ])("from %p to %p → %p", (from, to, expected) => {
+    expect(angleDelta(from, to)).toBeCloseTo(expected, 9);
+  });
+
+  it("always lies in (−180, 180]", () => {
+    for (let from = -1080; from <= 1080; from += 37) {
+      for (let to = -1080; to <= 1080; to += 41) {
+        const d = angleDelta(from, to);
+        expect(d).toBeGreaterThan(-180);
+        expect(d).toBeLessThanOrEqual(180);
+        expect(normalizeAngle(from + d)).toBeCloseTo(normalizeAngle(to), 9);
+      }
+    }
+  });
+});
+
+describe("isWithinProximity", () => {
+  it("enters within 5 m when the fix is accurate or has no accuracy", () => {
+    expect(isWithinProximity(4.9, 2, false)).toBe(true);
+    expect(isWithinProximity(5.1, 2, false)).toBe(false);
+    expect(isWithinProximity(5, null, false)).toBe(true);
+    expect(isWithinProximity(5.1, undefined, false)).toBe(false);
+  });
+
+  it("widens the enter radius to the GPS accuracy", () => {
+    expect(isWithinProximity(11, 12, false)).toBe(true);
+    expect(isWithinProximity(13, 12, false)).toBe(false);
+  });
+
+  it("only releases a reached point 3 m beyond the enter radius", () => {
+    expect(isWithinProximity(7.9, 2, true)).toBe(true);
+    expect(isWithinProximity(8.1, 2, true)).toBe(false);
+    expect(isWithinProximity(14.9, 12, true)).toBe(true);
+    expect(isWithinProximity(15.1, 12, true)).toBe(false);
   });
 });

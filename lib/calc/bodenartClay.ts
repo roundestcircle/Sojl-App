@@ -34,12 +34,9 @@ const BODENART_CLAY: Record<string, ClayRange> = {
   Tt: { min: 65, max: 100 },
 };
 
-/** Tries exact match, then strips trailing digits (e.g. "Su2" → "Su") as fallback. */
+/** KA6 clay range (%) of a canonical KA5/KA6 Bodenart code, or null if unknown. */
 export function bodenartToClay(bodenart: string): ClayRange | null {
-  const trimmed = bodenart.trim();
-  return (
-    BODENART_CLAY[trimmed] ?? BODENART_CLAY[trimmed.replace(/\d+$/, "")] ?? null
-  );
+  return BODENART_CLAY[bodenart.trim()] ?? null;
 }
 
 /** Returns the midpoint of the clay range, rounded to the nearest integer. */

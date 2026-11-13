@@ -35,30 +35,7 @@ import * as Haptics from "expo-haptics";
 import HorizontButton from "@/components/forms/HorizontButton";
 import Badge from "@/components/ui/Badge";
 import OrtFindenModal from "@/components/tools/OrtFindenModal";
-import { utmToLatLon } from "@/lib/geo/utmConversion";
-
-// ─── Target coordinates ───────────────────────────────────────────────────────
-
-/**
- * Resolves an Aufnahme's location to WGS84 lat/lon: uses GPS coordinates when
- * present, otherwise derives them from the stored UTM coordinates (parsing the
- * `utm_zone` label like "32N" into zone number + hemisphere). Returns null when
- * no coordinates exist at all.
- */
-function getTargetCoords(a: Aufnahme): { lat: number; lon: number } | null {
-  if (a.gps_lat != null && a.gps_lon != null) {
-    return { lat: a.gps_lat, lon: a.gps_lon };
-  }
-  if (a.utm_easting != null && a.utm_northing != null && a.utm_zone) {
-    const match = /^(\d+)\s*([NS])$/i.exec(a.utm_zone.trim());
-    if (match) {
-      const zone = parseInt(match[1], 10);
-      const hemisphere = match[2].toUpperCase() === "S" ? "S" : "N";
-      return utmToLatLon(a.utm_easting, a.utm_northing, zone, hemisphere);
-    }
-  }
-  return null;
-}
+import { storedLatLon } from "@/lib/geo/coordinates";
 
 // ─── Standortdaten status ─────────────────────────────────────────────────────
 
@@ -82,9 +59,9 @@ function deriveStandortStatus(a: Aufnahme): StandortStatus {
 }
 
 const standortBadge: Record<StandortStatus, { label: string; bg: string }> = {
-  leer: { label: "leer", bg: "#6c757d" },
-  begonnen: { label: "begonnen", bg: "#e0a020" },
-  abgeschlossen: { label: "abgeschlossen", bg: colors.primary },
+  leer: { label: "leer", bg: colors.statusEmpty },
+  begonnen: { label: "begonnen", bg: colors.statusStarted },
+  abgeschlossen: { label: "abgeschlossen", bg: colors.statusDone },
 };
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -93,7 +70,8 @@ const standortBadge: Record<StandortStatus, { label: string; bg: string }> = {
  * Aufnahme overview screen.
  * Shows a "Standortdaten" button with a derived completion badge, followed by the list
  * of Horizonte. Long-pressing a horizon row triggers delete confirmation.
- * The "Abschließen" button warns when incomplete horizons exist.
+ * The "Abschließen" button warns when the Standortdaten or a Horizont are
+ * incomplete, or when there are no Horizonte at all.
  */
 export default function AufnahmeOverview() {
   const { aufnahmeId: aufnahmeIdParam } = useLocalSearchParams<{
@@ -106,8 +84,8 @@ export default function AufnahmeOverview() {
   const [horizonte, setHorizonte] = useState<Horizont[]>([]);
   // The parent Aufnahme record (used for status derivation and navigation after close)
   const [aufnahme, setAufnahme] = useState<Aufnahme | null>(null);
-  // Whether to show the "incomplete horizons" warning before closing
-  const [showUnvollstaendigModal, setShowUnvollstaendigModal] = useState(false);
+  // Reasons the Aufnahme is incomplete; non-null shows the warning before closing
+  const [closeWarnings, setCloseWarnings] = useState<string[] | null>(null);
   // Drives the spinner on the export button while the ZIP is being generated
   const [exporting, setExporting] = useState(false);
   // Horizon queued for deletion; non-null triggers the delete confirmation modal
@@ -163,30 +141,41 @@ export default function AufnahmeOverview() {
   };
 
   /**
-   * Marks the Aufnahme as abgeschlossen and returns to the parent campaign screen.
-   * Falls back to the campaign list root if the parent campaign id is unknown.
+   * Marks the Aufnahme as abgeschlossen and returns to the parent campaign
+   * screen — popping back to it when it is already in the stack, so no
+   * duplicate screen is pushed. Falls back to the campaign list.
    */
   const doClose = () => {
     closeAufnahme(aufnahmeId);
     const kampagneId = aufnahme?.feldkampagne_id;
     if (kampagneId != null) {
-      router.replace(`/mapping/kampagne/${kampagneId}` as any);
+      router.dismissTo({
+        pathname: "/mapping/kampagne/[kampagneId]",
+        params: { kampagneId: String(kampagneId) },
+      });
     } else {
-      router.replace("/mapping" as any);
+      router.dismissTo("/mapping");
     }
   };
 
   /**
-   * Guards closing the Aufnahme: shows an "incomplete horizons" warning when any
-   * horizon is not yet vollständig, otherwise closes immediately.
+   * Guards closing the Aufnahme: lists what is still incomplete (Standortdaten,
+   * Horizonte) and asks for confirmation, otherwise closes immediately.
    */
   const handleAbschliessen = () => {
-    const offene = horizonte.filter((h) => h.status !== "vollstaendig");
-    if (offene.length > 0) {
-      setShowUnvollstaendigModal(true);
-    } else {
-      doClose();
+    const warnings: string[] = [];
+    if (standortStatus !== "abgeschlossen") {
+      warnings.push("Standortdaten sind unvollständig.");
     }
+    const offene = horizonte.filter((h) => h.status !== "vollstaendig");
+    if (horizonte.length === 0) warnings.push("Es gibt keine Horizonte.");
+    else if (offene.length > 0) {
+      warnings.push(
+        `${offene.length} von ${horizonte.length} Horizonten unvollständig.`,
+      );
+    }
+    if (warnings.length > 0) setCloseWarnings(warnings);
+    else doClose();
   };
 
   const handleExport = async () => {
@@ -203,7 +192,7 @@ export default function AufnahmeOverview() {
 
   const standortStatus = aufnahme ? deriveStandortStatus(aufnahme) : "leer";
   const badge = standortBadge[standortStatus];
-  const targetCoords = aufnahme ? getTargetCoords(aufnahme) : null;
+  const targetCoords = aufnahme ? storedLatLon(aufnahme) : null;
 
   return (
     <>
@@ -332,16 +321,24 @@ export default function AufnahmeOverview() {
       </Modal>
 
       {/* ── Unvollständig confirmation modal ── */}
-      <Modal visible={showUnvollstaendigModal} transparent animationType="fade">
+      <Modal
+        visible={closeWarnings !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCloseWarnings(null)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Aufnahme unvollständig</Text>
-            <Text style={styles.modalText}>Trotzdem abschließen?</Text>
+            <Text style={styles.modalText}>
+              {closeWarnings?.join("\n")}
+              {"\n\n"}Trotzdem abschließen?
+            </Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalButton}
                 onPress={() => {
-                  setShowUnvollstaendigModal(false);
+                  setCloseWarnings(null);
                   doClose();
                 }}
               >
@@ -349,7 +346,7 @@ export default function AufnahmeOverview() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: "#888" }]}
-                onPress={() => setShowUnvollstaendigModal(false)}
+                onPress={() => setCloseWarnings(null)}
               >
                 <Text style={styles.modalButtonText}>Abbrechen</Text>
               </TouchableOpacity>

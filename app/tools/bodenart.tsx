@@ -1,11 +1,6 @@
-import { View } from "react-native";
-import BodenartTool from "@/components/tools/BodenartTool";
+import TreeTool from "@/components/tools/TreeTool";
 
-/** Standalone screen wrapper for the soil texture (Bodenart) determination tool. */
+/** Standalone screen for the Bodenart determination tool. */
 export default function BodenartScreen() {
-  return (
-    <View style={{ flex: 1 }}>
-      <BodenartTool />
-    </View>
-  );
+  return <TreeTool kind="bodenart" />;
 }

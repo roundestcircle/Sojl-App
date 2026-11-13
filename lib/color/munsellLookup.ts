@@ -6,12 +6,31 @@
  */
 
 import { MUNSELL_DATA } from "@/data/munsellData";
+import type { RGB } from "@/lib/color/colorMath";
 
-interface LabColor {
+export interface LabColor {
   L: number;
   a: number;
   b: number;
 }
+
+/** Result of a nearest-chip search: notation and its CIEDE2000 distance. */
+export interface MunsellMatch {
+  munsell: string; // e.g. "7.5YR 6/4"
+  distance: number; // ΔE00 to that chip
+}
+
+/**
+ * ΔE00 above which a match is flagged as poor ("schlechte Übereinstimmung").
+ *
+ * In the current reference set the nearest neighbour of a chip is 0.7–4.9
+ * ΔE00 away (median ≈ 2.4), so a colour inside the chip grid normally lies
+ * within ~2–3 ΔE00 of its best match. Above 5 the colour is outside the
+ * covered range — e.g. near-neutral greys (no N chips in real.dat; an 18 %
+ * grey gives ≈ 7) or very dark/bright values — or exposure / white balance
+ * went wrong.
+ */
+export const POOR_MATCH_DELTA_E00 = 5;
 
 /**
  * Convert a linear-light sRGB color (channels in 0..1) to CIE-Lab (D65).
@@ -47,7 +66,7 @@ const POW25_7 = Math.pow(25, 7);
  * the low-chroma region where soil colors sit — this reduces neighbouring
  * chips being picked over the true closest one.
  */
-function ciede2000(lab1: LabColor, lab2: LabColor): number {
+export function ciede2000(lab1: LabColor, lab2: LabColor): number {
   const { L: L1, a: a1, b: b1 } = lab1;
   const { L: L2, a: a2, b: b2 } = lab2;
 
@@ -122,10 +141,7 @@ function ciede2000(lab1: LabColor, lab2: LabColor): number {
 /**
  * Find the closest Munsell color for a given Lab color via CIEDE2000.
  */
-export function labToMunsell(inputLab: LabColor): {
-  full: string;
-  distance: number;
-} {
+export function labToMunsell(inputLab: LabColor): MunsellMatch {
   let closestIdx = 0;
   let minDist = Infinity;
 
@@ -138,7 +154,7 @@ export function labToMunsell(inputLab: LabColor): {
   }
 
   return {
-    full: MUNSELL_DATA[closestIdx].munsell,
+    munsell: MUNSELL_DATA[closestIdx].munsell,
     distance: minDist,
   };
 }
@@ -148,9 +164,6 @@ export function labToMunsell(inputLab: LabColor): {
  * 0..1). Preferred entry point for the extractor, which already works in
  * linear light — avoids the lossy 8-bit re-encode before matching.
  */
-export function linearRgbToMunsell(lin: { r: number; g: number; b: number }): {
-  full: string;
-  distance: number;
-} {
+export function linearRgbToMunsell(lin: RGB): MunsellMatch {
   return labToMunsell(linearRgbToLab(lin.r, lin.g, lin.b));
 }

@@ -2,13 +2,12 @@ import { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   ScrollView,
-  Modal,
   TouchableOpacity,
 } from "react-native";
 import ValidatedField from "@/components/ui/ValidatedField";
+import { ToolModal } from "@/components/ui/ToolModal";
 import {
   validatePh,
   validateHumusgehalt,
@@ -19,7 +18,6 @@ import {
   calcBasensaettigung,
   humusGroupLabel,
 } from "@/lib/calc/basensaettigungLookup";
-import { SafeAreaView } from "react-native-safe-area-context";
 import HumusgehaltTool from "@/components/tools/HumusgehaltTool";
 
 export default function BasensaettigungTool() {
@@ -27,13 +25,10 @@ export default function BasensaettigungTool() {
   const [humusPct, setHumusPct] = useState("");
   const [activeModal, setActiveModal] = useState<"humus" | null>(null);
 
-  const allFilled =
-    pH !== "" &&
-    !isNaN(parseFloat(pH)) &&
-    humusPct !== "" &&
-    !isNaN(parseFloat(humusPct));
-  const result = allFilled ? calcBasensaettigung(pH, humusPct) : "";
-  const group = allFilled ? humusGroupLabel(humusPct) : null;
+  // humusGroupLabel is null for a missing/non-numeric Humusgehalt (calcBasensaettigung
+  // would fall back to the ≤ 4 % curve there); calcBasensaettigung returns "" without pH.
+  const group = humusGroupLabel(humusPct);
+  const result = group ? calcBasensaettigung(pH, humusPct) : "";
 
   return (
     <>
@@ -85,30 +80,24 @@ export default function BasensaettigungTool() {
           </View>
         ) : (
           <View style={styles.resultBox}>
-            <Text style={styles.resultPlaceholder}>Alle Felder ausfüllen</Text>
+            <Text style={styles.resultPlaceholder}>
+              Fehlende Eingabe – alle Felder ausfüllen
+            </Text>
           </View>
         )}
       </ScrollView>
 
-      <Modal
+      <ToolModal
         visible={activeModal === "humus"}
-        animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
+        onClose={() => setActiveModal(null)}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View style={localStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setActiveModal(null)}>
-              <Text style={localStyles.modalClose}>✕ Schließen</Text>
-            </TouchableOpacity>
-          </View>
-          <HumusgehaltTool
-            onConfirm={(_klasse, pct) => {
-              setHumusPct(pct);
-              setActiveModal(null);
-            }}
-          />
-        </SafeAreaView>
-      </Modal>
+        <HumusgehaltTool
+          onConfirm={(pct) => {
+            setHumusPct(pct);
+            setActiveModal(null);
+          }}
+        />
+      </ToolModal>
     </>
   );
 }
@@ -140,18 +129,5 @@ const localStyles = StyleSheet.create({
   toolBtn: {
     paddingHorizontal: 14,
     paddingVertical: 12,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ccc",
-  },
-  modalClose: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

@@ -10,7 +10,10 @@ import {
   rateFK,
   rateNFK,
   rateSWert,
+  type ProfileSum,
+  type Rating,
 } from "@/lib/calc/mappingMaths";
+import { parseDecimal } from "@/lib/number";
 import {
   ControlledReadonlyField,
   HeadingRow,
@@ -19,6 +22,23 @@ import {
   formStyles,
 } from "../shared";
 import type { AufnahmeFormData } from "./types";
+
+/** Display value and rating text of a profile sum. */
+function formatSum(
+  sum: ProfileSum,
+  digits: number,
+  rateFn: (v: number) => Rating,
+  suffix = "",
+): { value: string; rating: string } {
+  if (sum === null) return { value: "", rating: "" };
+  if (sum === "unvollständig") {
+    return {
+      value: "unvollständig",
+      rating: "Lücken, Überlappungen oder fehlende Werte in den Horizonten",
+    };
+  }
+  return { value: sum.toFixed(digits), rating: `${rateFn(sum)}${suffix}` };
+}
 
 /**
  * Collapsible block with profile-level values aggregated from the Horizonte
@@ -31,13 +51,26 @@ export default function BerechneteWerteSection({
 }) {
   const { control } = useFormContext<AufnahmeFormData>();
   const [expanded, setExpanded] = useState(false);
-  const effWurzelraum = parseFloat(
-    useWatch({ control, name: "effektiver_wurzelraum" }),
-  );
+  const effWurzelraum =
+    parseDecimal(useWatch({ control, name: "effektiver_wurzelraum" })) ?? NaN;
 
-  const profileFK = calcProfileFKOrNFK(horizonte, 100, "fk_lm2");
-  const profileNFK = calcProfileFKOrNFK(horizonte, effWurzelraum, "nfk_lm2");
-  const profileSWert = calcProfileSWert(horizonte, effWurzelraum);
+  const fk = formatSum(
+    calcProfileFKOrNFK(horizonte, 100, "fk_lm2"),
+    1,
+    rateFK,
+    " (KA5)",
+  );
+  const nfk = formatSum(
+    calcProfileFKOrNFK(horizonte, effWurzelraum, "nfk_lm2"),
+    1,
+    rateNFK,
+    " (KA5)",
+  );
+  const sWert = formatSum(
+    calcProfileSWert(horizonte, effWurzelraum),
+    0,
+    rateSWert,
+  );
 
   return (
     <CollapsibleSection
@@ -46,15 +79,16 @@ export default function BerechneteWerteSection({
       onToggle={() => setExpanded((v) => !v)}
     >
       <Text style={styles.erweiterteHint}>
-        Alle Werte werden automatisch aus den Horizontdaten berechnet. Falls
-        nichts angezeigt wird, bitte die entsprechenden Felder in den Horizonten
-        prüfen.
+        Alle Werte werden automatisch aus den Horizontdaten berechnet. Die
+        Horizonte müssen den Tiefenbereich lückenlos ab 0 cm abdecken. Falls
+        nichts oder „unvollständig“ angezeigt wird, bitte die Tiefen und Felder
+        in den Horizonten prüfen.
       </Text>
 
       <HeadingRow
         title="Gründigkeit"
         titleStyle={styles.fieldLabel}
-        info="Summe aller Horizont-Mächtigkeiten in cm, berechnet aus den Tiefenangaben der Horizonte."
+        info="Tiefe der Untergrenze des tiefsten Horizonts in cm, aus den Tiefenangaben der Horizonte."
       />
       <ControlledReadonlyField
         control={control}
@@ -68,13 +102,8 @@ export default function BerechneteWerteSection({
           title="Feldkapazität bis 1 m"
           info="Profilsumme der Feldkapazität über alle Horizonte bis 1 m Tiefe in l/m². Benötigt Bodenart, Packungsdichte (für die Trockenrohdichte) und Mächtigkeit in den Horizonten."
         />
-        <ReadonlyField
-          value={profileFK != null ? profileFK.toFixed(1) : ""}
-          unit="l/m²"
-        />
-        <RatingField
-          value={profileFK != null ? `${rateFK(profileFK)} (KA5)` : ""}
-        />
+        <ReadonlyField value={fk.value} unit="l/m²" />
+        <RatingField value={fk.rating} />
       </View>
 
       <View style={formStyles.calcBlock}>
@@ -82,13 +111,8 @@ export default function BerechneteWerteSection({
           title="Nutzbare Feldkapazität"
           info="Profilsumme der nutzbaren Feldkapazität über alle Horizonte bis zum effektiven Wurzelraum in l/m². Benötigt Bodenart, Packungsdichte (für die Trockenrohdichte), Mächtigkeit und den eingetragenen effektiven Wurzelraum."
         />
-        <ReadonlyField
-          value={profileNFK != null ? profileNFK.toFixed(1) : ""}
-          unit="l/m²"
-        />
-        <RatingField
-          value={profileNFK != null ? `${rateNFK(profileNFK)} (KA5)` : ""}
-        />
+        <ReadonlyField value={nfk.value} unit="l/m²" />
+        <RatingField value={nfk.rating} />
       </View>
 
       <View style={formStyles.calcBlock}>
@@ -96,13 +120,8 @@ export default function BerechneteWerteSection({
           title="S-Wert (im eff. Wurzelraum)"
           info="Sorptionssumme im effektiven Wurzelraum in cmol_c/m². Berechnet als KAK × (Basensättigung/100) × Trockenrohdichte × Mächtigkeit je Horizont. A-Horizonte gehen vollständig ein, alle anderen zur Hälfte. Benötigt KAK, Basensättigung und Trockenrohdichte (aus Packungsdichte abgeleitet) in den Horizonten."
         />
-        <ReadonlyField
-          value={profileSWert != null ? profileSWert.toFixed(0) : ""}
-          unit="cmol_c/m²"
-        />
-        <RatingField
-          value={profileSWert != null ? rateSWert(profileSWert) : ""}
-        />
+        <ReadonlyField value={sWert.value} unit="cmol_c/m²" />
+        <RatingField value={sWert.rating} />
       </View>
     </CollapsibleSection>
   );

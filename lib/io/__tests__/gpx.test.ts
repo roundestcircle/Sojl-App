@@ -59,4 +59,59 @@ describe("parseGpxWaypoints", () => {
   it("returns an empty list for non-GPX input", () => {
     expect(parseGpxWaypoints("not xml at all")).toEqual([]);
   });
+  it("unwraps CDATA names and keeps their content literal", () => {
+    const xml = gpx(
+      `<wpt lat="1" lon="2"><name><![CDATA[A & B <x> &amp;]]></name></wpt>`,
+    );
+    expect(parseGpxWaypoints(xml)[0].name).toBe("A & B <x> &amp;");
+  });
+
+  it("decodes numeric character references", () => {
+    const xml = gpx(
+      `<wpt lat="1" lon="2"><name>M&#252;hle &#xFC;ber &#x1F600;</name></wpt>`,
+    );
+    expect(parseGpxWaypoints(xml)[0].name).toBe("Mühle über 😀");
+  });
+
+  it("ignores commented-out waypoints and comments inside names", () => {
+    const xml = gpx(`
+      <!-- <wpt lat="5" lon="5"><name>alt</name></wpt> -->
+      <wpt lat="1" lon="2"><name>P<!-- x -->1</name></wpt>`);
+    expect(parseGpxWaypoints(xml)).toEqual([{ lat: 1, lon: 2, name: "P1" }]);
+  });
+
+  it("accepts namespace-prefixed tags", () => {
+    const xml = `<gpx:gpx xmlns:gpx="http://www.topografix.com/GPX/1/1">
+      <gpx:wpt lat="51.5" lon="9.9"><gpx:name>NS</gpx:name></gpx:wpt>
+      <gpx:wpt lat="51.6" lon="9.8"/>
+    </gpx:gpx>`;
+    expect(parseGpxWaypoints(xml)).toEqual([
+      { lat: 51.5, lon: 9.9, name: "NS" },
+      { lat: 51.6, lon: 9.8 },
+    ]);
+  });
+
+  it("does not take the name of a following waypoint", () => {
+    const xml = gpx(`
+      <wpt lat="1" lon="2"></wpt>
+      <wpt lat="3" lon="4"><name>B</name></wpt>`);
+    expect(parseGpxWaypoints(xml)).toEqual([
+      { lat: 1, lon: 2 },
+      { lat: 3, lon: 4, name: "B" },
+    ]);
+  });
+
+  it("skips waypoints outside the UTM range", () => {
+    const xml = gpx(`
+      <wpt lat="91" lon="9"/>
+      <wpt lat="51" lon="181"/>
+      <wpt lat="85" lon="9"/>
+      <wpt lat="-81" lon="9"/>
+      <wpt lat="84" lon="-180"/>
+      <wpt lat="-80" lon="180"/>`);
+    expect(parseGpxWaypoints(xml)).toEqual([
+      { lat: 84, lon: -180 },
+      { lat: -80, lon: 180 },
+    ]);
+  });
 });

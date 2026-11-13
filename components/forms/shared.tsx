@@ -3,13 +3,10 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
-  Modal,
   StyleSheet,
   type StyleProp,
   type TextStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Controller,
   type Control,
@@ -27,48 +24,7 @@ const CALC_PLACEHOLDER = "Wird berechnet…";
 
 // ─── Fullscreen tool modal ─────────────────────────────────────────────────────
 
-/**
- * Fullscreen slide-up modal with a "✕ Schließen" header, used to host a
- * Bestimmungshilfe/Lexikon from inside a form. `headerLeft` renders an
- * optional extra control on the left side of the header.
- */
-export function ToolModal({
-  visible,
-  onClose,
-  headerLeft,
-  padded = false,
-  children,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  headerLeft?: ReactNode;
-  /** Adds 20px padding around the content (camera / share scroller). */
-  padded?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-        <View
-          style={[
-            formStyles.modalHeader,
-            { justifyContent: headerLeft ? "space-between" : "flex-end" },
-          ]}
-        >
-          {headerLeft}
-          <TouchableOpacity onPress={onClose}>
-            <Text style={formStyles.modalClose}>✕ Schließen</Text>
-          </TouchableOpacity>
-        </View>
-        {padded ? (
-          <View style={{ flex: 1, padding: 20 }}>{children}</View>
-        ) : (
-          children
-        )}
-      </SafeAreaView>
-    </Modal>
-  );
-}
+// Moved to components/ui; re-exported until all form imports are switched over.
 
 // ─── Layout helpers ────────────────────────────────────────────────────────────
 
@@ -254,18 +210,5 @@ export const formStyles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#ddd",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ccc",
-  },
-  modalClose: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

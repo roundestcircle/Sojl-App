@@ -67,7 +67,8 @@ export default function StandorteigenschaftenSection() {
           label="Mittl. Temperatur"
           placeholder="z.B. 9.5"
           unit="°C"
-          keyboardType="decimal-pad"
+          // Mean temperatures can be negative; decimal-pad has no minus key.
+          keyboardType="numbers-and-punctuation"
         />
       </View>
     </>
@@ -119,7 +120,7 @@ function NumberWithUnit({
   label: string;
   placeholder: string;
   unit: string;
-  keyboardType: "number-pad" | "decimal-pad";
+  keyboardType: "number-pad" | "numbers-and-punctuation";
 }) {
   const { control } = useFormContext<AufnahmeFormData>();
   return (

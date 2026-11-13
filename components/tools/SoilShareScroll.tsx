@@ -75,7 +75,7 @@ export default function SoilShareScroll({ onConfirm }: Props) {
       <InstructionModal
         key={modalKey}
         title="Anleitung"
-        instructionText="Der Prozentcounter in der Mitte zeigt dir den Anteil an schwarzen Pixeln. Vergleich ihn mit dem Anteil deiner zu analysierenden Komponente. Scrolle um den Anteil zu erhöhen."
+        instructionText="Der Prozentcounter in der Mitte zeigt dir den Anteil an schwarzen Pixeln. Vergleiche ihn mit dem Anteil deiner zu analysierenden Komponente. Scrolle, um den Anteil zu erhöhen."
         storageKey="soilShareDontShowAgain"
       />
 

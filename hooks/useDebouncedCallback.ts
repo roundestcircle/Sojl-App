@@ -1,13 +1,19 @@
-import { useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+
+export type DebouncedFn<Args extends unknown[]> = ((...args: Args) => void) & {
+  /** Runs a pending call immediately (no-op when nothing is pending). */
+  flush: () => void;
+};
 
 /**
  * Returns a stable callback that debounces invocations of `fn` by `delayMs`.
- * Pending calls are flushed on unmount so no save is lost when navigating away.
+ * Pending calls are flushed on unmount so no save is lost when navigating
+ * away; `flush()` runs a pending call on demand.
  */
 export function useDebouncedCallback<Args extends unknown[]>(
   fn: (...args: Args) => void,
   delayMs: number,
-): (...args: Args) => void {
+): DebouncedFn<Args> {
   const fnRef = useRef(fn);
   // Sync the latest fn after commit (refs must not be written during render).
   // Layout effect so it is current before any timer can fire.
@@ -15,27 +21,25 @@ export function useDebouncedCallback<Args extends unknown[]>(
     fnRef.current = fn;
   });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastArgsRef = useRef<Args | null>(null);
+  const pendingRef = useRef<Args | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        if (lastArgsRef.current) fnRef.current(...lastArgsRef.current);
-      }
-    };
-  }, []);
-
-  return useCallback(
-    (...args: Args) => {
-      lastArgsRef.current = args;
+  const debounced = useMemo(() => {
+    const flush = () => {
       if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        timerRef.current = null;
-        lastArgsRef.current = null;
-        fnRef.current(...args);
-      }, delayMs);
-    },
-    [delayMs],
-  );
+      timerRef.current = null;
+      const args = pendingRef.current;
+      pendingRef.current = null;
+      if (args) fnRef.current(...args);
+    };
+    const call = (...args: Args) => {
+      pendingRef.current = args;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(flush, delayMs);
+    };
+    return Object.assign(call, { flush });
+  }, [delayMs]);
+
+  useEffect(() => debounced.flush, [debounced]);
+
+  return debounced;
 }

@@ -2,27 +2,27 @@ import { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Modal,
 } from "react-native";
 import ValidatedField from "@/components/ui/ValidatedField";
+import { ToolModal } from "@/components/ui/ToolModal";
 import {
   validateBodenart,
   validateHumusgehalt,
 } from "@/lib/validation/fieldValidation";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
-import { calcKAK, rateKAK } from "@/lib/calc/mappingMaths";
-import { SafeAreaView } from "react-native-safe-area-context";
-import BodenartTool from "@/components/tools/BodenartTool";
+import {
+  calcKAK,
+  rateKAK,
+  HUMUSFORMEN,
+  type Humusform,
+} from "@/lib/calc/mappingMaths";
+import TreeTool from "@/components/tools/TreeTool";
 import HumusgehaltTool from "@/components/tools/HumusgehaltTool";
 import HumusformLexikonContent from "@/components/lexikon/HumusformLexikonContent";
-
-const HUMUSFORM_OPTIONS = ["Mull", "Moder", "Rohhumus"] as const;
-type Humusform = (typeof HUMUSFORM_OPTIONS)[number];
 
 export default function KAKTool() {
   const [bodenart, setBodenart] = useState("");
@@ -32,14 +32,8 @@ export default function KAKTool() {
     "bodenart" | "humus" | "humusform" | null
   >(null);
 
-  const allFilled =
-    bodenart.trim() !== "" &&
-    humusform !== null &&
-    humusPct !== "" &&
-    !isNaN(parseFloat(humusPct));
-  const result = allFilled
-    ? calcKAK(bodenart.trim(), humusform ?? "", humusPct)
-    : "";
+  // calcKAK returns "" for an unknown Bodenart or missing Humusform / Humusgehalt.
+  const result = calcKAK(bodenart, humusform ?? "", humusPct);
 
   return (
     <>
@@ -72,7 +66,7 @@ export default function KAKTool() {
         <View style={localStyles.fieldGroup}>
           <Text style={localStyles.label}>Humusform</Text>
           <View style={localStyles.btnRow}>
-            {HUMUSFORM_OPTIONS.map((opt) => (
+            {HUMUSFORMEN.map((opt) => (
               <TouchableOpacity
                 key={opt}
                 style={[
@@ -128,75 +122,51 @@ export default function KAKTool() {
         {result !== "" ? (
           <View style={styles.resultBox}>
             <Text style={styles.resultValue}>{result} cmol_c/kg</Text>
-            <Text style={styles.resultLabel}>
-              {rateKAK(parseFloat(result))}
-            </Text>
+            <Text style={styles.resultLabel}>{rateKAK(Number(result))}</Text>
             <Text style={styles.resultLabel}>
               inkl. Humuskorrektur ({humusform})
             </Text>
           </View>
         ) : (
           <View style={styles.resultBox}>
-            <Text style={styles.resultPlaceholder}>Alle Felder ausfüllen</Text>
+            <Text style={styles.resultPlaceholder}>
+              Fehlende oder ungültige Eingabe
+            </Text>
           </View>
         )}
       </ScrollView>
 
-      {/* Farbe / Bodenart modals */}
-      <Modal
+      <ToolModal
         visible={activeModal === "bodenart"}
-        animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
+        onClose={() => setActiveModal(null)}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View style={localStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setActiveModal(null)}>
-              <Text style={localStyles.modalClose}>✕ Schließen</Text>
-            </TouchableOpacity>
-          </View>
-          <BodenartTool
-            onConfirm={(result) => {
-              setBodenart(result);
-              setActiveModal(null);
-            }}
-          />
-        </SafeAreaView>
-      </Modal>
+        <TreeTool
+          kind="bodenart"
+          onConfirm={(result) => {
+            setBodenart(result);
+            setActiveModal(null);
+          }}
+        />
+      </ToolModal>
 
-      <Modal
+      <ToolModal
         visible={activeModal === "humus"}
-        animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
+        onClose={() => setActiveModal(null)}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View style={localStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setActiveModal(null)}>
-              <Text style={localStyles.modalClose}>✕ Schließen</Text>
-            </TouchableOpacity>
-          </View>
-          <HumusgehaltTool
-            onConfirm={(klasse, pct) => {
-              setHumusPct(pct);
-              setActiveModal(null);
-            }}
-          />
-        </SafeAreaView>
-      </Modal>
+        <HumusgehaltTool
+          onConfirm={(pct) => {
+            setHumusPct(pct);
+            setActiveModal(null);
+          }}
+        />
+      </ToolModal>
 
-      <Modal
+      <ToolModal
         visible={activeModal === "humusform"}
-        animationType="slide"
-        onRequestClose={() => setActiveModal(null)}
+        onClose={() => setActiveModal(null)}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View style={localStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setActiveModal(null)}>
-              <Text style={localStyles.modalClose}>✕ Schließen</Text>
-            </TouchableOpacity>
-          </View>
-          <HumusformLexikonContent />
-        </SafeAreaView>
-      </Modal>
+        <HumusformLexikonContent />
+      </ToolModal>
     </>
   );
 }
@@ -258,18 +228,5 @@ const localStyles = StyleSheet.create({
   toolBtn: {
     paddingHorizontal: 14,
     paddingVertical: 12,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ccc",
-  },
-  modalClose: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

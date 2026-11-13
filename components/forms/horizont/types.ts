@@ -1,59 +1,20 @@
-import type { Horizont } from "@/lib/db/horizontQueries";
+import type { HorizontData } from "@/lib/db/horizontQueries";
+import {
+  HORIZONT_DATA_COLUMNS,
+  type HorizontDataColumn,
+} from "@/lib/db/columns";
+import { parseDecimal } from "@/lib/number";
 
 // ─── Form shape ────────────────────────────────────────────────────────────────
 
-export type HorizontFormData = {
-  horizontname: string;
-  farbe_munsell: string;
-  bodenart: string;
-  anteil: string;
-  notizen: string;
-  tiefe_oben: string;
-  tiefe_unten: string;
-  ph_cacl2: string;
-  humus: string;
-  humus_pct: string;
-  carbonat: string;
-  packungsdichte: string;
-  trockenrohdichte: string;
-  feinwurzeln: string;
-  gefuege: string;
-  maechtigk_dm: string;
-  gpv_pct: string;
-  gpv_lm2: string;
-  lk_pct: string;
-  lk_lm2: string;
-  fk_pct: string;
-  fk_lm2: string;
-  nfk_pct: string;
-  nfk_lm2: string;
-  kak: string;
-  basensaettigung: string;
-  tonanteil: string;
-  // Erweiterte fields
-  bodenfeuchte: string;
-  konsistenz: string;
-  oxidationsmerkmale: string;
-  reduktionsmerkmale: string;
-  pedogene_merkmale: string;
-  lagerungsart_erw: string;
-  lagerungsform: string;
-  verfestigungsdichte: string;
-  hohlraeume: string;
-  zersetzungsstufe: string;
-  wurzelverteilung: string;
-  pilzmycel: string;
-  grobbodenanbindung: string;
-  geog_org_kohlenstoff: string;
-  geogenese: string;
-  periglaziaere_lagen: string;
-  stratigraphie: string;
-  grobkomponenten: string;
-  feinkomponenten: string;
-  beimengungen: string;
-  bes_strukturen: string;
-  geruch: string;
-  substratart: string;
+/**
+ * One string field per stored data column (see lib/db/columns.ts); the sample
+ * numbers are a field array.
+ */
+export type HorizontFormData = Record<
+  Exclude<HorizontDataColumn, "probennummern">,
+  string
+> & {
   probennummern: { value: string }[];
 };
 
@@ -68,58 +29,11 @@ export type HorizontTool =
   | "gefuege"
   | "lexikon";
 
-/** String fields that are stored 1:1 from the DB row (everything except pH and probennummern). */
-const PLAIN_FIELDS = [
-  "horizontname",
-  "farbe_munsell",
-  "bodenart",
-  "anteil",
-  "notizen",
-  "tiefe_oben",
-  "tiefe_unten",
-  "humus",
-  "humus_pct",
-  "carbonat",
-  "packungsdichte",
-  "trockenrohdichte",
-  "feinwurzeln",
-  "gefuege",
-  "maechtigk_dm",
-  "gpv_pct",
-  "gpv_lm2",
-  "lk_pct",
-  "lk_lm2",
-  "fk_pct",
-  "fk_lm2",
-  "nfk_pct",
-  "nfk_lm2",
-  "kak",
-  "basensaettigung",
-  "tonanteil",
-  "bodenfeuchte",
-  "konsistenz",
-  "oxidationsmerkmale",
-  "reduktionsmerkmale",
-  "pedogene_merkmale",
-  "lagerungsart_erw",
-  "lagerungsform",
-  "verfestigungsdichte",
-  "hohlraeume",
-  "zersetzungsstufe",
-  "wurzelverteilung",
-  "pilzmycel",
-  "grobbodenanbindung",
-  "geog_org_kohlenstoff",
-  "geogenese",
-  "periglaziaere_lagen",
-  "stratigraphie",
-  "grobkomponenten",
-  "feinkomponenten",
-  "beimengungen",
-  "bes_strukturen",
-  "geruch",
-  "substratart",
-] as const satisfies readonly (keyof HorizontFormData & keyof Horizont)[];
+/** Columns stored 1:1 as text (everything except pH and probennummern). */
+const TEXT_COLUMNS = HORIZONT_DATA_COLUMNS.filter(
+  (c): c is Exclude<HorizontDataColumn, "ph_cacl2" | "probennummern"> =>
+    c !== "ph_cacl2" && c !== "probennummern",
+);
 
 /** Parses the JSON-encoded probennummern column into field-array entries. */
 function parseProbennummern(json: string | null | undefined) {
@@ -130,16 +44,29 @@ function parseProbennummern(json: string | null | undefined) {
   }
 }
 
+// ─── DB row ⇄ form values ─────────────────────────────────────────────────────
+
 /** Builds react-hook-form default values from a (possibly partial) DB row. */
 export function toHorizontFormDefaults(
-  initialData?: Partial<Horizont>,
+  row?: Partial<HorizontData> | null,
 ): HorizontFormData {
   const values = {} as HorizontFormData;
-  for (const f of PLAIN_FIELDS) {
-    values[f] = (initialData?.[f] as string | null | undefined) ?? "";
-  }
-  values.ph_cacl2 =
-    initialData?.ph_cacl2 != null ? String(initialData.ph_cacl2) : "";
-  values.probennummern = parseProbennummern(initialData?.probennummern);
+  for (const c of TEXT_COLUMNS) values[c] = row?.[c] ?? "";
+  values.ph_cacl2 = row?.ph_cacl2 != null ? String(row.ph_cacl2) : "";
+  values.probennummern = parseProbennummern(row?.probennummern);
   return values;
+}
+
+/**
+ * Converts form values into the DB payload: empty text → null, pH parsed with
+ * decimal comma support, probennummern JSON-encoded (empty entries dropped).
+ */
+export function toHorizontData(values: HorizontFormData): HorizontData {
+  const data = {} as HorizontData;
+  for (const c of TEXT_COLUMNS) data[c] = values[c] || null;
+  data.ph_cacl2 = parseDecimal(values.ph_cacl2);
+  data.probennummern = JSON.stringify(
+    (values.probennummern ?? []).map((p) => p.value).filter(Boolean),
+  );
+  return data;
 }

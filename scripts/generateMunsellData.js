@@ -13,20 +13,26 @@ const path = require("path");
 
 // --- Color math utilities ---
 
-// Bradford chromatic adaptation matrix (illuminant C -> D65)
-// Illuminant C white point: x=0.3101, y=0.3162 -> X=0.98074, Y=1.0, Z=1.18232
-// Illuminant D65 white point: x=0.3127, y=0.3290 -> X=0.95047, Y=1.0, Z=1.08883
-
-const BRADFORD_M = [
-  [0.8951, 0.2664, -0.1614],
-  [-0.7502, 1.7135, 0.0367],
-  [0.0389, -0.0685, 1.0296],
-];
-
-const BRADFORD_M_INV = [
-  [0.987, -0.1471, 0.16],
-  [0.4323, 0.5184, 0.0493],
-  [-0.0085, 0.04, 0.9685],
+/**
+ * Bradford chromatic adaptation, illuminant C -> D65, as one 3x3 matrix
+ * (M_inv · diag(cone_D65 / cone_C) · M).
+ *
+ * White points: C x=0.3101, y=0.3162 -> XYZ 0.98074 / 1.0 / 1.18232;
+ *               D65 x=0.3127, y=0.3290 -> XYZ 0.95047 / 1.0 / 1.08883.
+ * Bradford M = [[0.8951, 0.2664, -0.1614], [-0.7502, 1.7135, 0.0367],
+ *               [0.0389, -0.0685, 1.0296]].
+ *
+ * The values are the bit-exact result of the former runtime computation, which
+ * used the commonly published 4-decimal Bradford inverse
+ * [[0.987, -0.1471, 0.16], [0.4323, 0.5184, 0.0493], [-0.0085, 0.04, 0.9685]]
+ * instead of the exact inverse of M. Kept that way so the generated
+ * munsellData.ts stays identical; an exact inverse would only shift the
+ * stored Lab values in the last digits.
+ */
+const ADAPT_C_TO_D65 = [
+  [0.990490178131999, -0.007248612706769519, -0.01158311268109058],
+  [-0.012405871715746336, 1.015662417447792, -0.0029176132973229574],
+  [-0.0035050057701805568, 0.006701635013691018, 0.9181632662657789],
 ];
 
 function matMul3(M, v) {
@@ -36,49 +42,6 @@ function matMul3(M, v) {
     M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2],
   ];
 }
-
-// Precompute the full adaptation matrix from illuminant C to D65
-function computeAdaptationMatrix() {
-  const srcWhite = [0.98074, 1.0, 1.18232]; // Illuminant C
-  const dstWhite = [0.95047, 1.0, 1.08883]; // D65
-
-  const srcCone = matMul3(BRADFORD_M, srcWhite);
-  const dstCone = matMul3(BRADFORD_M, dstWhite);
-
-  // Diagonal scaling matrix
-  const scale = [
-    [dstCone[0] / srcCone[0], 0, 0],
-    [0, dstCone[1] / srcCone[1], 0],
-    [0, 0, dstCone[2] / srcCone[2]],
-  ];
-
-  // Full adaptation = M_inv * scale * M
-  const scaleTimesM = [];
-  for (let i = 0; i < 3; i++) {
-    scaleTimesM[i] = [];
-    for (let j = 0; j < 3; j++) {
-      scaleTimesM[i][j] =
-        scale[i][0] * BRADFORD_M[0][j] +
-        scale[i][1] * BRADFORD_M[1][j] +
-        scale[i][2] * BRADFORD_M[2][j];
-    }
-  }
-
-  const adapt = [];
-  for (let i = 0; i < 3; i++) {
-    adapt[i] = [];
-    for (let j = 0; j < 3; j++) {
-      adapt[i][j] =
-        BRADFORD_M_INV[i][0] * scaleTimesM[0][j] +
-        BRADFORD_M_INV[i][1] * scaleTimesM[1][j] +
-        BRADFORD_M_INV[i][2] * scaleTimesM[2][j];
-    }
-  }
-
-  return adapt;
-}
-
-const ADAPT_C_TO_D65 = computeAdaptationMatrix();
 
 // D65 reference white (XYZ, Y normalized to 1) used for the CIE-Lab transform.
 const D65_WHITE = [0.95047, 1.0, 1.08883];
@@ -155,21 +118,11 @@ function xyzD65toLab([X, Y, Z]) {
 const round3 = (n) => Math.round(n * 1000) / 1000;
 
 /**
- * Parse a Munsell hue string like "2.5YR", "10R", "5GY" etc.
- * into a canonical form.
- */
-function parseHue(hueStr) {
-  return hueStr.trim();
-}
-
-/**
- * Format Munsell notation: "HUE VALUE/CHROMA"
+ * Format Munsell notation "HUE VALUE/CHROMA". real.dat only contains integer
+ * values and chromas, so the numbers are printed as they are.
  */
 function formatMunsell(hue, value, chroma) {
-  // Format value as integer if whole number
-  const vStr = value % 1 === 0 ? value.toString() : value.toFixed(1);
-  const cStr = chroma % 1 === 0 ? chroma.toString() : chroma.toFixed(1);
-  return `${hue} ${vStr}/${cStr}`;
+  return `${hue} ${value}/${chroma}`;
 }
 
 // --- Main ---
@@ -196,42 +149,19 @@ function main() {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("H")) continue; // Skip header/empty
+    // Skip empty lines and the column header "h V C x y Y".
+    if (!trimmed || /^h\s/i.test(trimmed)) continue;
 
-    // Format: hue value chroma x y Y
-    // Fields are whitespace-separated, but hue can be like "2.5YR" or "N"
-    // The hue includes letters, so we need to handle that
+    // Format: hue value chroma x y Y, e.g. "2.5YR 3 4 0.3629 0.2710 1.210".
     const parts = trimmed.split(/\s+/);
-    if (parts.length < 6) {
+    if (parts.length !== 6) {
       skippedParsing++;
       continue;
     }
+    const hue = parts[0];
+    const [value, chroma, x, y, Y_val] = parts.slice(1).map(Number);
 
-    // The hue might be split across first two columns if it has a number prefix
-    // e.g., "2.5" "YR" "3" "4" "0.123" "0.456" "7.89"
-    // or "N" "5" "0" "0.310" "0.316" "19.77"
-    let hue, value, chroma, x, y, Y_val;
-
-    // Try to detect if first part is purely numeric (hue number prefix)
-    if (/^[\d.]+$/.test(parts[0]) && parts.length >= 7) {
-      // Hue is split: "2.5" + "YR"
-      hue = parts[0] + parts[1];
-      value = parseFloat(parts[2]);
-      chroma = parseFloat(parts[3]);
-      x = parseFloat(parts[4]);
-      y = parseFloat(parts[5]);
-      Y_val = parseFloat(parts[6]);
-    } else {
-      // Hue is single token: "N" or already combined
-      hue = parts[0];
-      value = parseFloat(parts[1]);
-      chroma = parseFloat(parts[2]);
-      x = parseFloat(parts[3]);
-      y = parseFloat(parts[4]);
-      Y_val = parseFloat(parts[5]);
-    }
-
-    if (isNaN(value) || isNaN(chroma) || isNaN(x) || isNaN(y) || isNaN(Y_val)) {
+    if ([value, chroma, x, y, Y_val].some((n) => isNaN(n))) {
       skippedParsing++;
       continue;
     }
@@ -252,7 +182,7 @@ function main() {
     // Lab comes straight from XYZ(D65) — full precision, not from the 8-bit RGB.
     const lab = xyzD65toLab(xyz);
 
-    const munsell = formatMunsell(parseHue(hue), value, chroma);
+    const munsell = formatMunsell(hue, value, chroma);
     entries.push({
       munsell,
       r: rgb.r,

@@ -1,4 +1,8 @@
 import db from "@/lib/db/db";
+import {
+  AUFNAHME_DETAIL_COLUMNS,
+  type AufnahmeDetailColumn,
+} from "@/lib/db/columns";
 import { latLonToUTM } from "@/lib/geo/utmConversion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -74,39 +78,42 @@ export const STANDORT_REQUIRED_FOR_VOLLSTAENDIG = [
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
 /**
- * Creates a new Aufnahme inside a Feldkampagne and inserts n empty Horizonte.
- * Returns the new aufnahme id.
+ * Inserts an Aufnahme into a Feldkampagne, numbered after the current last one,
+ * optionally at a known location. Returns the new aufnahme id.
  */
-export function createAufnahme(
-  anzahlHorizonte: number,
+function insertAufnahme(
   feldkampagneId: number,
+  location: { lat: number; lon: number; name: string | null } | null,
 ): number {
-  // Single statement: read-then-insert in one go so concurrent callers can't
-  // race to produce duplicate nummern within the same Feldkampagne.
-  const result = db.runSync(
-    `INSERT INTO aufnahmen (status, feldkampagne_id, nummer)
-     SELECT 'offen', ?, COALESCE(MAX(nummer), 0) + 1
+  const utm = location ? latLonToUTM(location.lat, location.lon) : null;
+  // Single read-then-insert statement so concurrent callers can't race to
+  // produce duplicate nummern within the same Feldkampagne.
+  return db.runSync(
+    `INSERT INTO aufnahmen
+       (status, feldkampagne_id, nummer, name,
+        gps_lat, gps_lon, utm_easting, utm_northing, utm_zone)
+     SELECT 'offen', ?, COALESCE(MAX(nummer), 0) + 1, ?, ?, ?, ?, ?, ?
        FROM aufnahmen WHERE feldkampagne_id = ?`,
     feldkampagneId,
+    location?.name ?? null,
+    location?.lat ?? null,
+    location?.lon ?? null,
+    utm?.easting ?? null,
+    utm?.northing ?? null,
+    utm?.label ?? null,
     feldkampagneId,
-  );
-  const aufnahmeId = result.lastInsertRowId;
+  ).lastInsertRowId;
+}
 
-  for (let i = 1; i <= anzahlHorizonte; i++) {
-    db.runSync(
-      `INSERT INTO horizonte (aufnahme_id, nummer, status) VALUES (?, ?, 'leer')`,
-      aufnahmeId,
-      i,
-    );
-  }
-
-  return aufnahmeId;
+/** Creates a new, empty Aufnahme (without Horizonte) inside a Feldkampagne. Returns its id. */
+export function createAufnahme(feldkampagneId: number): number {
+  return insertAufnahme(feldkampagneId, null);
 }
 
 /**
  * Creates an Aufnahme at a known location (e.g. from a GPX waypoint) with its
  * GPS and derived UTM coordinates and an optional name already filled in.
- * Starts with 0 horizons, just like createAufnahme. Returns the new aufnahme id.
+ * Starts with 0 Horizonte. Returns the new aufnahme id.
  */
 export function createAufnahmeAtLocation(
   feldkampagneId: number,
@@ -114,25 +121,7 @@ export function createAufnahmeAtLocation(
   lon: number,
   name: string | null,
 ): number {
-  const utm = latLonToUTM(lat, lon);
-  // Single read-then-insert statement so concurrent callers can't race to
-  // produce duplicate nummern within the same Feldkampagne.
-  const result = db.runSync(
-    `INSERT INTO aufnahmen
-       (status, feldkampagne_id, nummer, name,
-        gps_lat, gps_lon, utm_easting, utm_northing, utm_zone)
-     SELECT 'offen', ?, COALESCE(MAX(nummer), 0) + 1, ?, ?, ?, ?, ?, ?
-       FROM aufnahmen WHERE feldkampagne_id = ?`,
-    feldkampagneId,
-    name,
-    lat,
-    lon,
-    utm.easting,
-    utm.northing,
-    utm.label,
-    feldkampagneId,
-  );
-  return result.lastInsertRowId;
+  return insertAufnahme(feldkampagneId, { lat, lon, name });
 }
 
 /** Returns a single Aufnahme by id. */
@@ -143,124 +132,44 @@ export function getAufnahme(id: number): Aufnahme | null {
   );
 }
 
-export type AufnahmeDetails = Pick<
-  Aufnahme,
-  | "gps_lat"
-  | "gps_lon"
-  | "utm_easting"
-  | "utm_northing"
-  | "utm_zone"
-  | "notizen"
-  | "bodentyp"
-  | "bodtyp_abk"
-  | "humusform"
-  | "humsfrm_abk"
-  | "m_ue_nn"
-  | "witterung"
-  | "mittl_n"
-  | "mittl_temp"
-  | "nutzung"
-  | "vegetation"
-  | "reliefpos"
-  | "expos"
-  | "ausgangsgestein"
-  | "grundigkeit"
-  | "effektiver_wurzelraum"
-  | "hangneigung"
-  | "reliefformtyp"
-  | "mikrorelief"
-  | "nat_bodenabtrag"
-  | "kuenstl_bodenabtrag"
-  | "anthropogene_veraend"
-  | "bodenoberflaeche"
-  | "versiegelungsart"
-  | "regenwuermer"
-  | "substratsyst_einheit"
-  | "hydrogeniet_moortyp"
-  | "durchwurzelbarer_bodenraum"
-  | "wasserstand_gof"
-  | "grundnaessestufe"
-  | "besond_wasserverh"
-  | "stau_haftnaessestufe"
-  | "erosionsgrad"
->;
+/** Every editable Standortdaten column of an Aufnahme (see lib/db/columns.ts). */
+export type AufnahmeDetails = Pick<Aufnahme, AufnahmeDetailColumn>;
+
+const DETAIL_SET_CLAUSE = AUFNAHME_DETAIL_COLUMNS.map((c) => `${c} = ?`).join(
+  ", ",
+);
 
 /** Saves all form details for an Aufnahme. */
 export function saveAufnahmeDetails(id: number, data: AufnahmeDetails) {
   db.runSync(
-    `UPDATE aufnahmen SET
-       gps_lat = ?, gps_lon = ?, utm_easting = ?, utm_northing = ?, utm_zone = ?,
-       notizen = ?, bodentyp = ?, bodtyp_abk = ?, humusform = ?, humsfrm_abk = ?,
-       m_ue_nn = ?, witterung = ?, mittl_n = ?, mittl_temp = ?,
-       nutzung = ?, vegetation = ?, reliefpos = ?, expos = ?,
-       ausgangsgestein = ?, grundigkeit = ?, effektiver_wurzelraum = ?,
-       hangneigung = ?, reliefformtyp = ?, mikrorelief = ?,
-       nat_bodenabtrag = ?, kuenstl_bodenabtrag = ?,
-       anthropogene_veraend = ?, bodenoberflaeche = ?,
-       versiegelungsart = ?, regenwuermer = ?,
-       substratsyst_einheit = ?, hydrogeniet_moortyp = ?,
-       durchwurzelbarer_bodenraum = ?, wasserstand_gof = ?,
-       grundnaessestufe = ?, besond_wasserverh = ?,
-       stau_haftnaessestufe = ?, erosionsgrad = ?
-     WHERE id = ?`,
-    data.gps_lat ?? null,
-    data.gps_lon ?? null,
-    data.utm_easting ?? null,
-    data.utm_northing ?? null,
-    data.utm_zone ?? null,
-    data.notizen ?? null,
-    data.bodentyp ?? null,
-    data.bodtyp_abk ?? null,
-    data.humusform ?? null,
-    data.humsfrm_abk ?? null,
-    data.m_ue_nn ?? null,
-    data.witterung ?? null,
-    data.mittl_n ?? null,
-    data.mittl_temp ?? null,
-    data.nutzung ?? null,
-    data.vegetation ?? null,
-    data.reliefpos ?? null,
-    data.expos ?? null,
-    data.ausgangsgestein ?? null,
-    data.grundigkeit ?? null,
-    data.effektiver_wurzelraum ?? null,
-    data.hangneigung ?? null,
-    data.reliefformtyp ?? null,
-    data.mikrorelief ?? null,
-    data.nat_bodenabtrag ?? null,
-    data.kuenstl_bodenabtrag ?? null,
-    data.anthropogene_veraend ?? null,
-    data.bodenoberflaeche ?? null,
-    data.versiegelungsart ?? null,
-    data.regenwuermer ?? null,
-    data.substratsyst_einheit ?? null,
-    data.hydrogeniet_moortyp ?? null,
-    data.durchwurzelbarer_bodenraum ?? null,
-    data.wasserstand_gof ?? null,
-    data.grundnaessestufe ?? null,
-    data.besond_wasserverh ?? null,
-    data.stau_haftnaessestufe ?? null,
-    data.erosionsgrad ?? null,
+    `UPDATE aufnahmen SET ${DETAIL_SET_CLAUSE} WHERE id = ?`,
+    ...AUFNAHME_DETAIL_COLUMNS.map((c) => data[c] ?? null),
     id,
   );
 }
 
 /**
- * Overrides an imported Aufnahme's status, creation timestamp and name so a ZIP
- * import can faithfully restore the exported state (createAufnahme sets 'offen' +
- * now and leaves name null).
+ * Restores an imported Aufnahme's exported metadata (status, creation timestamp,
+ * name and nummer); createAufnahme sets 'offen', now, no name and the next nummer.
+ * A null nummer keeps the one assigned on insert.
  */
 export function setAufnahmeImportMeta(
   id: number,
-  status: string,
-  erstellt_am: string,
-  name: string | null = null,
+  meta: {
+    status: Aufnahme["status"];
+    erstellt_am: string;
+    name: string | null;
+    nummer: number | null;
+  },
 ) {
   db.runSync(
-    `UPDATE aufnahmen SET status = ?, erstellt_am = ?, name = ? WHERE id = ?`,
-    status,
-    erstellt_am,
-    name,
+    `UPDATE aufnahmen
+        SET status = ?, erstellt_am = ?, name = ?, nummer = COALESCE(?, nummer)
+      WHERE id = ?`,
+    meta.status,
+    meta.erstellt_am,
+    meta.name,
+    meta.nummer,
     id,
   );
 }

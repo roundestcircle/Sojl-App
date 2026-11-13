@@ -1,17 +1,23 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Linking,
   Text,
   TouchableOpacity,
   View,
   ViewStyle,
-  ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
 import { File } from "expo-file-system";
 import { styles } from "@/styles/styles";
-import { extractSoilColor } from "@/lib/color/soilColorExtractor";
-import { OVERLAY_FRACTIONS } from "@/lib/color/cameraOverlay";
+import {
+  ColorExtractionError,
+  extractSoilColor,
+  type SoilColorResult,
+} from "@/lib/color/soilColorExtractor";
+import { OVERLAY_DISPLAY, type OverlayRect } from "@/lib/color/cameraOverlay";
+import { POOR_MATCH_DELTA_E00 } from "@/lib/color/munsellLookup";
 import {
   InstructionModal,
   ResetInstructionButton,
@@ -33,37 +39,47 @@ const deleteCachedPhoto = (photoUri: string | null) => {
 };
 
 /**
- * Overlay rectangles guide proper positioning. Display fractions are kept in
- * sync with the sampling rectangles in `lib/color/cameraOverlay.ts`; the grey card
- * display rect is intentionally taller than its sampling rect so the user has
- * slack while aligning.
+ * Guide boxes over the preview. They come from `lib/color/cameraOverlay.ts`,
+ * the single source of the rectangles for UI and extraction.
  */
-const greyCardDisplay = OVERLAY_FRACTIONS.greyCard.display;
-const soilSampleDisplay = OVERLAY_FRACTIONS.soilSample.display;
+const guideBox = (rect: OverlayRect, borderWidth: number): ViewStyle => ({
+  position: "absolute",
+  top: `${rect.top * 100}%`,
+  left: `${rect.left * 100}%`,
+  width: `${rect.width * 100}%`,
+  height: `${rect.height * 100}%`,
+  borderWidth,
+  borderColor: "white",
+  backgroundColor: "transparent",
+});
 
-const overlayStyles: { largeRectangle: ViewStyle; smallRectangle: ViewStyle } =
-  {
-    largeRectangle: {
-      position: "absolute",
-      top: `${greyCardDisplay.top * 100}%`,
-      left: `${greyCardDisplay.left * 100}%`,
-      width: `${greyCardDisplay.width * 100}%`,
-      height: `${greyCardDisplay.height * 100}%`,
-      borderWidth: 3,
-      borderColor: "white",
-      backgroundColor: "transparent",
-    },
-    smallRectangle: {
-      position: "absolute",
-      top: `${soilSampleDisplay.top * 100}%`,
-      left: `${soilSampleDisplay.left * 100}%`,
-      width: `${soilSampleDisplay.width * 100}%`,
-      height: `${soilSampleDisplay.height * 100}%`,
-      borderWidth: 2,
-      borderColor: "white",
-      backgroundColor: "transparent",
-    },
-  };
+const overlayStyles = {
+  largeRectangle: guideBox(OVERLAY_DISPLAY.greyCard, 3),
+  smallRectangle: guideBox(OVERLAY_DISPLAY.soilSample, 2),
+  topBox: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    marginTop: 0,
+  } satisfies ViewStyle,
+  errorBox: {
+    backgroundColor: "rgba(253, 236, 234, 0.95)",
+    borderRadius: 10,
+    padding: 12,
+  } satisfies ViewStyle,
+  errorText: { color: "#b3261e", fontSize: 15, textAlign: "center" as const },
+  hintText: {
+    color: "#8a4b00",
+    fontSize: 14,
+    textAlign: "center" as const,
+  },
+};
+
+const CAPTURE_ERROR =
+  "Das Foto konnte nicht aufgenommen werden. Bitte erneut versuchen.";
+const EXTRACTION_ERROR =
+  "Die Farbe konnte nicht bestimmt werden. Bitte ein neues Foto aufnehmen.";
 
 type Props = { onConfirm?: (munsell: string) => void };
 
@@ -75,10 +91,10 @@ export default function PictureTaker({ onConfirm }: Props) {
   const ref = useRef<CameraView>(null);
 
   // On-screen aspect ratio (width / height) of the camera preview. The preview
-  // is center-cropped to fill the screen, so the extractor uses this to sample
-  // the same region of the photo that the user framed. Captured at layout time
-  // because the CameraView unmounts once a photo is taken.
-  const previewAspectRef = useRef<number | undefined>(undefined);
+  // is centre-cropped to fill the screen, so the extractor needs it to sample
+  // the region of the photo the user framed. Capture is blocked until layout
+  // has reported it; the value is kept while the CameraView is unmounted.
+  const [previewAspect, setPreviewAspect] = useState<number | null>(null);
 
   // Store the URI of the taken photo
   const [uri, setUri] = useState<string | null>(null);
@@ -89,19 +105,25 @@ export default function PictureTaker({ onConfirm }: Props) {
   useEffect(() => {
     uriRef.current = uri;
   }, [uri]);
-  useEffect(() => () => deleteCachedPhoto(uriRef.current), []);
 
-  // Store extracted RGB color values
-  const [soilColor, setSoilColor] = useState<{
-    r: number;
-    g: number;
-    b: number;
-  } | null>(null);
+  // Async results that arrive after unmount must not touch state, and a photo
+  // captured after unmount must still be cleaned up.
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      deleteCachedPhoto(uriRef.current);
+    };
+  }, []);
 
-  // Store Munsell color notation
-  const [munsellColor, setMunsellColor] = useState<string | null>(null);
+  // Synchronous guard against double taps (state updates land too late).
+  const busyRef = useRef(false);
 
-  // Loading state while extracting color
+  const [result, setResult] = useState<SoilColorResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
   const [isExtractingColor, setIsExtractingColor] = useState(false);
 
   // Key to force remount of InstructionModal after reset
@@ -127,45 +149,89 @@ export default function PictureTaker({ onConfirm }: Props) {
         <Text style={styles.maintext}>
           Zum Farbe bestimmen benötigt die App Zugriff auf deine Kamera.
         </Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
-          <Text style={styles.maintext}>Zugriff erlauben</Text>
-        </TouchableOpacity>
+        {permission.canAskAgain ? (
+          <TouchableOpacity style={styles.button} onPress={requestPermission}>
+            <Text style={styles.maintext}>Zugriff erlauben</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            <Text style={styles.text}>
+              Der Kamerazugriff wurde abgelehnt. Du kannst ihn in den
+              Einstellungen der App wieder erlauben.
+            </Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                Linking.openSettings().catch(() => {
+                  setError("Die Einstellungen konnten nicht geöffnet werden.");
+                });
+              }}
+            >
+              <Text style={styles.maintext}>Einstellungen öffnen</Text>
+            </TouchableOpacity>
+            {error && <Text style={overlayStyles.errorText}>{error}</Text>}
+          </>
+        )}
       </View>
     );
   }
 
-  /**
-   * Captures a photo from the camera
-   * Stores the image URI for processing
-   */
+  /** Captures a photo and replaces (and deletes) any previous one. */
   const takePicture = async () => {
-    const photo = await ref.current?.takePictureAsync();
-    if (photo?.uri) setUri(photo.uri); // Save image URI
+    if (busyRef.current || previewAspect === null) return;
+    busyRef.current = true;
+    setIsCapturing(true);
+    setError(null);
+    try {
+      const photo = await ref.current?.takePictureAsync();
+      if (!photo?.uri) throw new Error("No photo returned");
+      if (!mountedRef.current) {
+        deleteCachedPhoto(photo.uri);
+        return;
+      }
+      deleteCachedPhoto(uriRef.current);
+      setResult(null);
+      setUri(photo.uri);
+    } catch {
+      if (mountedRef.current) setError(CAPTURE_ERROR);
+    } finally {
+      busyRef.current = false;
+      if (mountedRef.current) setIsCapturing(false);
+    }
   };
 
   /**
-   * Extracts soil color from the photo using AI-based analysis
-   * Accounts for the grey card reference for accurate color correction
+   * White-balances the photo with the grey card and looks up the nearest
+   * Munsell chip.
    * @param photoUri - URI of the photo to analyze
    */
   const handleExtractSoilColor = async (photoUri: string) => {
+    if (busyRef.current || previewAspect === null) return;
+    busyRef.current = true;
+    setIsExtractingColor(true);
+    setError(null);
     try {
-      setIsExtractingColor(true);
-      // Extract color and convert to Munsell notation
-      const { correctedColor, correctedColorMunsell } = await extractSoilColor(
-        photoUri,
-        previewAspectRef.current,
-      );
-      setSoilColor(correctedColor); // Store RGB values
-      setMunsellColor(correctedColorMunsell.full); // Store full Munsell notation
-    } catch (error) {
-      console.error("Error extracting soil color:", error);
-      setSoilColor(null);
-      setMunsellColor(null);
+      const res = await extractSoilColor(photoUri, previewAspect);
+      if (mountedRef.current) setResult(res);
+    } catch (e) {
+      if (mountedRef.current) {
+        setResult(null);
+        setError(
+          e instanceof ColorExtractionError ? e.message : EXTRACTION_ERROR,
+        );
+      }
     } finally {
-      setIsExtractingColor(false);
+      busyRef.current = false;
+      if (mountedRef.current) setIsExtractingColor(false);
     }
   };
+
+  const renderError = (message: string | null) =>
+    message ? (
+      <View style={[overlayStyles.topBox, overlayStyles.errorBox]}>
+        <Text style={overlayStyles.errorText}>{message}</Text>
+      </View>
+    ) : null;
 
   /**
    * Renders the picture review screen
@@ -183,28 +249,28 @@ export default function PictureTaker({ onConfirm }: Props) {
         <View style={overlayStyles.largeRectangle} />
         <View style={overlayStyles.smallRectangle} />
 
-        {soilColor && (
+        {result && (
           <View
             style={[
               styles.resultBox,
-              {
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                marginTop: 0,
-                backgroundColor: "rgba(220, 240, 210, 0.93)",
-              },
+              overlayStyles.topBox,
+              { backgroundColor: "rgba(220, 240, 210, 0.93)" },
             ]}
           >
-            {munsellColor && (
-              <Text style={styles.resultValue}>{munsellColor}</Text>
-            )}
+            <Text style={styles.resultValue}>{result.munsell}</Text>
             <Text style={styles.resultLabel}>
-              RGB: R={soilColor.r} G={soilColor.g} B={soilColor.b}
+              RGB: R={result.rgb.r} G={result.rgb.g} B={result.rgb.b}
             </Text>
+            {result.distance > POOR_MATCH_DELTA_E00 && (
+              <Text style={overlayStyles.hintText}>
+                {`Schlechte Übereinstimmung (ΔE00 = ${result.distance.toFixed(1)}): ` +
+                  "Die Farbe liegt außerhalb der Referenzfarben oder Belichtung " +
+                  "bzw. Greycard passen nicht. Bitte mit der Farbtafel prüfen."}
+              </Text>
+            )}
           </View>
         )}
+        {renderError(error)}
 
         <View
           style={{
@@ -215,11 +281,11 @@ export default function PictureTaker({ onConfirm }: Props) {
             gap: 10,
           }}
         >
-          {munsellColor && onConfirm && (
+          {result && onConfirm && (
             <TouchableOpacity
               style={[styles.actionButton, { alignSelf: "stretch" }]}
               onPress={() => {
-                onConfirm(munsellColor);
+                onConfirm(result.munsell);
                 // Value handed off; the photo is no longer needed.
                 deleteCachedPhoto(uri);
               }}
@@ -227,7 +293,7 @@ export default function PictureTaker({ onConfirm }: Props) {
               <Text style={styles.actionButtonText}>Wert übernehmen</Text>
             </TouchableOpacity>
           )}
-          {!soilColor && (
+          {!result && (
             <TouchableOpacity
               style={styles.button}
               onPress={() => handleExtractSoilColor(uri)}
@@ -245,11 +311,12 @@ export default function PictureTaker({ onConfirm }: Props) {
           )}
           <TouchableOpacity
             style={styles.button}
+            disabled={isExtractingColor}
             onPress={() => {
               deleteCachedPhoto(uri);
               setUri(null);
-              setSoilColor(null);
-              setMunsellColor(null);
+              setResult(null);
+              setError(null);
             }}
           >
             <Text style={styles.maintext}>Neues Foto aufnehmen</Text>
@@ -264,6 +331,8 @@ export default function PictureTaker({ onConfirm }: Props) {
    * Shows live camera feed with overlay guides for proper positioning
    */
   const renderCamera = () => {
+    const canCapture =
+      previewAspect !== null && cameraError === null && !isCapturing;
     return (
       <View style={{ flex: 1, paddingBottom: 70 }}>
         <CameraView
@@ -279,17 +348,32 @@ export default function PictureTaker({ onConfirm }: Props) {
           responsiveOrientationWhenOrientationLocked
           onLayout={(e) => {
             const { width, height } = e.nativeEvent.layout;
-            if (width > 0 && height > 0) {
-              previewAspectRef.current = width / height;
-            }
+            if (width > 0 && height > 0) setPreviewAspect(width / height);
           }}
+          onMountError={(e) =>
+            setCameraError(
+              `Die Kamera konnte nicht gestartet werden (${e.message}).`,
+            )
+          }
         />
         <View style={overlayStyles.largeRectangle} />
         <View style={overlayStyles.smallRectangle} />
+        {renderError(cameraError ?? error)}
 
         <View style={{ position: "absolute", bottom: 70, left: 0, right: 0 }}>
-          <TouchableOpacity style={styles.button} onPress={takePicture}>
-            <Text style={styles.maintext}>Foto aufnehmen</Text>
+          <TouchableOpacity
+            style={[styles.button, !canCapture && { opacity: 0.5 }]}
+            onPress={takePicture}
+            disabled={!canCapture}
+          >
+            {isCapturing ? (
+              <ActivityIndicator
+                color={styles.maintext.color}
+                size={styles.maintext.fontSize}
+              />
+            ) : (
+              <Text style={styles.maintext}>Foto aufnehmen</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>

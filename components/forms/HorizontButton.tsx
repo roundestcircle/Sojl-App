@@ -160,9 +160,9 @@ const statusStyle: Record<
   Horizont["status"],
   { label: string; badgeBg: string }
 > = {
-  leer: { label: "leer", badgeBg: "#6c757d" },
-  angefangen: { label: "begonnen", badgeBg: "#e0a020" },
-  vollstaendig: { label: "vollständig", badgeBg: colors.primary },
+  leer: { label: "leer", badgeBg: colors.statusEmpty },
+  angefangen: { label: "begonnen", badgeBg: colors.statusStarted },
+  vollstaendig: { label: "vollständig", badgeBg: colors.statusDone },
 };
 
 const localStyles = StyleSheet.create({

@@ -152,7 +152,9 @@ export default function StandortSection({
         render={({ field: { onChange, value } }) => (
           <TextInput
             style={styles.input}
-            keyboardType="number-pad"
+            // Höhe can be negative (e.g. below sea level); number-pad has no
+            // minus key.
+            keyboardType="numbers-and-punctuation"
             placeholder="z.B. 350"
             placeholderTextColor={PLACEHOLDER_COLOR}
             onChangeText={onChange}

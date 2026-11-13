@@ -34,21 +34,30 @@ renaming a route, start the dev server once before type-checking.
   determination tools → `components/tools/`; lexica → `components/lexikon/`.
 - Pure logic → `lib/<area>/` (db, calc, color, geo, io, validation). No React or
   Expo imports in `lib/calc`, `lib/geo`, `lib/io/gpx.ts`,
-  `lib/color/munsellLookup.ts` — keep them testable.
+  `lib/io/campaignArchive.ts`, `lib/color/munsellLookup.ts`,
+  `lib/color/colorMath.ts`, `lib/number.ts` — keep them testable.
+- Parse user-entered numbers with `parseDecimal` (`lib/number.ts`), never
+  `parseFloat` — it accepts the German decimal comma ("5,5").
 - `lib/` and `data/` never import from `components/` (type-only imports excepted).
 - Static tables/options → `data/`; decision trees → `data/trees/`.
 - Tests → `__tests__/` next to the module.
 
 ## Cross-file invariants
 
-- **New DB columns:** add an `ALTER TABLE … ADD COLUMN` migration (in try/catch)
-  in `lib/db/db.ts` and update the matching `*Queries.ts`, `lib/io/csvExport.ts`
-  and `lib/io/zipImport.ts` — otherwise the column is lost on export/import.
-- **Forms autosave:** `AufnahmeForm`/`HorizontForm` call `onSave` from a single
-  `watch` subscription; the screen writes debounced (`hooks/useDebouncedCallback`)
-  and flushes on leave. Derived Horizont fields (Humus, KAK, TRD, GPV/LK/FK/nFK …)
-  are recomputed in `useHorizontCalculations` — add new derived values there, not
-  in sections. DB row ⇄ form-value mapping lives in each form folder's `types.ts`.
+- **New DB columns:** add the column to `lib/db/columns.ts` (and to its
+  `*_REAL_COLUMNS` set if numeric) plus the row type in `*Queries.ts`. The
+  migration (`db.ts` adds missing columns on start), the UPDATE statements, CSV
+  export/ZIP import and the form types are all built from those lists.
+- **Forms autosave:** `AufnahmeForm`/`HorizontForm` save every change through
+  `hooks/useFormAutosave` (no change is skipped); the screen writes via
+  `hooks/useAutosave` (debounced, flushed on blur, backgrounding and unmount).
+  Derived Horizont fields (Humus, KAK, TRD, GPV/LK/FK/nFK …) are computed by the
+  pure `deriveHorizont` (`lib/calc/deriveHorizont.ts`) — add new derived values
+  there, not in sections. DB row ⇄ form-value mapping lives in each form folder's
+  `types.ts`.
+- **Decision trees:** every tree is registered in `TREE_TOOLS`
+  (`data/trees/index.ts`) and rendered by `components/tools/TreeTool.tsx`;
+  `data/trees/__tests__/trees.test.ts` checks structure and leaf codes.
 - **Colour detection:** all colour math runs in linear light; only the display
   value is re-encoded to sRGB. `lib/color/cameraOverlay.ts` is the single source
   of the sampling rectangles for both the camera UI and the extraction.
@@ -59,5 +68,6 @@ renaming a route, start the dev server once before type-checking.
 - Components PascalCase, other modules camelCase.
 - Use **Horizont** (not "Horizon") and the other German domain terms consistently.
 - Form labels carry the Aufnahmeformblatt number in parentheses, e.g. `Bodenart / Textur (44)`.
-- `data/munsellData.ts` is generated — never edit by hand (also lint-ignored).
+- `data/munsellData.ts` is generated — never edit by hand (also lint- and
+  Prettier-ignored).
 - Personal notes/screenshots go in `_local/` (git-ignored, excluded from Jest).

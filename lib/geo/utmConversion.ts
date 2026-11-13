@@ -18,7 +18,10 @@ export type UTMCoord = {
  * Converts WGS84 decimal degrees to UTM (WGS84).
  *
  * Supported range: latitudes in [-80°, +84°] (standard UTM coverage),
- * longitudes in [-180°, +180°]. Outside this band the result is undefined.
+ * longitudes in [-180°, +180°]. Outside this band the result is undefined —
+ * callers converting user input validate first (see `isUtmLatLon` in
+ * `lib/geo/coordinates.ts`). The antimeridian (lon = +180°) belongs to zone 60;
+ * the zone number is therefore always 1–60.
  *
  * Special non-standard zones (Norway 31V/32V, Svalbard 31X-37X) are NOT handled —
  * inputs that fall into them will return the standard zone, not the special one.
@@ -28,7 +31,8 @@ export function latLonToUTM(lat: number, lon: number): UTMCoord {
   const φ = (lat * Math.PI) / 180;
   const λ = (lon * Math.PI) / 180;
 
-  const zone = Math.floor((lon + 180) / 6) + 1;
+  // lon = +180° would give zone 61; it is the eastern edge of zone 60.
+  const zone = Math.min(60, Math.max(1, Math.floor((lon + 180) / 6) + 1));
   const λ0 = (((zone - 1) * 6 - 180 + 3) * Math.PI) / 180;
 
   const N = a / Math.sqrt(1 - e2 * Math.sin(φ) ** 2);
@@ -73,7 +77,10 @@ export function latLonToUTM(lat: number, lon: number): UTMCoord {
   };
 }
 
-/** Converts UTM coordinates back to WGS84 decimal degrees. */
+/**
+ * Converts UTM coordinates back to WGS84 decimal degrees. `zone` must be 1–60
+ * (see `parseZone` in `lib/geo/coordinates.ts`); the result is not range-checked.
+ */
 export function utmToLatLon(
   easting: number,
   northing: number,

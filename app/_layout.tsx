@@ -1,37 +1,13 @@
-import { colors } from "@/styles/colors";
-import { Stack, router } from "expo-router";
-import { TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useEffect } from "react";
-import { initDatabase } from "@/lib/db/db";
-
-// Home icon rendered in the header right slot on most screens
-const homeButton = () => (
-  <TouchableOpacity
-    onPress={() => router.replace("/")}
-    style={{ marginRight: 4 }}
-  >
-    <Ionicons name="home" size={24} color="#fff" />
-  </TouchableOpacity>
-);
+import { Stack } from "expo-router";
+import { stackScreenOptions } from "@/components/ui/stackScreenOptions";
 
 /**
- * Root layout for the whole app.
- * Initializes the SQLite database on mount and defines top-level navigation screens.
+ * Root layout for the whole app: defines the top-level navigation screens.
+ * The SQLite schema is created when lib/db/db.ts is first imported.
  */
 export default function RootLayout() {
-  useEffect(() => {
-    initDatabase();
-  }, []);
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.primary },
-        headerTintColor: "#fff",
-        headerTitleStyle: { fontWeight: "bold", fontSize: 25 },
-        headerRight: homeButton,
-      }}
-    >
+    <Stack screenOptions={stackScreenOptions}>
       <Stack.Screen
         name="index"
         options={{ title: "Home", headerRight: () => null }}

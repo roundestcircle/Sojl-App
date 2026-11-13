@@ -1,3 +1,5 @@
+import { parseDecimal } from "@/lib/number";
+
 // Each entry: [base_saturation_pct, pH], sorted by pH ascending.
 // Source: digitized curves from soil science literature, three humus groups.
 
@@ -94,8 +96,8 @@ function interpBS(curve: CurvePoint[], pH: number): number {
  * and `calcBasensaettigung` can't drift.
  */
 export function humusGroupLabel(humusPctStr: string): string | null {
-  const n = parseFloat(humusPctStr);
-  if (isNaN(n)) return null;
+  const n = parseDecimal(humusPctStr);
+  if (n === null) return null;
   if (n <= 4) return "≤ 4 % Humus";
   if (n < 15) return "4 – 15 % Humus";
   return "≥ 15 % Humus";
@@ -104,19 +106,20 @@ export function humusGroupLabel(humusPctStr: string): string | null {
 /**
  * Estimates Basensättigung (%) from pH (CaCl₂) and humus percentage.
  * Humus groups: ≤4% → curve 1, 4–15% exclusive → curve 2, ≥15% → curve 3.
- * Returns empty string if pH is missing.
+ * Returns empty string if pH or humus % is missing. Decimal commas are accepted.
+ * A non-numeric humus value (e.g. "nb") falls back to the ≤4 % curve.
  */
 export function calcBasensaettigung(
   pHStr: string,
   humusPctStr: string,
 ): string {
-  const pH = parseFloat(pHStr);
-  if (isNaN(pH)) return "";
+  const pH = parseDecimal(pHStr);
+  if (pH === null) return "";
   if (!humusPctStr.trim()) return "";
-  const humus = parseFloat(humusPctStr);
+  const humus = parseDecimal(humusPctStr);
 
   let curve: CurvePoint[];
-  if (isNaN(humus) || humus <= 4) {
+  if (humus === null || humus <= 4) {
     curve = CURVE_LT4;
   } else if (humus < 15) {
     curve = CURVE_4TO15;

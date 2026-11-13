@@ -1,22 +1,25 @@
-import type { DecisionTreeData } from "@/data/trees/types";
+import { leaf, type DecisionTreeData } from "@/data/trees/types";
+
+const Q = "Geschätzte Lagerungsdichte";
 
 export const LagerungsdichteTree: DecisionTreeData = {
-  id: "start",
-  question: "Welche Bodenart liegt vor?",
-  hint: "Erster Schritt: Unterscheidung zwischen leichten (Sand, Schluff, leichter Lehm) und schweren (schwerer Lehm, Ton) Böden.",
-  options: [
-    {
-      text: "Sand-, Schluff- oder leichter Lehmboden (trocken bis frisch)",
-      next: "light_soil",
-    },
-    {
-      text: "schwerer Lehmboden oder Tonboden (trocken bis frisch)",
-      next: "heavy_soil",
-    },
-  ],
+  root: "start",
   nodes: {
+    start: {
+      question: "Welche Bodenart liegt vor?",
+      hint: "Erster Schritt: Unterscheidung zwischen leichten (Sand, Schluff, leichter Lehm) und schweren (schwerer Lehm, Ton) Böden.",
+      options: [
+        {
+          text: "Sand-, Schluff- oder leichter Lehmboden (trocken bis frisch)",
+          next: "light_soil",
+        },
+        {
+          text: "schwerer Lehmboden oder Tonboden (trocken bis frisch)",
+          next: "heavy_soil",
+        },
+      ],
+    },
     light_soil: {
-      id: "light_soil",
       question: "Wie verhält sich die Probe bei der Probenahme / beim Drücken?",
       options: [
         {
@@ -42,7 +45,6 @@ export const LagerungsdichteTree: DecisionTreeData = {
       ],
     },
     heavy_soil: {
-      id: "heavy_soil",
       question: "Wie verhält sich die Probe beim Aufprall und beim Drücken?",
       options: [
         {
@@ -65,84 +67,52 @@ export const LagerungsdichteTree: DecisionTreeData = {
     },
 
     // ── Ergebnisse leichte Böden ───────────────────────────
-    result_light_0: {
-      id: "result_light_0",
-      question: "Geschätzte Lagerungsdichte",
-      result: {
-        title: "0,9–1,2 kg/dm³",
-        description: "Häufige Gefügeformen: Einzelkorn, Krümel",
-      },
-    },
-    result_light_1: {
-      id: "result_light_1",
-      question: "Geschätzte Lagerungsdichte",
-      result: {
-        title: "1,2–1,4 kg/dm³",
-        description:
-          "Häufige Gefügeformen: Einzelkorn, Bröckel, Subpolyeder, (Polyeder)",
-      },
-    },
-    result_light_2: {
-      id: "result_light_2",
-      question: "Geschätzte Lagerungsdichte",
-      result: {
-        title: "1,4–1,6 kg/dm³",
-        description:
-          "Häufige Gefügeformen: Subpolyeder, Polyeder, Prismen, Fragmente, Hüllen, Platten",
-      },
-    },
-    result_light_3: {
-      id: "result_light_3",
-      question: "Geschätzte Lagerungsdichte",
-      result: {
-        title: "1,6–1,8 kg/dm³",
-        description:
-          "Häufige Gefügeformen: Prismen, Platten, Hüllen, (Polyeder)",
-      },
-    },
-    result_light_4: {
-      id: "result_light_4",
-      question: "Geschätzte Lagerungsdichte",
-      result: {
-        title: "1,8–1,9 kg/dm³",
-        description: "Häufige Gefügeformen: Hüllen, Kohärent, Prismen",
-      },
-    },
+    result_light_0: leaf(
+      "0,9–1,2 kg/dm³",
+      "Häufige Gefügeformen: Einzelkorn, Krümel",
+      Q,
+    ),
+    result_light_1: leaf(
+      "1,2–1,4 kg/dm³",
+      "Häufige Gefügeformen: Einzelkorn, Bröckel, Subpolyeder, (Polyeder)",
+      Q,
+    ),
+    result_light_2: leaf(
+      "1,4–1,6 kg/dm³",
+      "Häufige Gefügeformen: Subpolyeder, Polyeder, Prismen, Fragmente, Hüllen, Platten",
+      Q,
+    ),
+    result_light_3: leaf(
+      "1,6–1,8 kg/dm³",
+      "Häufige Gefügeformen: Prismen, Platten, Hüllen, (Polyeder)",
+      Q,
+    ),
+    result_light_4: leaf(
+      "1,8–1,9 kg/dm³",
+      "Häufige Gefügeformen: Hüllen, Kohärent, Prismen",
+      Q,
+    ),
 
     // ── Ergebnisse schwere Böden ──────────────────────────
-    result_heavy_0: {
-      id: "result_heavy_0",
-      question: "Geschätzte Lagerungsdichte",
-      result: {
-        title: "1,0–1,2 kg/dm³",
-        description: "Häufige Gefügeformen: Polyeder, Fragmente",
-      },
-    },
-    result_heavy_1: {
-      id: "result_heavy_1",
-      question: "Geschätzte Lagerungsdichte",
-      result: {
-        title: "1,2–1,4 kg/dm³",
-        description:
-          "Häufige Gefügeformen: Polyeder, Prismen, Säulen, Klumpen, Platten",
-      },
-    },
-    result_heavy_2: {
-      id: "result_heavy_2",
-      question: "Geschätzte Lagerungsdichte",
-      result: {
-        title: "1,4–1,6 kg/dm³",
-        description:
-          "Häufige Gefügeformen: Kohärent, Prismen, (Platten, Säulen, Polyeder)",
-      },
-    },
-    result_heavy_3: {
-      id: "result_heavy_3",
-      question: "Geschätzte Lagerungsdichte",
-      result: {
-        title: "1,6–1,7 kg/dm³",
-        description: "Häufige Gefügeformen: Kohärent, (Prismen, Säulen)",
-      },
-    },
+    result_heavy_0: leaf(
+      "1,0–1,2 kg/dm³",
+      "Häufige Gefügeformen: Polyeder, Fragmente",
+      Q,
+    ),
+    result_heavy_1: leaf(
+      "1,2–1,4 kg/dm³",
+      "Häufige Gefügeformen: Polyeder, Prismen, Säulen, Klumpen, Platten",
+      Q,
+    ),
+    result_heavy_2: leaf(
+      "1,4–1,6 kg/dm³",
+      "Häufige Gefügeformen: Kohärent, Prismen, (Platten, Säulen, Polyeder)",
+      Q,
+    ),
+    result_heavy_3: leaf(
+      "1,6–1,7 kg/dm³",
+      "Häufige Gefügeformen: Kohärent, (Prismen, Säulen)",
+      Q,
+    ),
   },
 };

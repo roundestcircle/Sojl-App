@@ -232,20 +232,25 @@ export function calcKAK(
 }
 
 // ─── S-Wert (Sorptionssumme) ─────────────────────────────────────────────────
-// Thresholds in mol_c/m²·We: <1, 1–10, 10–50, 50–200, ≥200
+// Thresholds in cmol_c/m²·We: <100, 100–1000, 1000–5000, 5000–20000, ≥20000
+// (= 1 / 10 / 50 / 200 mol_c/m²·We).
 export function rateSWert(value: number): Rating {
-  if (value < 1) return "sehr gering";
-  if (value < 10) return "gering";
-  if (value < 50) return "mittel";
-  if (value < 200) return "hoch";
+  if (value < 100) return "sehr gering";
+  if (value < 1000) return "gering";
+  if (value < 5000) return "mittel";
+  if (value < 20000) return "hoch";
   return "sehr hoch";
 }
 
 /**
- * Sums the S-Wert (KAK × BS/100 × TRD × Mächtigkeit) over all horizons up to depthLimitCm.
+ * Sums the S-Wert over all horizons up to depthLimitCm. Result in cmol_c/m²·We.
+ *
+ * Per horizon: KAK [cmol_c/kg] × BS/100 × TRD [kg/dm³] × Mächtigkeit [dm]
+ * = cmol_c/dm², × 100 dm²/m² → cmol_c/m². (The BS/100 and ×100 cancel out.)
+ *
  * Horizons with an uppercase 'A' in their name contribute fully (×1); all others ×0.5.
  * Depth-clipping follows the same proportional logic as calcProfileFKOrNFK.
- * Result is in mol_c/m²·We. Returns null if no horizon had all required values.
+ * Returns null if no horizon had all required values.
  */
 export function calcProfileSWert(
   horizonte: Horizont[],
@@ -274,7 +279,7 @@ export function calcProfileSWert(
     const maechtigkDm = (clippedBot - top) / 10;
     // A-Horizonte (Ah, Ap, fAh, rAp, …): optional lowercase prefix(es) then capital A.
     const weight = /^[a-z]*A/.test(h.horizontname ?? "") ? 1 : 0.5;
-    total += kak * (bs / 100) * trd * maechtigkDm * weight;
+    total += kak * bs * trd * maechtigkDm * weight;
     hasAny = true;
   }
   return hasAny ? total : null;

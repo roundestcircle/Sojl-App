@@ -56,11 +56,21 @@ describe("validateMunsell", () => {
     });
   });
 
-  // The RIT renotation dataset only has even chroma steps, so odd chromas
-  // (common on soil colour charts, e.g. 10YR 4/3) are currently rejected.
-  // This pins the current behaviour; change it together with the validator.
-  it("rejects odd chromas that are not in the RIT dataset", () => {
-    expect(validateMunsell("10YR 4/3").valid).toBe(false);
+  // The RIT dataset only has even chromas; soil charts also use 1 and 3.
+  it.each(["10YR 4/3", "10YR 3/1", "7.5yr 5/3", "2.5Y 6/1"])(
+    "accepts soil-chart chroma 1/3: %s",
+    (input) => {
+      expect(validateMunsell(input)).toEqual({
+        valid: true,
+        normalized: input.toUpperCase(),
+      });
+    },
+  );
+
+  it("still rejects other odd chromas and unknown hue/value pages", () => {
+    expect(validateMunsell("10YR 4/5").valid).toBe(false);
+    expect(validateMunsell("11YR 4/3").valid).toBe(false);
+    expect(validateMunsell("10YR 0/1").valid).toBe(false);
   });
 
   it("rejects malformed notation", () => {

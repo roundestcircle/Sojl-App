@@ -137,6 +137,23 @@ function canonicalizeMunsell(input: string): string | null {
   return `${hue} ${m[2]}/${m[3]}`;
 }
 
+/**
+ * The RIT renotation dataset only contains even chromas (2, 4, 6, …), but soil
+ * colour charts also use chroma 1 and 3 (e.g. 10YR 3/1, 10YR 4/3). Such a
+ * colour is accepted when the dataset has an adjacent even chroma (1 → 2,
+ * 3 → 2 or 4) for the same hue and value, i.e. the hue/value page exists.
+ */
+function isSoilChartOddChroma(canonical: string): boolean {
+  const m = canonical.match(/^(\S+) (\S+)\/(\S+)$/);
+  if (!m) return false;
+  const [, hue, value, chroma] = m;
+  if (chroma !== "1" && chroma !== "3") return false;
+  const neighbours = chroma === "1" ? [2] : [2, 4];
+  return neighbours.some((c) =>
+    MUNSELL_SET.has(`${hue} ${value}/${c}`.toUpperCase()),
+  );
+}
+
 // ─── "nicht bestimmt" sentinel ────────────────────────────────────────────────
 
 /** Accepts "nb" (any case) as a valid sentinel meaning "nicht bestimmt". */
@@ -275,7 +292,10 @@ export function validateMunsell(raw: string): ValidationResult {
       },
     };
   }
-  if (MUNSELL_SET.has(canonical.toUpperCase())) {
+  if (
+    MUNSELL_SET.has(canonical.toUpperCase()) ||
+    isSoilChartOddChroma(canonical)
+  ) {
     return { valid: true, normalized: canonical };
   }
   // Structurally fine but not in the dataset → suggest nearest by hue prefix

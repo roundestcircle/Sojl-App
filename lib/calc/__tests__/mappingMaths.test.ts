@@ -6,6 +6,7 @@ import {
   rateGPV,
   rateKAK,
   rateNFK,
+  rateSWert,
 } from "@/lib/calc/mappingMaths";
 import type { Horizont } from "@/lib/db/horizontQueries";
 
@@ -70,16 +71,31 @@ describe("calcProfileSWert", () => {
       h({ ...base, horizontname: "Ap", tiefe_oben: "0", tiefe_unten: "20" }),
       h({ ...base, horizontname: "Bv", tiefe_oben: "20", tiefe_unten: "40" }),
     ];
-    // per horizon: 20 × 0.5 × 1.5 × 2 dm = 30 → Ap 30 + Bv 15
-    expect(calcProfileSWert(profile, 100)).toBeCloseTo(45, 6);
+    // per horizon: 20 cmol_c/kg × 0.5 × 1.5 kg/dm³ × 2 dm = 30 cmol_c/dm²
+    // = 3000 cmol_c/m² → Ap 3000 + Bv 1500
+    expect(calcProfileSWert(profile, 100)).toBeCloseTo(4500, 6);
+  });
+
+  it("returns cmol_c/m² (1 kg/dm³ × 1 dm × 1 cmol_c/kg = 100 cmol_c/m²)", () => {
+    const profile = [
+      h({
+        horizontname: "Ah",
+        tiefe_oben: "0",
+        tiefe_unten: "10",
+        kak: "1",
+        basensaettigung: "100",
+        trockenrohdichte: "1",
+      }),
+    ];
+    expect(calcProfileSWert(profile, 100)).toBeCloseTo(100, 6);
   });
 
   it("recognises prefixed A-horizons (fAh) and clips at the limit", () => {
     const profile = [
       h({ ...base, horizontname: "fAh", tiefe_oben: "0", tiefe_unten: "40" }),
     ];
-    // clipped to 0–20 cm = 2 dm → 30
-    expect(calcProfileSWert(profile, 20)).toBeCloseTo(30, 6);
+    // clipped to 0–20 cm = 2 dm → 3000
+    expect(calcProfileSWert(profile, 20)).toBeCloseTo(3000, 6);
   });
 
   it("returns null when a horizon lacks KAK, BS or TRD", () => {
@@ -97,6 +113,14 @@ describe("rating thresholds", () => {
     expect(rateGPV(56)).toBe("sehr hoch");
     expect(rateNFK(49.9)).toBe("sehr gering");
     expect(rateNFK(50)).toBe("gering");
+  });
+
+  it("rates the S-Wert in cmol_c/m² (1/10/50/200 mol_c/m² boundaries)", () => {
+    expect(rateSWert(99)).toBe("sehr gering");
+    expect(rateSWert(100)).toBe("gering");
+    expect(rateSWert(1000)).toBe("mittel");
+    expect(rateSWert(5000)).toBe("hoch");
+    expect(rateSWert(20000)).toBe("sehr hoch");
   });
 
   it("rateKAK covers every bucket from 'sehr gering' to 'sehr hoch'", () => {

@@ -94,11 +94,11 @@ export default function BerechneteWerteSection({
       <View style={formStyles.calcBlock}>
         <HeadingRow
           title="S-Wert (im eff. Wurzelraum)"
-          info="Sorptionssumme im effektiven Wurzelraum in mol&#x2c;/m². Berechnet als KAK × (Basensättigung/100) × Trockenrohdichte × Mächtigkeit je Horizont. A-Horizonte gehen vollständig ein, alle anderen zur Hälfte. Benötigt KAK, Basensättigung und Trockenrohdichte (aus Packungsdichte abgeleitet) in den Horizonten."
+          info="Sorptionssumme im effektiven Wurzelraum in cmol_c/m². Berechnet als KAK × (Basensättigung/100) × Trockenrohdichte × Mächtigkeit je Horizont. A-Horizonte gehen vollständig ein, alle anderen zur Hälfte. Benötigt KAK, Basensättigung und Trockenrohdichte (aus Packungsdichte abgeleitet) in den Horizonten."
         />
         <ReadonlyField
-          value={profileSWert != null ? profileSWert.toFixed(2) : ""}
-          unit="cmol_c/m2"
+          value={profileSWert != null ? profileSWert.toFixed(0) : ""}
+          unit="cmol_c/m²"
         />
         <RatingField
           value={profileSWert != null ? rateSWert(profileSWert) : ""}

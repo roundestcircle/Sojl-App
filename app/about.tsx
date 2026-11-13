@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import CollapsibleSection from "@/components/CollapsibleSection";
-import FunktionsweiseContent from "@/components/FunktionsweiseContent";
+import CollapsibleSection from "@/components/ui/CollapsibleSection";
+import FunktionsweiseContent from "@/components/lexikon/FunktionsweiseContent";
 import { colors } from "../styles/colors";
 import { styles } from "../styles/styles";
 

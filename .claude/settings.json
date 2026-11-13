@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git config *)",
+      "Bash(git clone *)",
+      "Bash(node scripts/generateMunsellData.js)",
+      "Bash(npx tsc *)",
+      "PowerShell(npm run lint 2>&1)",
+      "Bash(git --no-pager diff HEAD --stat)",
+      "Bash(git --no-pager status)",
+      "Bash(git --no-pager diff HEAD)"
+    ]
+  }
+}

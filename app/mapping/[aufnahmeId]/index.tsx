@@ -22,20 +22,20 @@ import {
   getAufnahme,
   STANDORT_REQUIRED_FOR_VOLLSTAENDIG,
   type Aufnahme,
-} from "@/utils/MappingQueries";
+} from "@/lib/db/aufnahmeQueries";
 import {
   addHorizont,
   deleteHorizont,
   getHorizonteForAufnahme,
   moveHorizont,
   type Horizont,
-} from "@/utils/HorizonQueries";
-import { exportAufnahmeAsZip } from "@/utils/csvExport";
+} from "@/lib/db/horizontQueries";
+import { exportAufnahmeAsZip } from "@/lib/io/csvExport";
 import * as Haptics from "expo-haptics";
-import HorizontButton from "@/components/HorizonButton";
-import Badge from "@/components/Badge";
-import OrtFindenModal from "@/components/OrtFindenModal";
-import { utmToLatLon } from "@/utils/utmConversion";
+import HorizontButton from "@/components/forms/HorizontButton";
+import Badge from "@/components/ui/Badge";
+import OrtFindenModal from "@/components/tools/OrtFindenModal";
+import { utmToLatLon } from "@/lib/geo/utmConversion";
 
 // ─── Target coordinates ───────────────────────────────────────────────────────
 
@@ -95,7 +95,7 @@ const standortBadge: Record<StandortStatus, { label: string; bg: string }> = {
  * of Horizonte. Long-pressing a horizon row triggers delete confirmation.
  * The "Abschließen" button warns when incomplete horizons exist.
  */
-export default function HorizonOverview() {
+export default function AufnahmeOverview() {
   const { aufnahmeId: aufnahmeIdParam } = useLocalSearchParams<{
     aufnahmeId: string;
   }>();
@@ -148,7 +148,7 @@ export default function HorizonOverview() {
 
   /** Navigates to the detail screen for the tapped Horizont. */
   const handleHorizontPress = (horizont: Horizont) => {
-    router.push(`/mapping/${aufnahmeId}/horizon/${horizont.nummer}`);
+    router.push(`/mapping/${aufnahmeId}/horizont/${horizont.nummer}`);
   };
 
   /** Moves a Horizont one position up or down, with haptic + label crossfade feedback. */
@@ -238,8 +238,8 @@ export default function HorizonOverview() {
             <Text style={styles.actionButtonText}>Ort finden</Text>
           </TouchableOpacity>
 
-          {/* ── Horizon list ── */}
-          <View style={localStyles.horizonList}>
+          {/* ── Horizont list ── */}
+          <View style={localStyles.horizontList}>
             {horizonte.map((horizont, index) => (
               <HorizontButton
                 key={horizont.id}
@@ -368,7 +368,7 @@ const localStyles = StyleSheet.create({
     paddingBottom: 32,
     gap: 8,
   },
-  horizonList: {
+  horizontList: {
     gap: 12,
     paddingVertical: 8,
   },

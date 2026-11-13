@@ -116,11 +116,23 @@ Die Farbbestimmung erfolgt vollautomatisch aus einem Foto, das die Bodenprobe zu
 
 1. **Pixelauslese** — Die App liest die RGBA-Pixeldaten des Fotos pixelgenau mit Skia aus.
 
-2. **Weißabgleich über Graukarte** — Aus dem mittleren Bereich der Graukarte (60 % Bildbreite, 35 % Bildhöhe) wird der mittlere RGB-Wert berechnet. Da eine 18 %-Graukarte theoretisch den Wert (128, 128, 128) haben sollte, ergibt sich pro Kanal ein Korrekturfaktor von `128 / gemessenem Wert`. Das kompensiert Farbstiche durch wechselnde Lichtverhältnisse.
+2. **Weißabgleich über Graukarte** — Aus dem mittleren Bereich der Graukarte (60 % Bildbreite, 35 % Bildhöhe) wird die mittlere Farbe berechnet. Alle Rechnungen laufen dabei im linearen Licht: jeder sRGB-Wert wird vor dem Mitteln linearisiert. Da eine 18 %-Graukarte theoretisch dem sRGB-Wert (128, 128, 128) entspricht, ergibt sich pro Kanal ein Korrekturfaktor von `linear(128) / gemessenem Wert`. Das kompensiert Farbstiche durch wechselnde Lichtverhältnisse.
 
-3. **Probenfarbe ermitteln und korrigieren** — Aus dem kleinen Probenfeld (16 % Bildbreite, 10 % Bildhöhe, unten mittig) wird ebenfalls der mittlere RGB-Wert bestimmt. Anschließend wird jeder Kanal mit dem zugehörigen Korrekturfaktor multipliziert.
+3. **Probenfarbe ermitteln und korrigieren** — Aus dem kleinen Probenfeld (16 % Bildbreite, 10 % Bildhöhe, unten mittig) wird ebenfalls die mittlere lineare Farbe bestimmt und jeder Kanal mit dem zugehörigen Korrekturfaktor multipliziert. Ausgewertet wird nur der Bildausschnitt, den ihr in der Vorschau seht, damit die Messflächen genau den weißen Hilfsrechtecken entsprechen.
 
-4. **Munsell-Zuweisung** — Der korrigierte RGB-Wert wird in den CIE-L\*a\*b\*-Farbraum umgerechnet (Gamma-Korrektur → lineares sRGB → XYZ mit D65-Weißpunkt → L\*a\*b\*). Danach sucht die App im vorberechneten [RIT-Munsell-Renotation-Datensatz](https://www.rit.edu/science/munsell-color-science-lab-educational-resources) den Eintrag mit dem kleinsten CIE76-ΔE-Abstand (euklidische Distanz im Lab-Raum) und gibt die zugehörige Munsell-Notation aus.
+4. **Munsell-Zuweisung** — Die korrigierte Farbe wird direkt aus dem linearen Licht in den CIE-L\*a\*b\*-Farbraum umgerechnet (lineares sRGB → XYZ mit D65-Weißpunkt → L\*a\*b\*). Danach sucht die App im vorberechneten [RIT-Munsell-Renotation-Datensatz](https://www.rit.edu/science/munsell-color-science-lab-educational-resources) den Eintrag mit dem kleinsten CIEDE2000-Farbabstand und gibt die zugehörige Munsell-Notation aus. CIEDE2000 bildet die menschliche Farbwahrnehmung gerade bei den wenig gesättigten Bodenfarben deutlich besser ab als der einfache euklidische Abstand (CIE76).
+
+## Entwicklung
+
+Aufbau, Datenmodell und Konventionen stehen in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Die wichtigsten Befehle:
+
+```bash
+npm install
+npm start           # Expo-Entwicklungsserver
+npm run typecheck   # TypeScript
+npm run lint        # ESLint + Prettier
+npm test            # Unit-Tests
+```
 
 ## Kontakt
 

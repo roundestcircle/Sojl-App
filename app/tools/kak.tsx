@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import KAKTool from "@/components/KAKTool";
+import KAKTool from "@/components/tools/KAKTool";
 
 export default function KAKScreen() {
   return (

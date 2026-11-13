@@ -4,7 +4,7 @@
  * Download real.dat from:
  *   http://www.rit-mcsl.org/MunsellRenotation/real.dat
  *
- * Place it in the project root, then run:
+ * It is checked in at scripts/data/real.dat, so just run:
  *   node scripts/generateMunsellData.js
  */
 
@@ -175,15 +175,15 @@ function formatMunsell(hue, value, chroma) {
 // --- Main ---
 
 function main() {
-  const inputPath = path.join(__dirname, "..", "real.dat");
-  const outputPath = path.join(__dirname, "..", "utils", "munsellData.ts");
+  const inputPath = path.join(__dirname, "data", "real.dat");
+  const outputPath = path.join(__dirname, "..", "data", "munsellData.ts");
 
   if (!fs.existsSync(inputPath)) {
-    console.error("Error: real.dat not found in project root.");
+    console.error("Error: real.dat not found in scripts/data/.");
     console.error(
       "Download it from: http://www.rit-mcsl.org/MunsellRenotation/real.dat",
     );
-    console.error("Place it in: " + path.join(__dirname, ".."));
+    console.error("Place it in: " + path.join(__dirname, "data"));
     process.exit(1);
   }
 

@@ -22,22 +22,22 @@ import {
   useNavigation,
 } from "expo-router";
 import * as Location from "expo-location";
-import { haversineMeters, bearingDegrees, smoothHeading } from "@/utils/geo";
+import { haversineMeters, bearingDegrees, smoothHeading } from "@/lib/geo/geo";
 import { styles } from "@/styles/styles";
 import { colors } from "@/styles/colors";
 import {
   getAufnahmenWithHorizontCount,
   getFeldkampagne,
   closeFeldkampagne,
-} from "@/utils/FeldkampagneQueries";
-import StatusBadge from "@/components/StatusBadge";
-import { formatDate } from "@/utils/formatDate";
-import { exportAufnahmeAsZip, exportKampagneAsZip } from "@/utils/csvExport";
+} from "@/lib/db/feldkampagneQueries";
+import StatusBadge from "@/components/ui/StatusBadge";
+import { formatDate } from "@/lib/formatDate";
+import { exportAufnahmeAsZip, exportKampagneAsZip } from "@/lib/io/csvExport";
 import {
   createAufnahme,
   deleteAufnahme,
   type Aufnahme,
-} from "@/utils/MappingQueries";
+} from "@/lib/db/aufnahmeQueries";
 
 // Extends Aufnahme with a derived horizon count used in the list subtitle
 type AufnahmeRow = Aufnahme & { horizontCount: number };

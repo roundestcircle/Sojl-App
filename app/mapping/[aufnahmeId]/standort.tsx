@@ -9,11 +9,14 @@ import {
   saveAufnahmeDetails,
   type AufnahmeDetails,
   Aufnahme,
-} from "@/utils/MappingQueries";
-import { getHorizonteForAufnahme, type Horizont } from "@/utils/HorizonQueries";
-import { calcGrundigkeitCm } from "@/utils/MappingMaths";
-import AufnahmeForm from "@/components/AufnahmeForm";
-import { useDebouncedCallback } from "@/utils/useDebouncedCallback";
+} from "@/lib/db/aufnahmeQueries";
+import {
+  getHorizonteForAufnahme,
+  type Horizont,
+} from "@/lib/db/horizontQueries";
+import { calcGrundigkeitCm } from "@/lib/calc/mappingMaths";
+import AufnahmeForm from "@/components/forms/aufnahme/AufnahmeForm";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
 /**
  * Standortdaten screen.

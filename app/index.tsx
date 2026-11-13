@@ -11,8 +11,8 @@ import {
 import Constants from "expo-constants";
 import { styles } from "../styles/styles";
 import { colors } from "../styles/colors";
-import { pickAndImportCampaignZip } from "../utils/zipImport";
-import { pickAndImportGpx } from "../utils/gpxImport";
+import { pickAndImportCampaignZip } from "@/lib/io/zipImport";
+import { pickAndImportGpx } from "@/lib/io/gpxImport";
 
 export default function Index() {
   // True while a ZIP import is in progress (picker + reconstruction).
@@ -90,7 +90,7 @@ export default function Index() {
           <Text style={styles.chevron}>›</Text>
         )}
       </TouchableOpacity>
-      <Link href="/soilcolor" asChild>
+      <Link href="/tools/bodenfarbe" asChild>
         <TouchableOpacity style={styles.navButton}>
           <Text style={styles.navButtonLabel}>Nur Bodenfarbe bestimmen</Text>
           <Text style={styles.chevron}>›</Text>

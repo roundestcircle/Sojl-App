@@ -35,7 +35,7 @@ export default function MappingLayout() {
         options={{ title: "Standortdaten" }}
       />
       <Stack.Screen
-        name="[aufnahmeId]/horizon/[nr]"
+        name="[aufnahmeId]/horizont/[nr]"
         options={{ title: "Horizont" }}
       />
     </Stack>

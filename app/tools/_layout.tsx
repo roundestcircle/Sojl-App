@@ -28,6 +28,7 @@ export default function ToolsLayout() {
         name="index"
         options={{ title: "Kartierungsunterstützung" }}
       />
+      <Stack.Screen name="bodenfarbe" options={{ title: "Bodenfarbe" }} />
       <Stack.Screen name="bodenart" options={{ title: "Bodenart" }} />
       <Stack.Screen name="anteil" options={{ title: "Anteil" }} />
       <Stack.Screen name="humusgehalt" options={{ title: "Humusgehalt" }} />

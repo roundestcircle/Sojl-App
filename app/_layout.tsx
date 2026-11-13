@@ -3,7 +3,7 @@ import { Stack, router } from "expo-router";
 import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect } from "react";
-import { initDatabase } from "@/utils/db";
+import { initDatabase } from "@/lib/db/db";
 
 // Home icon rendered in the header right slot on most screens
 const homeButton = () => (
@@ -37,7 +37,6 @@ export default function RootLayout() {
         options={{ title: "Home", headerRight: () => null }}
       />
       <Stack.Screen name="about" options={{ title: "About" }} />
-      <Stack.Screen name="soilcolor" options={{ title: "Bodenfarbe" }} />
       <Stack.Screen name="mapping" options={{ headerShown: false }} />
       <Stack.Screen name="tools" options={{ headerShown: false }} />
     </Stack>

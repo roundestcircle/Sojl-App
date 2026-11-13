@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import SoilShareScroll from "@/components/SoilShareScroll";
+import SoilShareScroll from "@/components/tools/SoilShareScroll";
 
 /** Standalone screen wrapper for the coarse fraction share (Anteil) estimation tool. */
 export default function AnteilScreen() {

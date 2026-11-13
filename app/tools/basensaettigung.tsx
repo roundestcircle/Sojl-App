@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import BasensaettigungTool from "@/components/BasensaettigungTool";
+import BasensaettigungTool from "@/components/tools/BasensaettigungTool";
 
 export default function BasensaettigungScreen() {
   return (

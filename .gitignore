@@ -9,6 +9,10 @@ dist/
 web-build/
 expo-env.d.ts
 
+# generated native folders
+/ios
+/android
+
 # Native
 .kotlin/
 *.orig.*
@@ -16,6 +20,7 @@ expo-env.d.ts
 *.p8
 *.p12
 *.key
+*.pem
 *.mobileprovision
 
 # Metro
@@ -26,40 +31,24 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
-.DS_Store
+# typescript
+*.tsbuildinfo
 
-# Munsell data source
-real.dat
-*.pem
-generateMunsellData.ts
+# test coverage
+coverage/
 
 # local env files
 .env
 .env.*
 !.env.example
 
-# typescript
-*.tsbuildinfo
-
-app-example
-
-# generated native folders
-/ios
-/android
-
-.claude
-
-Videoscript.md
-
-# Local planning notes
-planned.md
-
-# Store screenshots
-Screenshots/
-
-# Local editor / tool config
+# OS / editor
+.DS_Store
 .cursor/
 
-# Local notes
-TODO
+# Claude Code: share project settings, keep personal settings and cloned skills local
+.claude/settings.local.json
+.claude/skills/
+
+# Personal, non-project files (planning notes, screenshots, store artwork, …)
+_local/

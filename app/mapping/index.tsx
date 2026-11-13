@@ -20,14 +20,14 @@ import {
   createFeldkampagne,
   deleteFeldkampagne,
   type Feldkampagne,
-} from "@/utils/FeldkampagneQueries";
-import { exportKampagneAsZip } from "@/utils/csvExport";
+} from "@/lib/db/feldkampagneQueries";
+import { exportKampagneAsZip } from "@/lib/io/csvExport";
 import {
   InstructionModal,
   ResetInstructionButton,
-} from "@/components/InstructionModal";
-import StatusBadge from "@/components/StatusBadge";
-import { formatDate } from "@/utils/formatDate";
+} from "@/components/ui/InstructionModal";
+import StatusBadge from "@/components/ui/StatusBadge";
+import { formatDate } from "@/lib/formatDate";
 
 /**
  * Feldkampagnen overview screen.

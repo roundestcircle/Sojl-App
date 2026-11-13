@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BodenTypTool from "@/components/BodenTypTool";
-import HorizontLexikonContent from "@/components/HorizontLexikonContent";
+import BodentypTool from "@/components/tools/BodentypTool";
+import HorizontLexikonContent from "@/components/lexikon/HorizontLexikonContent";
 import { colors } from "@/styles/colors";
 
 /**
- * Standalone screen wrapper for the BodenTypTool.
+ * Standalone screen wrapper for the BodentypTool.
  * Accessible from the Tools overview without a form context (no onConfirm callback).
  * Includes a button to open the Horizontlexikon as a modal reference.
  */
@@ -25,7 +25,7 @@ export default function BodentypScreen() {
         </TouchableOpacity>
       </View>
 
-      <BodenTypTool />
+      <BodentypTool />
 
       {/* ── Horizontlexikon modal ── */}
       <Modal
